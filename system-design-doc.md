@@ -24,21 +24,20 @@ A modular call center and case management platform for cross-sector use (e.g., s
 ## 2. High-Level Architecture
 
 ### Architecture Diagram
-
 ```mermaid
 flowchart TD
     Client[Client Applications] -->|HTTPS/WSS| API[API Gateway]
     
-    subgraph "Frontend Layer"
+    subgraph Frontend_Layer
         WebApp[Web Application\nReact/TypeScript]
         MobileApp[Mobile Application\nFlutter]
         DesktopApp[Desktop Application\nElectron]
     end
     
-    Client --> Frontend Layer
+    Client --> Frontend_Layer
     
-    subgraph "Backend Services"
-        API --> Auth[Authentication\n& Authorization]
+    subgraph Backend_Services
+        API --> Auth[Authentication & Authorization]
         API --> CommHub[Communication Hub]
         API --> CaseService[Case Management Service]
         API --> AnalyticsService[Analytics Service]
@@ -47,7 +46,7 @@ flowchart TD
         API --> ConfigService[Configuration Service]
     end
     
-    subgraph "Communication Channels"
+    subgraph Communication_Channels
         CommHub --> VoIP[Voice Call Service\nTwilio/Vonage]
         CommHub --> SMS[SMS Service\nTwilio/Twilio Verify]
         CommHub --> WhatsApp[WhatsApp API]
@@ -56,7 +55,7 @@ flowchart TD
         CommHub --> Chat[Live Chat Service]
     end
     
-    subgraph "AI Services"
+    subgraph AI_Services
         AIGateway --> Transcription[Speech-to-Text\nGoogle/Azure/AWS]
         AIGateway --> Sentiment[Sentiment Analysis\nAzure/AWS Comprehend]
         AIGateway --> Summarization[Auto-Summarization\nOpenAI/HuggingFace]
@@ -65,7 +64,7 @@ flowchart TD
         AIGateway --> KeywordDetection[Keyword Detection]
     end
     
-    subgraph "Data Layer"
+    subgraph Data_Layer
         CaseService --> RDBMS[(Primary Database\nPostgreSQL)]
         CaseService --> DocumentDB[(Document Storage\nMongoDB)]
         NotificationService --> MessageQueue[(Message Queue\nRabbitMQ/Kafka)]
@@ -73,7 +72,7 @@ flowchart TD
         AnalyticsService --> DataWarehouse[(Data Warehouse\nSnowflake/BigQuery)]
     end
     
-    subgraph "Storage"
+    subgraph Storage
         RDBMS --> DBBackup[(Database Backup)]
         DocumentDB --> FileStorage[(File Storage\nS3/Azure Blob)]
     end
