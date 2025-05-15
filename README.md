@@ -10,7 +10,7 @@
 
 ## Table of Contents
 
-1. Introduction
+1. Introduction.
 2. Scope
 3. System Objectives
 4. Architecture Overview
