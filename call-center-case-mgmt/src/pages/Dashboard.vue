@@ -1,196 +1,292 @@
 <template>
   <div class="dashboard-layout">
-    <button class="mobile-menu-btn" id="mobile-menu-btn" @click="toggleMobileMenu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" @click="toggleMobileMenu" :class="{ 'active': mobileOpen }">
+      <svg v-if="!mobileOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+      <svg v-if="mobileOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
-
-    <div class="sidebar" id="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': mobileOpen }">
+  
+    <!-- Sidebar -->
+    <div class="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': mobileOpen }">
       <div class="sidebar-content">
+        <!-- Logo Section -->
         <div class="logo-container">
           <div class="logo">
-            <img :src="logo" alt="OpenCHS Logo">
+            <img src="/Openchs logo-1.png" alt="OpenCHS Logo">
+          </div>
+          <div class="brand-text" v-show="!isSidebarCollapsed">
+            <h2>OpenCHS</h2>
+            <span>Child Protection</span>
           </div>
         </div>
         
-        <router-link to="/dashboard" class="nav-item active">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Dashboard</div>
-        </router-link>
-        
-        <router-link to="/calls" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Calls</div>
-        </router-link>
-        
-        <router-link to="/cases" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Cases</div>
-        </router-link>
-        
-        <router-link to="/chats" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Chats</div>
-        </router-link>
-        
-        <router-link to="/qa-statistics" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">QA Statistics</div>
-        </router-link>
-        
-        <router-link to="/wallboard" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Wallboard</div>
-        </router-link>
-        
-        <router-link to="/settings" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Settings</div>
-        </router-link>
-        
-        <div class="user-profile">
-          <router-link to="/edit-profile" class="user-avatar">
-            <!-- If user has profile picture, show it -->
-            <!-- <img src="profile-picture.jpg" alt="User Profile"> -->
-            <!-- Otherwise show default icon -->
-            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"/>
-              <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z"/>
+        <!-- Navigation -->
+        <nav class="nav-menu">
+          <router-link to="/dashboard" class="nav-item active">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9,22 9,12 15,12 15,22"></polyline>
             </svg>
+            <span class="nav-text">Dashboard</span>
           </router-link>
-        </div>
+          
+          <router-link to="/calls" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span class="nav-text">Calls</span>
+          </router-link>
+          
+          <router-link to="/cases" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="nav-text">Cases</span>
+          </router-link>
+          
+          <router-link to="/chats" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="nav-text">Chats</span>
+          </router-link>
+          
+          <router-link to="/qa-statistics" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"></path>
+              <path d="m19 9-5 5-4-4-3 3"></path>
+            </svg>
+            <span class="nav-text">QA Statistics</span>
+          </router-link>
+          
+          <router-link to="/wallboard" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="3" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span class="nav-text">Wallboard</span>
+          </router-link>
+          
+          <router-link to="/settings" class="nav-item">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span class="nav-text">Settings</span>
+          </router-link>
+  
+          <!-- Admin Access -->
+          <button @click="navigateToSuperAdmin" class="nav-item admin-item" v-if="userRole === 'super-admin'">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span class="nav-text">Super Admin</span>
+          </button>
+        </nav>
         
-        <div class="status">
-          <div class="status-dot"></div>
-          <span>Status: Online</span>
-        </div>
-        
-        <div class="button-container">
-          <button class="join-queue-btn">Join Queue</button>
-          <button class="logout-btn" @click="logout">Logout</button>
+        <!-- User Profile -->
+        <div class="user-section">
+          <div class="user-profile">
+            <div class="user-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="user-info" v-show="!isSidebarCollapsed">
+              <span class="user-name">{{ userName }}</span>
+              <span class="user-role">{{ userRole }}</span>
+            </div>
+          </div>
+          
+          <div class="status-indicator" v-show="!isSidebarCollapsed">
+            <div class="status-dot online"></div>
+            <span>Online</span>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="join-queue-btn" v-show="!isSidebarCollapsed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5,3 19,12 5,21 5,3"></polygon>
+              </svg>
+              Join Queue
+            </button>
+            <button class="logout-btn" @click="logout">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16,17 21,12 16,7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span v-show="!isSidebarCollapsed">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
+      
+      <!-- Sidebar Toggle -->
+      <button class="sidebar-toggle" @click="toggleSidebar">
+        <svg v-if="!isSidebarCollapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15,18 9,12 15,6"></polyline>
+        </svg>
+        <svg v-if="isSidebarCollapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9,18 15,12 9,6"></polyline>
+        </svg>
+      </button>
     </div>
-
-    <button class="expand-btn" id="expand-btn" @click="expandSidebar" :class="{ 'visible': isSidebarCollapsed }">
-      >
-    </button>
-
-    <div class="main-content" :class="{ 'sidebar-collapsed': isSidebarCollapsed }" :style="{ marginLeft: mainContentMarginLeft }">
-      <div class="header">
-        <button class="sidebar-toggle" @click="toggleSidebar">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <h1>Dashboard</h1>
-        <button class="theme-toggle" @click="toggleTheme">
-          <svg id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-show="currentTheme === 'dark'">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <svg id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" v-show="currentTheme === 'light'">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-        </button>
-      </div>
-
-      <div class="dashboard-grid">
-        <div class="dashboard-card" v-for="(card, index) in dashboardCards" :key="index">
-          <div class="card-header">
-            <div class="card-title">{{ card.title }}</div>
-            <div class="card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path :d="card.iconPath" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+  
+    <!-- Main Content -->
+    <div class="main-content" :class="{ 'sidebar-collapsed': isSidebarCollapsed }">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <h1>Dashboard</h1>
+          <p class="header-subtitle">Welcome back, {{ userName }}</p>
+        </div>
+        <div class="header-right">
+          <button class="theme-toggle" @click="toggleTheme">
+            <svg v-if="currentTheme === 'dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg v-if="currentTheme === 'light'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <div class="notification-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="notification-badge">3</span>
           </div>
-          <div class="card-value">{{ card.value }}</div>
-          <div class="card-subtitle">{{ card.subtitle }}</div>
         </div>
-      </div>
-
-      <div class="queue-activity">
-        <div class="section-header">
-          <div class="section-title">Queue Activity</div>
-        </div>
-        
-        <table class="queue-table">
-          <thead>
-            <tr>
-              <th>Agent Name</th>
-              <th>Current Status</th>
-              <th>Calls Handled</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="agent in agents" :key="agent.name">
-              <td>{{ agent.name }}</td>
-              <td>
-                <span :class="['agent-status', `status-${agent.status}`]">
-                  {{ agent.statusText }}
-                </span>
-              </td>
-              <td>{{ agent.callsHandled }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="recent-calls">
-        <div class="section-header">
-          <div class="section-title">Recent Calls</div>
-          <router-link to="/calls" class="view-all">View All</router-link>
-        </div>
-        
-        <div class="call-list">
-          <div v-for="call in recentCalls" :key="call.id" class="call-item">
-            <div class="call-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+      </header>
+  
+      <!-- Dashboard Content -->
+      <div class="dashboard-content">
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          <div v-for="(metric, index) in metrics" :key="index" class="metric-card">
+            <div class="metric-header">
+              <div class="metric-icon" :class="metric.iconClass">
+                <component :is="metric.icon" />
+              </div>
+              <div class="metric-trend" :class="metric.trendClass">
+                <svg v-if="metric.trend > 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"></polyline>
+                  <polyline points="17,6 23,6 23,12"></polyline>
+                </svg>
+                <svg v-if="metric.trend < 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23,18 13.5,8.5 8.5,13.5 1,6"></polyline>
+                  <polyline points="17,18 23,18 23,12"></polyline>
+                </svg>
+                <span>{{ Math.abs(metric.trend) }}%</span>
+              </div>
             </div>
-            <div class="call-details">
-              <div class="call-type">{{ call.type }}</div>
-              <div class="call-time">{{ call.time }}</div>
-            </div>
-            <div :class="['call-status', `status-${call.status}`]">
-              {{ call.statusText }}
+            <div class="metric-content">
+              <h3 class="metric-value">{{ metric.value }}</h3>
+              <p class="metric-label">{{ metric.label }}</p>
+              <span class="metric-subtitle">{{ metric.subtitle }}</span>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="chart-container">
-        <div class="chart-card">
-          <div class="section-title">Call Volume Trends</div>
-          <div class="chart-placeholder">
-            <div class="line-chart">
-              <div class="chart-grid">
-                <div v-for="i in 5" :key="i" class="grid-line" :style="{ gridRow: i }"></div>
+  
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <h2 class="section-title">Quick Actions</h2>
+          <div class="actions-grid">
+            <button class="action-card" @click="startEmergencyCall">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span>Emergency Call</span>
+            </button>
+            <button class="action-card" @click="createNewCase">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+              </svg>
+              <span>New Case</span>
+            </button>
+            <button class="action-card" @click="viewReports">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
+              </svg>
+              <span>View Reports</span>
+            </button>
+            <button class="action-card" @click="accessResources">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <span>Resources</span>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Recent Activity -->
+        <div class="activity-section">
+          <div class="activity-header">
+            <h2 class="section-title">Recent Activity</h2>
+            <router-link to="/calls" class="view-all">View All</router-link>
+          </div>
+          
+          <div class="activity-grid">
+            <!-- Recent Calls -->
+            <div class="activity-card">
+              <h3 class="card-title">Recent Calls</h3>
+              <div class="call-list">
+                <div v-for="call in recentCalls" :key="call.id" class="call-item">
+                  <div class="call-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                  </div>
+                  <div class="call-details">
+                    <h4>{{ call.type }}</h4>
+                    <p>{{ call.time }}</p>
+                  </div>
+                  <div class="call-status" :class="call.statusClass">
+                    {{ call.status }}
+                  </div>
+                </div>
               </div>
-              
-              <div class="y-axis"></div>
-              <div v-for="(label, index) in yLabels" :key="index" class="y-label" :style="{ bottom: `${20 + index * 57}px` }">
-                {{ label }}
-              </div>
-              
-              <div class="chart-axis"></div>
-              
-              <div class="chart-line">
-                <div v-for="(point, index) in chartData" :key="index" class="chart-point">
-                  <div class="point-dot" :style="{ bottom: `${point.value}px` }"></div>
-                  <div class="point-line" :style="{ height: `${point.value}px`, bottom: 0 }"></div>
-                  <div class="point-label">{{ point.label }}</div>
+            </div>
+  
+            <!-- Queue Status -->
+            <div class="activity-card">
+              <h3 class="card-title">Queue Status</h3>
+              <div class="queue-stats">
+                <div class="queue-item">
+                  <div class="queue-number">{{ queueStats.waiting }}</div>
+                  <div class="queue-label">Waiting</div>
+                </div>
+                <div class="queue-item">
+                  <div class="queue-number">{{ queueStats.active }}</div>
+                  <div class="queue-label">Active</div>
+                </div>
+                <div class="queue-item">
+                  <div class="queue-number">{{ queueStats.agents }}</div>
+                  <div class="queue-label">Agents Online</div>
                 </div>
               </div>
             </div>
@@ -198,1098 +294,1095 @@
         </div>
       </div>
     </div>
+  
+    <!-- Super Admin Modal/Page -->
+    <div v-if="showSuperAdmin" class="super-admin-overlay" @click="closeSuperAdmin">
+      <div class="super-admin-container" @click.stop>
+        <SuperAdminDashboard @close="closeSuperAdmin" />
+      </div>
+    </div>
   </div>
-</template>
-
-<script>
-import logo from '../assets/Openchs logo-1.png'
-
-export default {
+  </template>
+  
+  <script>
+  import { ref, onMounted } from 'vue'
+  
+  // Define icon components as simple SVG elements
+  const PhoneIcon = {
+    template: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>`
+  }
+  
+  const FolderIcon = {
+    template: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>`
+  }
+  
+  const BarChart3Icon = {
+    template: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"></path>
+      <path d="m19 9-5 5-4-4-3 3"></path>
+    </svg>`
+  }
+  
+  const TrendingUpIcon = {
+    template: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"></polyline>
+      <polyline points="17,6 23,6 23,12"></polyline>
+    </svg>`
+  }
+  
+  // Super Admin Dashboard Component
+  const SuperAdminDashboard = {
+    template: `
+      <div class="super-admin-dashboard">
+        <div class="super-admin-header">
+          <h1>Super Admin Dashboard</h1>
+          <button @click="$emit('close')" class="close-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="super-admin-content">
+          <p>Welcome to the Super Admin Dashboard. Here you can manage system-wide settings, user permissions, and organizational configurations.</p>
+          <div class="admin-actions">
+            <button class="admin-action-btn">Manage Users</button>
+            <button class="admin-action-btn">System Settings</button>
+            <button class="admin-action-btn">Organization Management</button>
+            <button class="admin-action-btn">Reports & Analytics</button>
+          </div>
+        </div>
+      </div>
+    `,
+    emits: ['close']
+  }
+  
+  export default {
   name: 'Dashboard',
-  data() {
+  components: {
+    PhoneIcon,
+    FolderIcon,
+    BarChart3Icon,
+    TrendingUpIcon,
+    SuperAdminDashboard
+  },
+  setup() {
+    const isSidebarCollapsed = ref(false)
+    const mobileOpen = ref(false)
+    const currentTheme = ref(localStorage.getItem('theme') || 'dark')
+    const showSuperAdmin = ref(false)
+    
+    // User data
+    const userName = ref('Sarah Johnson')
+    const userRole = ref('super-admin') // Change this based on actual user role
+    
+    // Metrics data
+    const metrics = ref([
+      {
+        label: 'Total Calls Today',
+        value: '127',
+        trend: 12,
+        trendClass: 'positive',
+        subtitle: 'vs yesterday',
+        icon: 'PhoneIcon',
+        iconClass: 'phone'
+      },
+      {
+        label: 'Active Cases',
+        value: '34',
+        trend: 8,
+        trendClass: 'positive',
+        subtitle: 'this week',
+        icon: 'FolderIcon',
+        iconClass: 'folder'
+      },
+      {
+        label: 'Response Time',
+        value: '2.3m',
+        trend: -15,
+        trendClass: 'negative',
+        subtitle: 'average',
+        icon: 'BarChart3Icon',
+        iconClass: 'chart'
+      },
+      {
+        label: 'Resolution Rate',
+        value: '94%',
+        trend: 5,
+        trendClass: 'positive',
+        subtitle: 'this month',
+        icon: 'TrendingUpIcon',
+        iconClass: 'trending'
+      }
+    ])
+    
+    // Recent calls data
+    const recentCalls = ref([
+      {
+        id: 1,
+        type: 'Emergency Crisis Support',
+        time: '2 minutes ago',
+        status: 'In Progress',
+        statusClass: 'in-progress'
+      },
+      {
+        id: 2,
+        type: 'Follow-up Call',
+        time: '15 minutes ago',
+        status: 'Completed',
+        statusClass: 'completed'
+      },
+      {
+        id: 3,
+        type: 'Resource Request',
+        time: '1 hour ago',
+        status: 'Pending',
+        statusClass: 'pending'
+      }
+    ])
+    
+    // Queue statistics
+    const queueStats = ref({
+      waiting: 5,
+      active: 12,
+      agents: 8
+    })
+    
+    const toggleSidebar = () => {
+      isSidebarCollapsed.value = !isSidebarCollapsed.value
+    }
+    
+    const toggleMobileMenu = () => {
+      mobileOpen.value = !mobileOpen.value
+    }
+    
+    const toggleTheme = () => {
+      const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
+      currentTheme.value = newTheme
+      localStorage.setItem('theme', newTheme)
+      document.documentElement.setAttribute('data-theme', newTheme)
+    }
+    
+    const navigateToSuperAdmin = () => {
+      showSuperAdmin.value = true
+    }
+    
+    const closeSuperAdmin = () => {
+      showSuperAdmin.value = false
+    }
+    
+    const logout = () => {
+      // Handle logout logic
+      console.log('Logging out...')
+    }
+    
+    const startEmergencyCall = () => {
+      console.log('Starting emergency call...')
+    }
+    
+    const createNewCase = () => {
+      console.log('Creating new case...')
+    }
+    
+    const viewReports = () => {
+      console.log('Viewing reports...')
+    }
+    
+    const accessResources = () => {
+      console.log('Accessing resources...')
+    }
+    
+    onMounted(() => {
+      document.documentElement.setAttribute('data-theme', currentTheme.value)
+    })
+    
     return {
-      logo,
-      isSidebarCollapsed: false,
-      mobileOpen: false,
-      dashboardCards: [
-        {
-          title: 'Total Calls',
-          iconPath: 'M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z',
-          value: '53',
-          subtitle: '+12% from last week'
-        },
-        {
-          title: 'Active Cases',
-          iconPath: 'M22 12h-4l-3 9L9 3l-3 9H2',
-          value: '24',
-          subtitle: '+5% from last week'
-        },
-        {
-          title: 'Pending Calls',
-          iconPath: 'M12 6v6l4 2 M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0 -20 0',
-          value: '5',
-          subtitle: '-2% from last week'
-        },
-        {
-          title: 'Completed Calls',
-          iconPath: 'M22 11.08V12a10 10 0 11-5.93-9.14 M22 4L12 14.01l-3-3',
-          value: '42',
-          subtitle: '+8% from last week'
-        }
-      ],
-      agents: [
-        { name: 'Sarah Davis', status: 'available', statusText: 'Available', callsHandled: 34 },
-        { name: 'Mark Reynolds', status: 'in-call', statusText: 'In Call', callsHandled: 28 },
-        { name: 'Emily Chan', status: 'on-break', statusText: 'On Break', callsHandled: 15 },
-        { name: 'David Lee', status: 'available', statusText: 'Available', callsHandled: 42 },
-        { name: 'Sophia Clark', status: 'in-call', statusText: 'In Call', callsHandled: 30 }
-      ],
-      recentCalls: [
-        { 
-          id: 1, 
-          type: 'Emergency Crisis: Domestic Violence', 
-          time: 'Today, 09:00AM', 
-          status: 'in-progress',
-          statusText: 'In Progress'
-        },
-        { 
-          id: 2, 
-          type: 'Survivor Follow-Up: Safety Planning', 
-          time: 'Today, 10:30AM', 
-          status: 'pending',
-          statusText: 'Pending'
-        },
-        { 
-          id: 3, 
-          type: 'Wellness Check-In: Mental Health Support', 
-          time: 'Yesterday, 11:15AM', 
-          status: 'completed',
-          statusText: 'Completed'
-        },
-        { 
-          id: 4, 
-          type: 'Resource Request: Shelter Information', 
-          time: 'Today, 04:45PM', 
-          status: 'unassigned',
-          statusText: 'Unassigned'
-        }
-      ],
-      yLabels: [0, 10, 20, 30, 40],
-      chartData: [
-        { label: 'Mon', value: 60 },
-        { label: 'Tue', value: 90 },
-        { label: 'Wed', value: 120 },
-        { label: 'Thu', value: 150 },
-        { label: 'Fri', value: 100 },
-        { label: 'Sat', value: 70 },
-        { label: 'Sun', value: 40 }
-      ],
-      currentTheme: localStorage.getItem('theme') || 'dark',
-    };
-  },
-  computed: {
-    mainContentMarginLeft() {
-      if (window.innerWidth <= 768) {
-        return '0px';
-      } else if (this.isSidebarCollapsed) {
-        return '80px'; // Collapsed sidebar width
-      } else {
-        return '250px'; // Full sidebar width
-      }
+      isSidebarCollapsed,
+      mobileOpen,
+      currentTheme,
+      showSuperAdmin,
+      userName,
+      userRole,
+      metrics,
+      recentCalls,
+      queueStats,
+      toggleSidebar,
+      toggleMobileMenu,
+      toggleTheme,
+      navigateToSuperAdmin,
+      closeSuperAdmin,
+      logout,
+      startEmergencyCall,
+      createNewCase,
+      viewReports,
+      accessResources
     }
-  },
-  methods: {
-    toggleSidebar() {
-      this.isSidebarCollapsed = !this.isSidebarCollapsed;
-    },
-    expandSidebar() {
-      this.isSidebarCollapsed = false;
-    },
-    toggleMobileMenu() {
-      this.mobileOpen = !this.mobileOpen;
-    },
-    joinQueue() {
-      console.log('Joining queue');
-      // Add the queue functionality here
-    },
-    logout() {
-      console.log('Logging out');
-      this.$router.push('/'); // Use Vue Router for navigation
-    },
-    animateChart() {
-      setTimeout(() => {
-        const chartPoints = this.$el.querySelectorAll('.point-dot, .point-line');
-        chartPoints.forEach(point => {
-          const originalBottom = point.style.bottom;
-          point.style.bottom = '0';
-          setTimeout(() => {
-            point.style.transition = 'bottom 1s ease-out';
-            point.style.bottom = originalBottom;
-          }, 100);
-        });
-      }, 300);
-    },
-    setupOutsideClickListener() {
-      document.addEventListener('click', (event) => {
-        const isMobile = window.innerWidth <= 768;
-        // const sidebar = document.getElementById('sidebar');
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        
-        if (isMobile && sidebar && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
-          this.mobileOpen = false;
-        }
-      });
-    },
-    setupResizeListener() {
-      window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-          this.mobileOpen = false;
-        }
-      });
-    },
-    applyTheme(theme) {
-      if (theme === 'light') {
-          document.documentElement.setAttribute('data-theme', 'light');
-      } else {
-          document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    },
-    toggleTheme() {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
-      localStorage.setItem('theme', newTheme);
-      this.currentTheme = newTheme;
-      this.applyTheme(newTheme);
-    }
-  },
-  mounted() {
-    // Apply theme from localStorage
-    this.applyTheme(this.currentTheme);
-    
-    // Initialize status counts
-    // this.updateStatusCounts(); // This method is not in dashboard.html
-
-    // Set up event listeners
-    this.setupOutsideClickListener();
-    this.setupResizeListener();
-    
-    // Select the first call by default if calls exist
-    // This logic is specific to the Calls page and not present in dashboard.html
-    // const firstCallId = this.allCalls.length > 0 ? this.allCalls[0].id : null;
-    // if (firstCallId) {
-    //   this.selectCall(firstCallId);
-    // }
-
-    // Animate chart when component is mounted, based on dashboard.html script
-    const chartPoints = this.$el.querySelectorAll('.point-dot, .point-line');
-    chartPoints.forEach(point => {
-        const originalBottom = point.style.bottom;
-        point.style.bottom = '0';
-        setTimeout(() => {
-            point.style.transition = 'bottom 1s ease-out';
-            point.style.bottom = originalBottom;
-        }, 100);
-    });
-
-    // Add event listeners for sidebar toggling, based on dashboard.html script
-    const sidebar = this.$el.querySelector('#sidebar');
-    const toggleBtn = this.$el.querySelector('#toggle-btn');
-    const expandBtn = this.$el.querySelector('#expand-btn');
-    const mobileMenuBtn = this.$el.querySelector('#mobile-menu-btn');
-    const html = document.documentElement;
-
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            if (sidebar.classList.contains('collapsed')) {
-                toggleBtn.innerHTML = '&gt;';
-            } else {
-                toggleBtn.innerHTML = '&lt;';
-            }
-            // Also toggle the visibility of the expand button based on sidebar state
-            if (expandBtn) {
-                if (sidebar.classList.contains('collapsed')) {
-                    expandBtn.style.display = 'flex';
-                } else {
-                    expandBtn.style.display = 'none';
-                }
-            }
-        });
-    }
-
-    if (expandBtn) {
-        expandBtn.addEventListener('click', () => {
-            sidebar.classList.remove('collapsed');
-            if (toggleBtn) {
-                toggleBtn.innerHTML = '&lt;';
-            }
-             // Hide expand button when sidebar is not collapsed
-            expandBtn.style.display = 'none';
-        });
-    }
-
-     // Mobile menu toggle based on dashboard.html script
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('mobile-open');
-        });
-    }
-
-    // Close sidebar when clicking outside on mobile, based on dashboard.html script
-    document.addEventListener('click', (event) => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile && sidebar && !sidebar.contains(event.target) && event.target !== mobileMenuBtn && (!toggleBtn || !toggleBtn.contains(event.target))) {
-            sidebar.classList.remove('mobile-open');
-        }
-    });
-
-    // Handle window resize, based on dashboard.html script
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-            sidebar.classList.remove('mobile-open');
-        }
-         // Adjust expand button display on resize if sidebar is collapsed
-        if (expandBtn && sidebar.classList.contains('collapsed')) {
-             if (window.innerWidth > 768) {
-                 expandBtn.style.display = 'flex';
-             } else {
-                 expandBtn.style.display = 'none';
-             }
-        }
-    });
-
-    // Theme toggle logic based on dashboard.html script
-    const themeToggle = this.$el.querySelector('#theme-toggle');
-    const themeText = this.$el.querySelector('#theme-text');
-    const moonIcon = this.$el.querySelector('#moon-icon');
-    const sunIcon = this.$el.querySelector('#sun-icon');
-
-    function applyTheme(theme) {
-        if (theme === 'light') {
-            html.setAttribute('data-theme', 'light');
-            if (themeText) themeText.textContent = 'Dark Mode';
-            if (moonIcon) moonIcon.style.display = 'none';
-            if (sunIcon) sunIcon.style.display = 'block';
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            if (themeText) themeText.textContent = 'Light Mode';
-            if (moonIcon) moonIcon.style.display = 'block';
-            if (sunIcon) sunIcon.style.display = 'none';
-        }
-    }
-
-     // Check localStorage for saved theme preference and apply on mount
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else {
-         // Apply default theme if no preference is saved
-         applyTheme(html.getAttribute('data-theme') || 'dark');
-    }
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            localStorage.setItem('theme', newTheme);
-            applyTheme(newTheme);
-        });
-    }
-
-  },
-};
-</script>
-
-<style scoped>
-:root {
-  /* Dark theme variables */
-  --background-color: #0a0a0a;
-  --sidebar-bg: #111;
-  --content-bg: #222;
-  --text-color: #fff; /* Ensure text color is white in dark mode */
-  --text-secondary: #aaa;
-  --border-color: #333;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-  --danger-color: #ff3b30;
-  --success-color: #4CAF50;
-  --pending-color: #FFA500;
-  --unassigned-color: #808080;
-  --highlight-color: #ff3b30;
-  --header-bg: #333;
-  --card-bg: #222;
-}
-
-[data-theme="light"] {
-  --background-color: #f5f5f5;
-  --sidebar-bg: #ffffff;
-  --content-bg: #ffffff;
-  --text-color: #333; /* Ensure text color is dark in light mode */
-  --text-secondary: #666;
-  --border-color: #ddd;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-  --danger-color: #ff3b30;
-  --success-color: #4CAF50;
-  --pending-color: #FFA500;
-  --unassigned-color: #808080;
-  --highlight-color: #ff3b30;
-  --header-bg: #f0f0f0;
-  --card-bg: #ffffff;
-}
-
-* {
+  }
+  }
+  </script>
+  
+  <style scoped>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  :root {
+  --primary-color: #1e7e34;
+  --primary-hover: #166534;
+  --secondary-color: #6c757d;
+  --accent-color: #ffc107;
+  --danger-color: #dc3545;
+  --success-color: #28a745;
+  --warning-color: #fd7e14;
+  --info-color: #17a2b8;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  }
+  
+  [data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #404040;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-muted: #808080;
+  --border-color: #404040;
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+  }
+  
+  * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  }
+  
+  body {
   font-family: 'Inter', sans-serif;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
-  overflow-x: hidden;
-  color: var(--text-color); /* Ensure body text uses theme color */
-}
-
-.dashboard-layout {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  }
+  
+  .dashboard-layout {
   display: flex;
   min-height: 100vh;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
-  width: 100%;
-}
-
-.sidebar {
-  width: 250px;
-  flex-shrink: 0;
-  background-color: var(--sidebar-bg);
-  color: var(--text-color);
-  transition: width 0.3s ease, background-color 0.3s;
-  overflow-x: hidden;
-  border-radius: 0 30px 30px 0;
-  z-index: 100;
-  height: 100vh;
-  /* position handled in media query */
-}
-
-.sidebar.collapsed {
-  width: 80px;
-}
-
-.expand-btn {
-  position: fixed;
-  top: 50px;
-  left: 5px;
-  width: 30px;
-  height: 30px;
-  background-color: var(--text-color);
-  border-radius: 50%;
+  background-color: var(--bg-primary);
+  transition: all 0.3s ease;
+  position: relative;
+  }
+  
+  /* Mobile Menu Button */
+  .mobile-menu-btn {
   display: none;
-  justify-content: center;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1001;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
-  z-index: 101;
-  border: 1px solid var(--border-color);
-  color: var(--background-color);
-  font-weight: bold;
-  font-size: 14px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.sidebar.collapsed ~ .main-content .expand-btn {
-    display: flex;
-}
-
-.sidebar-content {
-  padding: 30px 0;
-  width: 250px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.sidebar.collapsed .sidebar-content {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.logo-container {
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  }
+  
+  .mobile-menu-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  }
+  
+  /* Sidebar */
+  .sidebar {
+  width: 280px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1000;
   display: flex;
-  justify-content: center; /* Ensure horizontal centering */
-  align-items: center; /* Ensure vertical centering */
-  margin-bottom: 30px;
-}
-
-.logo {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background-color: var(--text-color);
+  flex-direction: column;
+  }
+  
+  .sidebar.collapsed {
+  width: 80px;
+  }
+  
+  .sidebar-content {
+  flex: 1;
+  padding: 2rem 1rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 2rem;
+  }
+  
+  .sidebar.collapsed .sidebar-content {
+  padding: 2rem 0.5rem;
+  }
+  
+  /* Logo Section */
+  .logo-container {
+  display: flex;
   align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  }
+  
+  .sidebar.collapsed .logo-container {
+  justify-content: center;
+  padding: 0;
+  }
+  
+  .logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-}
-
-.logo img {
-  width: 40px;
-  height: 40px;
+  flex-shrink: 0;
+  }
+  
+  .logo img {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-}
-
-.nav-item {
+  }
+  
+  .brand-text h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.25rem;
+  }
+  
+  .brand-text span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  }
+  
+  /* Navigation */
+  .nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  }
+  
+  .nav-item {
   display: flex;
   align-items: center;
-  padding: 12px 20px;
-  cursor: pointer;
-  margin-bottom: 5px;
-  border-radius: 30px 0 0 30px;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
   text-decoration: none;
-  color: var(--text-color);
-}
-
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-icon {
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  position: relative;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  }
+  
+  .sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  }
+  
+  .nav-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: translateX(4px);
+  }
+  
+  .nav-item.active {
+  background: var(--primary-color);
+  color: white;
+  }
+  
+  .nav-item.admin-item {
+  background: linear-gradient(135deg, #dc3545, #fd7e14);
+  color: white;
+  margin-top: 1rem;
+  }
+  
+  .nav-item.admin-item:hover {
+  transform: translateX(4px) scale(1.02);
+  }
+  
+  .nav-icon {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--text-color);
-  margin-right: 15px;
-}
-
-.nav-text {
-  font-size: 14px;
+  flex-shrink: 0;
+  }
+  
+  .nav-text {
   font-weight: 500;
-}
-
-.user-profile {
+  font-size: 0.875rem;
+  }
+  
+  .sidebar.collapsed .nav-text {
+  display: none;
+  }
+  
+  /* User Section */
+  .user-section {
+  margin-top: auto;
   display: flex;
-  justify-content: center;
-  margin: 30px 0 20px;
-}
-
-.user-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.user-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.user-avatar svg {
-  width: 30px;
-  height: 30px;
-  fill: var(--background-color);
-}
-
-.status {
+  flex-direction: column;
+  gap: 1rem;
+  }
+  
+  .user-profile {
   display: flex;
   align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  }
+  
+  .sidebar.collapsed .user-profile {
   justify-content: center;
-  font-size: 12px;
-  margin: 0 20px 15px;
-}
-
-.status-dot {
+  padding: 1rem 0.5rem;
+  }
+  
+  .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  }
+  
+  .user-info {
+  display: flex;
+  flex-direction: column;
+  }
+  
+  .user-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  }
+  
+  .user-role {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  }
+  
+  .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  }
+  
+  .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--success-color);
-  margin-right: 5px;
-}
-
-.button-container {
-  padding: 0 20px;
-}
-
-.join-queue-btn {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 10px;
-  width: 100%;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 10px;
-  transition: background-color 0.3s;
-}
-
-.join-queue-btn:hover {
-  background-color: var(--accent-hover);
-}
-
-.logout-btn {
-  background-color: #800000; /* Maroon background */
-  color: white;
-  border: 1px solid #800000; /* Maroon border */
-  border-radius: 30px;
-  padding: 10px;
-  width: 100%;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s, border-color 0.3s; /* Add border-color transition */
-}
-
-.logout-btn:hover {
-  background-color: var(--danger-color); /* Red background on hover */
-  border-color: var(--danger-color); /* Red border on hover */
-}
-
-.main-content {
-  flex: 1; /* Allow main content to take remaining space */
-  padding: 20px;
-  min-height: 100vh;
-  background-color: var(--background-color);
-  color: var(--text-color); /* Explicitly set text color for main content */
-  transition: background-color 0.3s, margin-left 0.3s ease, color 0.3s ease; /* Add color transition */
-  overflow-y: auto;
-}
-
-/* Add styles for specific text elements within main-content */
-.main-content h1,
-.main-content h2,
-.main-content h3,
-.main-content h4,
-.main-content h5,
-.main-content h6 {
-  color: var(--text-color); /* Ensure headers use theme color */
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .card-title {
-  color: var(--text-color); /* Ensure card titles use theme color */
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .card-value {
-    color: var(--text-color); /* Ensure card values use theme color */
-    transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .card-subtitle {
-  color: var(--text-secondary); /* Ensure card subtitles use secondary theme color */
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .section-title {
-    color: var(--text-color); /* Ensure section titles use theme color */
-    transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .queue-table th {
-  text-align: left;
-  padding: 12px 15px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary); /* Use text-secondary for table headers */
-  border-bottom: 1px solid var(--border-color);
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .queue-table td {
-  padding: 12px 15px;
-  font-size: 14px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-color); /* Ensure table data text uses theme color */
-  transition: color 0.3s ease;
-}
-
-.main-content .call-type {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 5px;
-  color: var(--text-color); /* Ensure call type uses theme color */
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.main-content .call-time {
-  font-size: 12px;
-  color: var(--text-secondary); /* Use text-secondary for call time */
-  transition: color 0.3s ease; /* Add transition */
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.header h1 {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.theme-toggle {
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 30px;
-  padding: 8px 15px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-}
-
-.theme-toggle:hover {
-  background-color: var(--border-color);
-}
-
-.theme-toggle svg {
-  width: 16px;
-  height: 16px;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.dashboard-card {
-  background-color: var(--card-bg);
-  border-radius: 30px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
-  color: var(--text-color); /* Ensure card text uses theme color */
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.card-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: var(--accent-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.card-icon svg {
-  width: 20px;
-  height: 20px;
-  stroke: white;
-}
-
-.card-value {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-
-.card-subtitle {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.recent-calls {
-  background-color: var(--card-bg);
-  border-radius: 30px;
-  padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.view-all {
-  font-size: 14px;
-  color: var(--accent-color);
-  text-decoration: none;
-}
-
-.call-list {
+  }
+  
+  .status-dot.online {
+  background: var(--success-color);
+  }
+  
+  .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-
-.call-item {
+  gap: 0.5rem;
+  padding: 0 1rem;
+  }
+  
+  .sidebar.collapsed .action-buttons {
+  padding: 0 0.5rem;
+  }
+  
+  .join-queue-btn,
+  .logout-btn {
   display: flex;
   align-items: center;
-  padding: 15px;
-  background-color: var(--content-bg);
-  border-radius: 20px;
-  transition: transform 0.2s, background-color 0.3s ease;
-  color: var(--text-color); /* Ensure call item text uses theme color */
-}
-
-.call-item:hover {
-  transform: translateX(5px);
-}
-
-.call-icon {
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  }
+  
+  .join-queue-btn {
+  background: var(--primary-color);
+  color: white;
+  }
+  
+  .join-queue-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  }
+  
+  .logout-btn {
+  background: var(--danger-color);
+  color: white;
+  }
+  
+  .logout-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  }
+  
+  .sidebar.collapsed .join-queue-btn,
+  .sidebar.collapsed .logout-btn {
+  padding: 0.75rem 0.5rem;
+  }
+  
+  /* Sidebar Toggle */
+  .sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  }
+  
+  .sidebar-toggle:hover {
+  background: var(--primary-hover);
+  transform: translateY(-50%) scale(1.1);
+  }
+  
+  /* Main Content */
+  .main-content {
+  flex: 1;
+  background: var(--bg-primary);
+  transition: all 0.3s ease;
+  overflow-x: hidden;
+  }
+  
+  .main-content.sidebar-collapsed {
+  margin-left: 0;
+  }
+  
+  /* Header */
+  .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  }
+  
+  .header-left h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  }
+  
+  .header-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  }
+  
+  .header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  }
+  
+  .theme-toggle,
+  .notification-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  }
+  
+  .theme-toggle:hover,
+  .notification-btn:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  }
+  
+  .notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger-color);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  }
+  
+  /* Dashboard Content */
+  .dashboard-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  }
+  
+  /* Metrics Grid */
+  .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  }
+  
+  .metric-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  }
+  
+  .metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  }
+  
+  .metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  }
+  
+  .metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  }
+  
+  .metric-icon.phone { background: var(--primary-color); }
+  .metric-icon.folder { background: var(--info-color); }
+  .metric-icon.chart { background: var(--warning-color); }
+  .metric-icon.trending { background: var(--success-color); }
+  
+  .metric-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  }
+  
+  .metric-trend.positive {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--success-color);
+  }
+  
+  .metric-trend.negative {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--danger-color);
+  }
+  
+  .metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  }
+  
+  .metric-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  }
+  
+  .metric-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  }
+  
+  /* Quick Actions */
+  .quick-actions {
+  margin-bottom: 2rem;
+  }
+  
+  .section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  }
+  
+  .actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  }
+  
+  .action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+  font-weight: 500;
+  }
+  
+  .action-card:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  }
+  
+  /* Activity Section */
+  .activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  }
+  
+  .view-all {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  }
+  
+  .view-all:hover {
+  text-decoration: underline;
+  }
+  
+  .activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  }
+  
+  .activity-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  }
+  
+  .card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  }
+  
+  /* Call List */
+  .call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  }
+  
+  .call-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  }
+  
+  .call-item:hover {
+  background: var(--bg-tertiary);
+  }
+  
+  .call-icon {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background-color: var(--content-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 15px;
-}
-
-.call-icon svg {
-  width: 20px;
-  height: 20px;
-  stroke: var(--text-color);
-}
-
-.call-details {
-  flex: 1;
-  color: var(--text-color);
-}
-
-.call-type {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.call-time {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.call-status {
-  padding: 5px 15px;
-  border-radius: 30px;
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: 10px;
+  background: var(--primary-color);
   color: white;
-}
-
-.status-completed {
-  background-color: var(--success-color);
-}
-
-.status-in-progress {
-  background-color: var(--accent-color);
-}
-
-.status-pending {
-  background-color: var(--pending-color);
-}
-
-.status-unassigned {
-  background-color: var(--unassigned-color);
-}
-
-.chart-container {
-  margin-bottom: 30px;
-}
-
-.chart-card {
-  background-color: var(--card-bg);
-  border-radius: 30px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
-}
-
-.chart-placeholder {
-  width: 100%;
-  height: 300px;
-  background-color: var(--background-color);
-  border-radius: 20px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-top: 15px;
-  transition: background-color 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-
-.chart-placeholder p {
-  font-size: 14px;
+  justify-content: center;
+  }
+  
+  .call-details {
+  flex: 1;
+  }
+  
+  .call-details h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  }
+  
+  .call-details p {
+  font-size: 0.75rem;
   color: var(--text-secondary);
-}
-
-/* Line chart styles */
-.line-chart {
-  width: 100%;
-  height: 100%;
-  padding: 20px;
-  position: relative;
-}
-
-.chart-grid {
-  position: absolute;
+  }
+  
+  .call-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  }
+  
+  .call-status.in-progress {
+  background: rgba(255, 193, 7, 0.1);
+  color: var(--warning-color);
+  }
+  
+  .call-status.completed {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--success-color);
+  }
+  
+  .call-status.pending {
+  background: rgba(23, 162, 184, 0.1);
+  color: var(--info-color);
+  }
+  
+  /* Queue Stats */
+  .queue-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  }
+  
+  .queue-item {
+  text-align: center;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  }
+  
+  .queue-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.25rem;
+  }
+  
+  .queue-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  }
+  
+  /* Super Admin Overlay */
+  .super-admin-overlay {
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-rows: repeat(5, 1fr);
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.grid-line {
-  border-bottom: 1px dashed var(--border-color);
-  width: 100%;
-  height: 0;
-}
-
-.chart-line {
-  position: absolute;
-  bottom: 50px;
-  left: 40px;
-  width: calc(100% - 80px);
-  height: 200px;
-  display: flex;
-  align-items: flex-end;
-}
-
-.chart-point {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  position: relative;
-}
-
-.point-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--accent-color);
-  position: absolute;
-  z-index: 2;
-}
-
-.point-line {
-  width: 2px;
-  background-color: var(--accent-color);
-  position: absolute;
+  right: 0;
   bottom: 0;
-  z-index: 1;
-}
-
-.point-label {
-  position: absolute;
-  bottom: -30px;
-  font-size: 10px;
-  color: var(--text-secondary);
-}
-
-.chart-axis {
-  position: absolute;
-  bottom: 20px;
-  left: 40px;
-  width: calc(100% - 80px);
-  height: 1px;
-  background-color: var(--border-color);
-}
-
-.y-axis {
-  position: absolute;
-  bottom: 20px;
-  left: 40px;
-  width: 1px;
-  height: 230px;
-  background-color: var(--border-color);
-}
-
-.y-label {
-  position: absolute;
-  left: 10px;
-  font-size: 10px;
-  color: var(--text-secondary);
-}
-
-/* Queue Activity Table */
-.queue-activity {
-  background-color: var(--card-bg);
-  border-radius: 30px;
-  padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
-}
-
-.queue-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 15px;
-}
-
-.queue-table th {
-  text-align: left;
-  padding: 12px 15px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.queue-table td {
-  padding: 12px 15px;
-  font-size: 14px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-color); /* Ensure table data text uses theme color */
-  transition: color 0.3s ease;
-}
-
-.queue-table tr:last-child td {
-  border-bottom: none;
-}
-
-.agent-status {
-  display: inline-block;
-  padding: 5px 15px;
-  border-radius: 30px;
-  font-size: 12px;
-  font-weight: 500;
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  text-align: center;
-  min-width: 100px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.status-available {
-  background-color: var(--success-color);
-  color: white;
-}
-
-.status-in-call {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-.status-on-break {
-  background-color: var(--pending-color);
-  color: white;
-}
-
-/* Mobile menu button */
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 101;
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2000;
+  }
+  
+  .super-admin-container {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+  }
+  
+  .super-admin-dashboard {
+  padding: 2rem;
+  min-width: 600px;
+  }
+  
+  .super-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  }
+  
+  .super-admin-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  }
+  
+  .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* Responsive styles */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed; /* Fixed position for mobile sidebar */
-    transform: translateX(-250px); /* Hide by default on mobile */
-    height: 100vh;
-    width: 250px;
-    border-radius: 0;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
   }
   
-  .sidebar.mobile-open {
-    transform: translateX(0); /* Show when mobile-open */
+  .close-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   }
   
-  .main-content {
-    margin-left: 0 !important; /* No margin on mobile */
-    width: 100% !important;
-    padding: 15px;
+  .super-admin-content p {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.6;
   }
   
-  .sidebar.collapsed + .main-content {
-    margin-left: 0 !important;
+  .admin-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
   }
   
-  .sidebar.mobile-open + .main-content {
-     margin-left: 0 !important;
+  .admin-action-btn {
+  padding: 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
   }
-
+  
+  .admin-action-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
   .mobile-menu-btn {
     display: flex;
   }
-}
-
-@media (min-width: 769px) {
+  
   .sidebar {
     position: fixed;
     top: 0;
-    bottom: 0;
     left: 0;
-    width: 250px;
-    transition: left 0.3s ease, width 0.3s ease; /* Transition left and width */
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
   }
-
-  .sidebar.collapsed {
-    left: -170px; /* Hide 170px of the sidebar */
-    width: 250px; /* Keep the width for smooth transition */
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
-
+  
   .main-content {
-    /* margin-left handled by computed style */
+    margin-left: 0 !important;
   }
-
-  .mobile-menu-btn {
-    display: none;
+  
+  .header {
+    padding: 1rem;
   }
-}
-</style>
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .super-admin-container {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .super-admin-dashboard {
+    min-width: auto;
+    padding: 1rem;
+  }
+  }
+  
+  @media (max-width: 480px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .queue-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-actions {
+    grid-template-columns: 1fr;
+  }
+  }
+  </style>
