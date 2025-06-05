@@ -5,7 +5,11 @@ from decouple import config
 DEBUG = True
 
 # Additional development-specific settings
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*.localhost', 'demo.localhost', 'public.localhost']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.localhost',
+]
 
 # Development-specific middleware
 MIDDLEWARE += [
