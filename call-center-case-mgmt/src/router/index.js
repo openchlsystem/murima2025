@@ -10,6 +10,7 @@ import Wallboard from '../pages/Wallboard.vue'
 import Settings from '../pages/Settings.vue'
 import EditProfile from '../pages/EditProfile.vue'
 import CaseCreation from '../pages/CaseCreation.vue'
+import superadmin from '../pages/SuperAdminDashboard.vue'
 
 const routes = [
   { path: '/', component: Login },
@@ -22,6 +23,7 @@ const routes = [
   { path: '/settings', component: Settings },
   { path: '/edit-profile', component: EditProfile },
   { path: '/case-creation', component: CaseCreation },
+  { path: '/superadmin', component: superadmin }
 ]
 
 export const router = createRouter({

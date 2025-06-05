@@ -104,7 +104,7 @@
           </router-link>
 
           <!-- Super Admin Dashboard Button -->
-          <router-link to="/super-admin-dashboard" class="nav-item" v-if="userRole === 'super-admin'" :class="{ active: $route.path === '/super-admin-dashboard' }">
+          <router-link to="/superadmin" class="nav-item" v-if="userRole === 'super-admin'" :class="{ active: $route.path === '/super-admin-dashboard' }">
             <div class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 22S8 18 8 12V5L12 2L16 5V12C16 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
