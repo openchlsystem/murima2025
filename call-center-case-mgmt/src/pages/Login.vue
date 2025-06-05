@@ -7,7 +7,7 @@
       <!-- Left Section - Welcome with Pattern -->
       <div class="welcome-section">
         <!-- Seamless Photo -->
-        <img src="/src/assets/welcome-helpline.png" alt="Welcome to OPENCHS" class="welcome-photo">
+        <img src="/src/assets/images/welcome-helpline.png" alt="Welcome to OPENCHS" class="welcome-photo">
         
         <div class="welcome-content">
           <h1 class="welcome-title">Welcome to <span>OPENCHS</span></h1>
@@ -218,135 +218,128 @@
     </div>
   </div>
 </template>
-
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { defineComponent } from 'vue';
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
+  import axiosInstance from '../utils/axios';
 
-export default defineComponent({
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
-    
-    // Form data
-    const username = ref('');
-    const selectedMeans = ref('');
-    const rememberMe = ref(false);
-    const otpDigits = ref(['', '', '', '', '', '']);
-    const otpInputs = ref([]);
-    
-    // Form state
-    const currentStep = ref('username'); // 'username' or 'otp'
-    const loading = ref(false);
-    const submitted = ref(false);
-    const error = ref('');
-    const successMessage = ref('');
-    const returnUrl = ref(route.query.returnUrl || '/dashboard');
-    const resendTimer = ref(0);
-    const resendInterval = ref(null);
-    
-    // Mock contact information (would come from backend)
-    const maskedContact = ref({
-      phone: '1234',
-      email: 'u***r@example.com'
-    });
-    
-    // Computed properties
-    const isOtpComplete = computed(() => {
-      return otpDigits.value.every(digit => digit !== '');
-    });
-    
-    const isFormValid = computed(() => {
-      if (currentStep.value === 'username') {
-        return username.value.length > 0 && selectedMeans.value !== '';
-      } else if (currentStep.value === 'otp') {
-        return isOtpComplete.value;
-      }
-      return false;
-    });
-    
-    // Methods
-    const handleOtpInput = (index, event) => {
-      const value = event.target.value;
-      if (value && index < 5) {
-        // Move to next input
-        otpInputs.value[index + 1]?.focus();
-      }
-    };
-    
-    const handleOtpKeydown = (index, event) => {
-      if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
-        // Move to previous input on backspace
-        otpInputs.value[index - 1]?.focus();
-      }
-    };
-    
-    const startResendTimer = () => {
-      resendTimer.value = 30;
-      resendInterval.value = setInterval(() => {
-        resendTimer.value--;
-        if (resendTimer.value <= 0) {
-          clearInterval(resendInterval.value);
+  export default {
+    setup() {
+      const router = useRouter();
+      const route = useRoute();
+
+      // Form data
+      const username = ref('');
+      const selectedMeans = ref('');
+      const rememberMe = ref(false);
+      const otpDigits = ref(['', '', '', '', '', '']);
+      const otpInputs = ref([]);
+
+      // Form state
+      const currentStep = ref('username');
+      const loading = ref(false);
+      const submitted = ref(false);
+      const error = ref('');
+      const successMessage = ref('');
+      const returnUrl = ref(route.query.returnUrl || '/dashboard');
+      const resendTimer = ref(0);
+      const resendInterval = ref(null);
+      const maskedContact = ref({
+        phone: '',
+        email: ''
+      });
+
+      // Computed properties
+      const isOtpComplete = computed(() => {
+        return otpDigits.value.every(digit => digit !== '');
+      });
+
+      const isFormValid = computed(() => {
+        if (currentStep.value === 'username') {
+          return username.value.length > 0 && selectedMeans.value !== '';
+        } else if (currentStep.value === 'otp') {
+          return isOtpComplete.value;
         }
-      }, 1000);
-    };
-    
-    const getMeansDisplayText = () => {
-      switch (selectedMeans.value) {
-        case 'phone':
-          return 'SMS';
-        case 'email':
-          return 'email';
-        case 'whatsapp':
-          return 'WhatsApp';
-        default:
-          return 'selected method';
-      }
-    };
-    
-    const requestOtp = async () => {
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        // Simulate API call to request OTP
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Simulate successful OTP request
-        if (username.value === 'testuser') {
+        return false;
+      });
+
+      // Methods
+      const handleOtpInput = (index, event) => {
+        const value = event.target.value;
+        if (value && index < 5) {
+          otpInputs.value[index + 1]?.focus();
+        }
+      };
+
+      const handleOtpKeydown = (index, event) => {
+        if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
+          otpInputs.value[index - 1]?.focus();
+        }
+      };
+
+      const startResendTimer = () => {
+        resendTimer.value = 30;
+        resendInterval.value = setInterval(() => {
+          resendTimer.value--;
+          if (resendTimer.value <= 0) {
+            clearInterval(resendInterval.value);
+          }
+        }, 1000);
+      };
+
+      const requestOtp = async () => {
+        loading.value = true;
+        error.value = '';
+
+        try {
+          const response = await axiosInstance.post('/api/auth/otp/request/', {
+            contact: username.value,
+            method: selectedMeans.value
+          });
+
+          // Extract masked contact info from response
+          if (selectedMeans.value === 'email') {
+            maskedContact.value.email = username.value;
+          } else {
+            // Assuming phone number is returned in response
+            const phone = response.data.phone || '';
+            maskedContact.value.phone = phone.slice(-4);
+          }
+
           currentStep.value = 'otp';
-          const meansText = getMeansDisplayText();
-          successMessage.value = `OTP sent successfully via ${meansText}!`;
+          successMessage.value = `OTP sent successfully via ${selectedMeans.value}!`;
           startResendTimer();
-          
-          // Clear success message after 3 seconds
+
           setTimeout(() => {
             successMessage.value = '';
           }, 3000);
-        } else {
-          error.value = 'Invalid username. Please try again.';
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'Failed to send OTP. Please try again.';
+          console.error('OTP request error:', err);
+        } finally {
+          loading.value = false;
         }
-      } catch (err) {
-        error.value = 'Failed to send OTP. Please try again.';
-        console.error('OTP request error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
-    
-    const verifyOtp = async () => {
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        // Simulate API call to verify OTP
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const enteredOtp = otpDigits.value.join('');
-        
-        // Simulate successful OTP verification
-        if (enteredOtp === '123456') {
+      };
+
+      const verifyOtp = async () => {
+        loading.value = true;
+        error.value = '';
+
+        try {
+          const otpCode = otpDigits.value.join('');
+          const response = await axiosInstance.post('/api/auth/otp/verify/', {
+            contact: username.value,
+            code: otpCode,
+            method: selectedMeans.value
+          });
+
+          // Store authentication tokens and user data
+          localStorage.setItem('access_token', response.data.access);
+          localStorage.setItem('refresh_token', response.data.refresh);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+
           // Store remember me preference if selected
           if (rememberMe.value) {
             localStorage.setItem('rememberedUsername', username.value);
@@ -355,126 +348,126 @@ export default defineComponent({
             localStorage.removeItem('rememberedUsername');
             localStorage.removeItem('rememberedMeans');
           }
-          
+
           // Redirect to dashboard
           router.push(returnUrl.value);
-        } else {
-          error.value = 'Invalid OTP. Please try again.';
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'OTP verification failed. Please try again.';
+          console.error('OTP verification error:', err);
+        } finally {
+          loading.value = false;
         }
-      } catch (err) {
-        error.value = 'OTP verification failed. Please try again.';
-        console.error('OTP verification error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
-    
-    const handleSubmit = async () => {
-      submitted.value = true;
-      
-      if (!isFormValid.value) {
-        return;
-      }
-      
-      if (currentStep.value === 'username') {
-        await requestOtp();
-      } else if (currentStep.value === 'otp') {
-        await verifyOtp();
-      }
-    };
-    
-    const resendOtp = async () => {
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        // Simulate API call to resend OTP
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const meansText = getMeansDisplayText();
-        successMessage.value = `OTP resent successfully via ${meansText}!`;
-        startResendTimer();
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          successMessage.value = '';
-        }, 3000);
-      } catch (err) {
-        error.value = 'Failed to resend OTP. Please try again.';
-      } finally {
-        loading.value = false;
-      }
-    };
-    
-    const goBackToUsername = () => {
-      currentStep.value = 'username';
-      otpDigits.value = ['', '', '', '', '', ''];
-      submitted.value = false;
-      error.value = '';
-      successMessage.value = '';
-      
-      // Clear resend timer
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
-        resendTimer.value = 0;
-      }
-    };
-    
-    const handleHelp = () => {
-      console.log('Help clicked');
-      // TODO: Implement help logic
-    };
-    
-    // Check for remembered username and means on component mount
-    const checkRememberedData = () => {
-      const rememberedUsername = localStorage.getItem('rememberedUsername');
-      const rememberedMeans = localStorage.getItem('rememberedMeans');
-      
-      if (rememberedUsername) {
-        username.value = rememberedUsername;
-        rememberMe.value = true;
-      }
-      
-      if (rememberedMeans) {
-        selectedMeans.value = rememberedMeans;
-      }
-    };
-    
-    // Lifecycle hooks
-    onMounted(() => {
-      checkRememberedData();
-    });
-    
-    onUnmounted(() => {
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
-      }
-    });
-    
-    return {
-      username,
-      selectedMeans,
-      rememberMe,
-      otpDigits,
-      otpInputs,
-      currentStep,
-      loading,
-      submitted,
-      error,
-      successMessage,
-      maskedContact,
-      resendTimer,
-      isOtpComplete,
-      isFormValid,
-      handleOtpInput,
-      handleOtpKeydown,
-      handleSubmit,
-      resendOtp,
-      goBackToUsername,
-      handleHelp
-    };
-  }
-});
+      };
+
+      const handleSubmit = async () => {
+        submitted.value = true;
+
+        if (!isFormValid.value) {
+          return;
+        }
+
+        if (currentStep.value === 'username') {
+          await requestOtp();
+        } else if (currentStep.value === 'otp') {
+          await verifyOtp();
+        }
+      };
+
+      const resendOtp = async () => {
+        loading.value = true;
+        error.value = '';
+
+        try {
+          await axiosInstance.post('/api/auth/otp/request/', {
+            contact: username.value,
+            method: selectedMeans.value
+          });
+
+          successMessage.value = `OTP resent successfully via ${selectedMeans.value}!`;
+          startResendTimer();
+
+          setTimeout(() => {
+            successMessage.value = '';
+          }, 3000);
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'Failed to resend OTP. Please try again.';
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const goBackToUsername = () => {
+        currentStep.value = 'username';
+        otpDigits.value = ['', '', '', '', '', ''];
+        submitted.value = false;
+        error.value = '';
+        successMessage.value = '';
+
+        if (resendInterval.value) {
+          clearInterval(resendInterval.value);
+          resendTimer.value = 0;
+        }
+      };
+
+      const handleHelp = () => {
+        console.log('Help clicked');
+        // TODO: Implement help logic
+      };
+
+      // Check for remembered username and means on component mount
+      const checkRememberedData = () => {
+        const rememberedUsername = localStorage.getItem('rememberedUsername');
+        const rememberedMeans = localStorage.getItem('rememberedMeans');
+
+        if (rememberedUsername) {
+          username.value = rememberedUsername;
+          rememberMe.value = true;
+        }
+
+        if (rememberedMeans) {
+          selectedMeans.value = rememberedMeans;
+        }
+      };
+
+      // Lifecycle hooks
+      onMounted(() => {
+        checkRememberedData();
+      });
+
+      onUnmounted(() => {
+        if (resendInterval.value) {
+          clearInterval(resendInterval.value);
+        }
+      });
+
+      return {
+        username,
+        selectedMeans,
+        rememberMe,
+        otpDigits,
+        otpInputs,
+        currentStep,
+        loading,
+        submitted,
+        error,
+        successMessage,
+        maskedContact,
+        resendTimer,
+        isOtpComplete,
+        isFormValid,
+        handleOtpInput,
+        handleOtpKeydown,
+        handleSubmit,
+        resendOtp,
+        goBackToUsername,
+        handleHelp
+      };
+    }
+  };
 </script>
 
 <style scoped>
