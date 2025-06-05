@@ -1,10 +1,28 @@
-
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
-    path('system-configuration/', views.SystemConfigurationViewList.as_view(), name='system-configuration-list'),
-    path('system-configuration/<int:pk>/', views.SystemConfigurationViewDetail.as_view(), name='system-configuration-detail'),
-    path('audit-logs/', views.AuditLogListCreateView.as_view(), name='audit-log-list'),
-    path('audit-logs/<int:pk>/', views.AuditLogDetailView.as_view(), name='audit-log-detail'),
+    # System Configuration
+    path('system-config/', SystemConfigurationListCreateView.as_view()),
+    path('system-config/<int:pk>/', SystemConfigurationRetrieveUpdateDestroyView.as_view()),
+
+    # Tenant Configuration
+    path('tenant-config/', TenantConfigurationListCreateView.as_view()),
+    path('tenant-config/<int:pk>/', TenantConfigurationRetrieveUpdateDestroyView.as_view()),
+
+    # Audit Log
+    path('audit-logs/', AuditLogListView.as_view()),
+    path('audit-logs/<int:pk>/', AuditLogDetailView.as_view()),
+
+    # Category Types
+    path('category-types/', CategoryTypeListCreateView.as_view()),
+    path('category-types/<int:pk>/', CategoryTypeRetrieveUpdateDestroyView.as_view()),
+
+    # Categories
+    path('categories/', CategoryListCreateView.as_view()),
+    path('categories/<int:pk>/', CategoryRetrieveUpdateDestroyView.as_view()),
+
+    # System Notifications
+    path('system-notifications/', SystemNotificationListCreateView.as_view()),
+    path('system-notifications/<int:pk>/', SystemNotificationRetrieveUpdateDestroyView.as_view()),
 ]
