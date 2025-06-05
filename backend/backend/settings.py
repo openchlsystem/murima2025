@@ -40,11 +40,15 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'corsheaders',  # if used
+    'django_filters',  # if using Django filters
     # 'django_otp',  # if using django-otp package
     
     # 'security',  # your custom app for security features
     'users',     # your custom app for user management
     'tenants',   # your custom app for tenant management
+    'admin_module',  # your custom app for admin features
+    'communications',  # your custom app for communications features
+    'drf_spectacular',  # for OpenAPI schema generation
 ]
 
 MIDDLEWARE = [
