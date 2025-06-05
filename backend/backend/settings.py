@@ -37,9 +37,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'rest_framework',
+    'corsheaders',  # if used
+    # 'django_otp',  # if using django-otp package
+    
+    # 'security',  # your custom app for security features
+    'users',     # your custom app for user management
+    'tenants',   # your custom app for tenant management
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # if using CORS
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -120,3 +129,25 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Configure CORS if needed
+CORS_ALLOW_ALL_ORIGINS = True  # or restrict origins
+
+
+# Email settings for OTP verification
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.bitz-itc.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'support@bitz-itc.com'
+EMAIL_HOST_PASSWORD = 'SaccoCRM2024'
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = 'support@bitz-itc.com'
+
+TENANT_MODEL = "tenants.Tenant"          # Format: "<app_label>.<model_name>"
+TENANT_DOMAIN_MODEL = "tenants.Domain"   # Optional but needed if you're using domains
+# Custom user model
+AUTH_USER_MODEL = 'users.User'
+
+

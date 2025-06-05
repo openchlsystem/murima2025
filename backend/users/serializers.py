@@ -1,43 +1,62 @@
 from rest_framework import serializers
-from django.contrib.auth.models import Group, Permission
-from .models import User, Role
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from .models import OTP
 
-class PermissionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Permission
-        fields = ['id', 'name', 'codename']
+User = get_user_model()
 
-class GroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Group
-        fields = ['id', 'name']
-
-class RoleSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Role
-        fields = ['id', 'name', 'permissions', 'tenant']
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False)
-    groups = GroupSerializer(many=True, read_only=True)
-    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'phone', 'tenant', 'is_verified']
+
+
+class UserManagementSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Group.objects.all(),
+        required=False
+    )
+
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'phone', 'is_verified', 'tenant', 'groups', 'password'
+            'id', 'username', 'email', 'phone', 'tenant', 'is_verified', 'is_active', 'groups'
         ]
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'tenant': {'read_only': True}  # Tenant set via request, not user input
-        }
+        read_only_fields = ['id']
+
+    def update(self, instance, validated_data):
+        groups = validated_data.pop('groups', None)
+        if groups is not None:
+            instance.groups.set(groups)
+        return super().update(instance, validated_data)
+
+
+class RegisterUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'phone', 'tenant', 'password']
 
     def create(self, validated_data):
-        password = validated_data.pop('password', None)
-        user = super().create(validated_data)
-        if password:
-            user.set_password(password)
-            user.save()
-        return user
+        return User.objects.create_user(
+            username=validated_data.get('username'),
+            email=validated_data.get('email'),
+            phone=validated_data.get('phone'),
+            tenant=validated_data.get('tenant'),
+            password=validated_data.get('password')
+        )
+
+
+class RequestOTPSerializer(serializers.Serializer):
+    contact = serializers.CharField()  # phone or email
+    method = serializers.ChoiceField(choices=OTP.DeliveryMethods.choices)
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    contact = serializers.CharField()
+    code = serializers.CharField(max_length=6)
+    method = serializers.ChoiceField(choices=OTP.DeliveryMethods.choices)

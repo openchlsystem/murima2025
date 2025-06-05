@@ -1,7 +1,6 @@
-
 from django.db import models
-from django.contrib.auth import get_user_model
-User = get_user_model()
+from django_tenants.models import TenantMixin, DomainMixin  # ✅ Required for multi-tenancy
+
 
 class TimeStampedUserModel(models.Model):
     """
@@ -11,14 +10,14 @@ class TimeStampedUserModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, 
+        'users.User',  # Use string reference to avoid import issues
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='created_%(class)s'  # Dynamic related name (e.g., 'created_tenant')
+        related_name='created_%(class)s'
     )
     updated_by = models.ForeignKey(
-        User,
+        'users.User',  # Use string reference here as well
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -29,16 +28,19 @@ class TimeStampedUserModel(models.Model):
         abstract = True
 
 
-
-
-class Tenant(TenantMixin):
+class Tenant(TenantMixin, models.Model):  # 👈 must inherit from both
     name = models.CharField(max_length=100)
     paid_until = models.DateField()
     on_trial = models.BooleanField(default=True)
     created_on = models.DateField(auto_now_add=True)
     enable_ai = models.BooleanField(default=False)
     enable_analytics = models.BooleanField(default=False)
-    auto_create_schema = True
+
+    auto_create_schema = True  # only relevant during schema creation
+
+    def __str__(self):
+        return self.name
+
 
 class Domain(DomainMixin):
     pass
