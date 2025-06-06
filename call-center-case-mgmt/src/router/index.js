@@ -12,6 +12,7 @@ import EditProfile from '../pages/EditProfile.vue'
 import CaseCreation from '../pages/CaseCreation.vue'
 import superadmin from '../pages/SuperAdminDashboard.vue'
 import AdminPanel from '../pages/AdminPanel.vue'
+import SidePanel from '../components/SidePanel.vue'
 
 const routes = [
   { path: '/', component: Login },
@@ -25,7 +26,9 @@ const routes = [
   { path: '/edit-profile', component: EditProfile },
   { path: '/case-creation', component: CaseCreation },
   { path: '/superadmin', component: superadmin },
-  { path: '/admin', component: AdminPanel }
+  { path: '/admin', component: AdminPanel },
+  { path: '/sidepanel', component: SidePanel }
+
 ]
 
 export const router = createRouter({

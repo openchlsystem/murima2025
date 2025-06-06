@@ -1,678 +1,196 @@
 <template>
-  <div>
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-btn" id="mobile-menu-btn" @click="toggleMobileMenu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+<div>
+  <!-- SidePanel Component -->
+  <SidePanel 
+    :userRole="userRole"
+    :isInQueue="isInQueue"
+    :isProcessingQueue="isProcessingQueue"
+    :currentCall="currentCall"
+    @toggle-queue="handleQueueToggle"
+    @logout="handleLogout"
+    @sidebar-toggle="handleSidebarToggle"
+  />
 
-    <!-- Sidebar -->
-    <div class="sidebar" :class="{ collapsed: isSidebarCollapsed, 'mobile-open': mobileOpen }" id="sidebar">
-      <div class="toggle-btn" @click="toggleSidebar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="calls-container">
+      <div class="header">
+        <h1 class="page-title">Calls</h1>
+        <div class="header-actions">
+          <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
+            <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
+          </button>
+          <button class="new-call-btn" @click="initiateNewCall">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            New Call
+          </button>
+        </div>
+      </div>
+      
+      <div class="view-tabs">
+        <div class="view-tab" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'">Timeline</div>
+        <div class="view-tab" :class="{ active: activeView === 'table' }" @click="activeView = 'table'">Table View</div>
+        <div class="view-tab" :class="{ active: activeView === 'queue' }" @click="activeView = 'queue'">Call Queue</div>
       </div>
 
-      <div class="sidebar-content">
-        <div class="sidebar-header">
-          <div class="logo-container">
-            <div class="logo">
-              <img src="/Openchs logo-1.png" alt="OpenCHS Logo">
-            </div>
+      <!-- Status Cards - Horizontal Layout -->
+      <div class="status-cards">
+        <div class="status-card" v-for="status in statusItems" :key="status.label">
+          <div class="status-card-header">
+            <div class="status-card-label">{{ status.label }}</div>
+            <div class="status-card-count">{{ status.count }}</div>
+          </div>
+          <div class="status-card-progress">
+            <div class="status-card-progress-fill" :style="{ width: status.percentage + '%' }"></div>
           </div>
         </div>
-        
-        <div class="nav-section">
-          <a href="/dashboard" class="nav-item" @click.prevent="navigateTo('/dashboard')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Dashboard</div>
-          </a>
-          
-          <a href="/calls" class="nav-item active" @click.prevent="navigateTo('/calls')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Calls</div>
-          </a>
-          
-          <a href="/cases" class="nav-item" @click.prevent="navigateTo('/cases')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Cases</div>
-          </a>
-          
-          <a href="/chats" class="nav-item" @click.prevent="navigateTo('/chats')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M8 9H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M8 13H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Chats</div>
-          </a>
-          
-          <a href="/qa-statistics" class="nav-item" @click.prevent="navigateTo('/qa-statistics')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="20" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="6" y1="20" x2="6" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">QA Statistics</div>
-          </a>
-          
-          <a href="/wallboard" class="nav-item" @click.prevent="navigateTo('/wallboard')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Wallboard</div>
-          </a>
-          
-          <a href="/settings" class="nav-item" @click.prevent="navigateTo('/settings')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M19.4 15C19.2669 15.3016 19.2272 15.6362 19.286 15.9606C19.3448 16.285 19.4995 16.5843 19.73 16.82L19.79 16.88C19.976 17.0657 20.1235 17.2863 20.2241 17.5291C20.3248 17.7719 20.3766 18.0322 20.3766 18.295C20.3766 18.5578 20.3248 18.8181 20.2241 19.0609C20.1235 19.3037 19.976 19.5243 19.79 19.71C19.6043 19.896 19.3837 20.0435 19.1409 20.1441C18.8981 20.2448 18.6378 20.2966 18.375 20.2966C18.1122 20.2966 17.8519 20.2448 17.6091 20.1441C17.3663 20.0435 17.1457 19.896 16.96 19.71L16.9 19.65C16.6643 19.4195 16.365 19.2648 16.0406 19.206C15.7162 19.1472 15.3816 19.1869 15.08 19.32C14.7842 19.4468 14.532 19.6572 14.3543 19.9255C14.1766 20.1938 14.0813 20.5082 14.08 20.83V21C14.08 21.5304 13.8693 22.0391 13.4942 22.4142C13.1191 22.7893 12.6104 23 12.08 23C11.5496 23 11.0409 22.7893 10.6658 22.4142C10.2907 22.0391 10.08 21.5304 10.08 21V20.91C10.0723 20.579 9.96512 20.2573 9.77251 19.9887C9.5799 19.7201 9.31074 19.5176 9 19.41C8.69838 19.2769 8.36381 19.2372 8.03941 19.296C7.71502 19.3548 7.41568 19.5095 7.18 19.74L7.12 19.8C6.93425 19.986 6.71368 20.1335 6.47088 20.2341C6.22808 20.3348 5.96783 20.3866 5.705 20.3866C5.44217 20.3866 5.18192 20.3348 4.93912 20.2341C4.69632 20.1335 4.47575 19.986 4.29 19.8C4.10405 19.6143 3.95653 19.3937 3.85588 19.1509C3.75523 18.9081 3.70343 18.6478 3.70343 18.385C3.70343 18.1222 3.75523 17.8619 3.85588 17.6191C3.95653 17.3763 4.10405 17.1557 4.29 16.97L4.35 16.91C4.58054 16.6743 4.73519 16.375 4.794 16.0506C4.85282 15.7262 4.81312 15.3916 4.68 15.09C4.55324 14.7942 4.34276 14.542 4.07447 14.3643C3.80618 14.1866 3.49179 14.0913 3.17 14.09H3C2.46957 14.09 1.96086 13.8793 1.58579 13.5042C1.21071 13.1291 1 12.6204 1 12.09C1 11.5596 1.21071 11.0509 1.58579 10.6758C1.96086 10.3007 2.46957 10.09 3 10.09H3.09C3.42099 10.0823 3.742 9.97512 4.01062 9.78251C4.27925 9.5899 4.48167 9.32074 4.59 9.01C4.72312 8.70838 4.76282 8.37381 4.704 8.04941C4.64519 7.72502 4.49054 7.42568 4.26 7.19L4.2 7.13C4.01405 6.94425 3.86653 6.72368 3.76588 6.48088C3.66523 6.23808 3.61343 5.97783 3.61343 5.715C3.61343 5.45217 3.66523 5.19192 3.76588 4.94912C3.86653 4.70632 4.01405 4.48575 4.2 4.3C4.38575 4.11405 4.60632 3.96653 4.84912 3.86588C5.09192 3.76523 5.35217 3.71343 5.615 3.71343C5.87783 3.71343 6.13808 3.76523 6.38088 3.86588C6.62368 3.96653 6.84425 4.11405 7.03 4.3L7.09 4.36C7.32568 4.59054 7.62502 4.74519 7.94941 4.804C8.27381 4.86282 8.60838 4.82312 8.91 4.69H9C9.29577 4.56324 9.54802 4.35276 9.72569 4.08447C9.90337 3.81618 9.99872 3.50179 10 3.18V3C10 2.46957 10.2107 1.96086 10.5858 1.58579C10.9609 1.21071 11.4696 1 12 1C12.5304 1 13.0391 1.21071 13.4142 1.58579C13.7893 1.96086 14 2.46957 14 3V3.09C14.0013 3.41179 14.0966 3.72618 14.2743 3.99447C14.452 4.26276 14.7042 4.47324 15 4.6C15.3016 4.73312 15.6362 4.77282 15.9606 4.714C16.285 4.65519 16.5843 4.50054 16.82 4.27L16.88 4.21C17.0657 4.02405 17.2863 3.87653 17.5291 3.77588C17.7719 3.67523 18.0322 3.62343 18.295 3.62343C18.5578 3.62343 18.8181 3.67523 19.0609 3.77588C19.3037 3.87653 19.5243 4.02405 19.71 4.21C19.896 4.39575 20.0435 4.61632 20.1441 4.85912C20.2448 5.10192 20.2966 5.36217 20.2966 5.625C20.2966 5.88783 20.2448 6.14808 20.1441 6.39088C20.0435 6.63368 19.896 6.85425 19.71 7.04L19.65 7.1C19.4195 7.33568 19.2648 7.63502 19.206 7.95941C19.1472 8.28381 19.1869 8.61838 19.32 8.92V9C19.4468 9.29577 19.6572 9.54802 19.9255 9.72569C20.1938 9.90337 20.5082 9.99872 20.83 10H21C21.5304 10 22.0391 10.2107 22.4142 10.5858C22.7893 10.9609 23 11.4696 23 12C23 12.5304 22.7893 13.0391 22.4142 13.4142C22.0391 13.7893 21.5304 14 21 14H20.91C20.5882 14.0013 20.2738 14.0966 20.0055 14.2743C19.7372 14.452 19.5268 14.7042 19.4 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Settings</div>
-          </a>
-
-          <!-- Super Admin Dashboard Button -->
-          <a href="/super-admin-dashboard" class="nav-item" v-if="userRole === 'super-admin'" @click.prevent="navigateTo('/super-admin-dashboard')">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22S8 18 8 12V5L12 2L16 5V12C16 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Super Admin</div>
-          </a>
-        </div>
-        
-        <div class="sidebar-bottom">
-          <div class="user-profile">
-            <a href="/edit-profile" class="user-avatar" @click.prevent="navigateTo('/edit-profile')">
-              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"/>
-                <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z"/>
-              </svg>
-            </a>
-          </div>
-          
-          <div class="status">
-            <div class="status-dot" :class="{ 'in-queue': isInQueue }"></div>
-            <span>{{ queueStatus }}</span>
-          </div>
-          
-          <div class="button-container">
-            <button 
-              class="join-queue-btn" 
-              :class="{ 'in-queue': isInQueue, 'has-call': currentCall }"
-              @click="toggleQueue"
-              :disabled="isProcessingQueue"
+      </div>
+      
+      <!-- Timeline View -->
+      <div class="view-container" v-show="activeView === 'timeline'">
+        <div class="time-section" v-for="(group, label) in groupedCalls" :key="label">
+          <h2 class="time-section-title">{{ label }}</h2>
+          <div class="call-list">
+            <div 
+              v-for="(call, index) in group" 
+              :key="call.id" 
+              class="call-item" 
+              :class="{ 
+                selected: call.id === selectedCallId,
+                'timeline-connector': index < group.length - 1
+              }" 
+              @click="selectCall(call.id)"
             >
-              {{ queueButtonText }}
-            </button>
-            <button class="logout-btn" @click="logout">Logout</button>
+              <div class="call-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="call-details">
+                <div class="call-type">{{ call.title }}</div>
+                <div class="call-time">{{ call.time }}</div>
+                <div class="call-meta">
+                  <span class="case-link">Case: #{{ call.caseId }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <button class="expand-btn" @click="expandSidebar" id="expand-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <!-- Main Content -->
-    <div class="main-content">
-      <div class="calls-container">
-        <div class="header">
-          <h1 class="page-title">Calls</h1>
-          <div class="header-actions">
-            <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
-              <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-            </button>
-            <button class="new-call-btn" @click="initiateNewCall">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              New Call
-            </button>
-          </div>
-        </div>
-        
-        <div class="view-tabs">
-          <div class="view-tab" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'">Timeline</div>
-          <div class="view-tab" :class="{ active: activeView === 'table' }" @click="activeView = 'table'">Table View</div>
-          <div class="view-tab" :class="{ active: activeView === 'queue' }" @click="activeView = 'queue'">Call Queue</div>
-        </div>
-
-        <!-- Status Cards - Horizontal Layout -->
-        <div class="status-cards">
-          <div class="status-card" v-for="status in statusItems" :key="status.label">
-            <div class="status-card-header">
-              <div class="status-card-label">{{ status.label }}</div>
-              <div class="status-card-count">{{ status.count }}</div>
-            </div>
-            <div class="status-card-progress">
-              <div class="status-card-progress-fill" :style="{ width: status.percentage + '%' }"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Timeline View -->
-        <div class="view-container" v-show="activeView === 'timeline'">
-          <div class="time-section" v-for="(group, label) in groupedCalls" :key="label">
-            <h2 class="time-section-title">{{ label }}</h2>
-            <div class="call-list">
-              <div 
-                v-for="(call, index) in group" 
+      
+      <!-- Table View -->
+      <div class="view-container" v-show="activeView === 'table'">
+        <div class="calls-table-container">
+          <table class="calls-table">
+            <thead>
+              <tr>
+                <th>Call ID</th>
+                <th>Case ID</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Agent</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr 
+                v-for="call in allCalls" 
                 :key="call.id" 
-                class="call-item" 
-                :class="{ 
-                  selected: call.id === selectedCallId,
-                  'timeline-connector': index < group.length - 1
-                }" 
+                :class="{ selected: call.id === selectedCallId }" 
                 @click="selectCall(call.id)"
               >
-                <div class="call-icon">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="call-details">
-                  <div class="call-type">{{ call.title }}</div>
-                  <div class="call-time">{{ call.time }}</div>
-                  <div class="call-meta">
-                    <span class="case-link">Case: #{{ call.caseId }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Table View -->
-        <div class="view-container" v-show="activeView === 'table'">
-          <div class="calls-table-container">
-            <table class="calls-table">
-              <thead>
-                <tr>
-                  <th>Call ID</th>
-                  <th>Case ID</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>Agent</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="call in allCalls" 
-                  :key="call.id" 
-                  :class="{ selected: call.id === selectedCallId }" 
-                  @click="selectCall(call.id)"
-                >
-                  <td>
-                    <span class="call-id">#{{ call.id }}</span>
-                  </td>
-                  <td>
-                    <span class="case-link">#{{ call.caseId }}</span>
-                  </td>
-                  <td>{{ call.dateLabel }}</td>
-                  <td>{{ call.time }}</td>
-                  <td>
-                    <span :class="['status-badge', getStatusClass(call.status)]">{{ call.status }}</span>
-                  </td>
-                  <td>{{ call.agent || 'Unassigned' }}</td>
-                  <td>
-                    <div class="table-actions">
-                      <button class="action-btn view-btn" @click.stop="viewCallDetails(call.id)" title="View Details">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                      <button class="action-btn link-btn" @click.stop="linkToCase(call.id)" title="Link to Case">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                      <button class="action-btn case-btn" @click.stop="viewCase(call.caseId)" title="View Case">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Queue View -->
-        <div class="view-container" v-show="activeView === 'queue'">
-          <div class="queue-section">
-            <h2 class="queue-title">Call Queue Management</h2>
-            <div class="queue-stats">
-              <div class="queue-stat">
-                <div class="stat-value">{{ queueStats.waiting }}</div>
-                <div class="stat-label">Waiting</div>
-              </div>
-              <div class="queue-stat">
-                <div class="stat-value">{{ queueStats.active }}</div>
-                <div class="stat-label">Active</div>
-              </div>
-              <div class="queue-stat">
-                <div class="stat-value">{{ queueStats.agents }}</div>
-                <div class="stat-label">Agents Online</div>
-              </div>
-            </div>
-            
-            <div class="queue-calls">
-              <h3 class="queue-subtitle">Pending Calls</h3>
-              <div class="queue-call-list">
-                <div v-for="call in queueCalls" :key="call.id" class="queue-call-item">
-                  <div class="queue-call-info">
-                    <div class="queue-call-type">{{ call.type }}</div>
-                    <div class="queue-call-details">
-                      <span>Wait Time: {{ call.waitTime }}</span>
-                      <span>Case: #{{ call.caseId }}</span>
-                    </div>
-                  </div>
-                  <div class="queue-call-actions">
-                    <button class="queue-action-btn accept" @click="acceptQueueCall(call.id)" v-if="isInQueue">
-                      Accept
+                <td>
+                  <span class="call-id">#{{ call.id }}</span>
+                </td>
+                <td>
+                  <span class="case-link">#{{ call.caseId }}</span>
+                </td>
+                <td>{{ call.dateLabel }}</td>
+                <td>{{ call.time }}</td>
+                <td>
+                  <span :class="['status-badge', getStatusClass(call.status)]">{{ call.status }}</span>
+                </td>
+                <td>{{ call.agent || 'Unassigned' }}</td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn view-btn" @click.stop="viewCallDetails(call.id)" title="View Details">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn link-btn" @click.stop="linkToCase(call.id)" title="Link to Case">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn case-btn" @click.stop="viewCase(call.caseId)" title="View Case">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                     </button>
                   </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Queue View -->
+      <div class="view-container" v-show="activeView === 'queue'">
+        <div class="queue-section">
+          <h2 class="queue-title">Call Queue Management</h2>
+          <div class="queue-stats">
+            <div class="queue-stat">
+              <div class="stat-value">{{ queueStats.waiting }}</div>
+              <div class="stat-label">Waiting</div>
+            </div>
+            <div class="queue-stat">
+              <div class="stat-value">{{ queueStats.active }}</div>
+              <div class="stat-label">Active</div>
+            </div>
+            <div class="queue-stat">
+              <div class="stat-value">{{ queueStats.agents }}</div>
+              <div class="stat-label">Agents Online</div>
+            </div>
+          </div>
+          
+          <div class="queue-calls">
+            <h3 class="queue-subtitle">Pending Calls</h3>
+            <div class="queue-call-list">
+              <div v-for="call in queueCalls" :key="call.id" class="queue-call-item">
+                <div class="queue-call-info">
+                  <div class="queue-call-type">{{ call.type }}</div>
+                  <div class="queue-call-details">
+                    <span>Wait Time: {{ call.waitTime }}</span>
+                    <span>Case: #{{ call.caseId }}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Call Details Panel -->
-    <div class="call-details-panel" :class="{ active: showCallDetails }" id="call-details-panel">
-      <div class="call-details-header">
-        <div class="call-details-title">{{ selectedCallDetails?.title || 'Call Details' }}</div>
-        <button class="close-details" @click="closeCallDetails">×</button>
-      </div>
-      <div class="call-details-content" v-if="selectedCallDetails">
-        <div class="detail-item">
-          <div class="detail-label">Call ID</div>
-          <div class="detail-value">#{{ selectedCallDetails.id }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Case ID</div>
-          <div class="detail-value">
-            <a href="#" @click.prevent="viewCase(selectedCallDetails.caseId)" class="case-link">
-              #{{ selectedCallDetails.caseId }}
-            </a>
-          </div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Call Title</div>
-          <div class="detail-value">{{ selectedCallDetails.callTitle }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Caller</div>
-          <div class="detail-value">{{ selectedCallDetails.callerName }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Duration</div>
-          <div class="detail-value">{{ selectedCallDetails.duration }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Call Start</div>
-          <div class="detail-value">{{ selectedCallDetails.callStart }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Call End</div>
-          <div class="detail-value">{{ selectedCallDetails.callEnd }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Disposition</div>
-          <div class="detail-value">{{ selectedCallDetails.disposition }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Date</div>
-          <div class="detail-value">{{ selectedCallDetails.date }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Escalated to</div>
-          <div class="detail-value">{{ selectedCallDetails.escalatedTo }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Priority</div>
-          <div class="detail-value">
-            <span class="priority-badge" :class="selectedCallDetails.priority">{{ selectedCallDetails.priority }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Queue Popup Modal -->
-    <div v-if="showQueuePopup" class="modal-overlay" @click="closeQueuePopup">
-      <div class="queue-popup" @click.stop>
-        <div class="queue-popup-header">
-          <h3>Queue Members</h3>
-          <button class="modal-close" @click="closeQueuePopup">×</button>
-        </div>
-        <div class="queue-members">
-          <div v-for="member in queueMembers" :key="member.id" class="queue-member-card" @click="confirmJoinQueue">
-            <div class="member-avatar">
-              <img :src="member.avatar" :alt="member.name" />
-              <div class="status-indicator" :class="member.status"></div>
-            </div>
-            <div class="member-info">
-              <div class="member-name">{{ member.name }}</div>
-              <div class="member-role">{{ member.role }}</div>
-              <div class="member-status">{{ member.statusText }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="queue-popup-footer">
-          <button class="btn-primary" @click="confirmJoinQueue">Join Queue</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Ringing Call Interface -->
-    <div v-if="showRingingInterface" class="ringing-overlay">
-      <div class="ringing-container">
-        <div class="ringing-header">
-          <div class="call-type-badge" :class="ringingCall.priority">
-            {{ ringingCall.type }}
-          </div>
-        </div>
-        
-        <div class="caller-info">
-          <div class="caller-avatar">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="caller-name">{{ ringingCall.callerName }}</div>
-          <div class="caller-number">{{ ringingCall.number || 'Unknown Number' }}</div>
-          <div class="call-duration">{{ ringingDuration }}</div>
-        </div>
-
-        <div class="ringing-animation">
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring delay-1"></div>
-          <div class="pulse-ring delay-2"></div>
-        </div>
-
-        <div class="call-actions">
-          <button class="call-btn decline" @click="declineCall">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-          <button class="call-btn answer" @click="answerCall">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Case Form During Call -->
-    <div v-if="showCaseForm" class="case-form-overlay">
-      <div class="case-form-container">
-        <div class="case-form-header">
-          <div class="form-title">
-            <h3>Case Information</h3>
-            <div class="case-id">Case #{{ currentCaseId }}</div>
-          </div>
-          <div class="call-timer">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            {{ callDuration }}
-          </div>
-          <button class="minimize-btn" @click="minimizeCaseForm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="case-form-content">
-          <form @submit.prevent="saveCaseForm">
-            <div class="form-section">
-              <div class="section-title">Basic Information</div>
-              <div class="form-group">
-                <label for="case-name">Case Name*</label>
-                <input 
-                  v-model="caseFormData.caseName"
-                  class="form-control" 
-                  id="case-name" 
-                  placeholder="Enter case name" 
-                  required 
-                  type="text"
-                />
-              </div>
-              <div class="form-group">
-                <label for="case-description">Description*</label>
-                <textarea 
-                  v-model="caseFormData.description"
-                  class="form-control" 
-                  id="case-description" 
-                  placeholder="Enter case description" 
-                  required
-                  rows="3"
-                ></textarea>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="case-priority">Priority*</label>
-                  <select 
-                    v-model="caseFormData.priority"
-                    class="form-control" 
-                    id="case-priority" 
-                    required
-                  >
-                    <option value="">Select priority</option>
-                    <option value="Critical">Critical</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
+                <div class="queue-call-actions">
+                  <button class="queue-action-btn accept" @click="acceptQueueCall(call.id)" v-if="isInQueue">
+                    Accept
+                  </button>
                 </div>
-                <div class="form-group">
-                  <label for="case-type">Type*</label>
-                  <select 
-                    v-model="caseFormData.type"
-                    class="form-control" 
-                    id="case-type" 
-                    required
-                  >
-                    <option value="">Select type</option>
-                    <option value="Domestic Violence">Domestic Violence</option>
-                    <option value="Sexual Assault">Sexual Assault</option>
-                    <option value="Human Trafficking">Human Trafficking</option>
-                    <option value="Child Abuse">Child Abuse</option>
-                    <option value="Elder Abuse">Elder Abuse</option>
-                    <option value="Stalking">Stalking</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="caller-info">Caller Information</label>
-                <textarea 
-                  v-model="caseFormData.callerInfo"
-                  class="form-control" 
-                  id="caller-info" 
-                  placeholder="Enter caller information and notes"
-                  rows="3"
-                ></textarea>
-              </div>
-              <div class="form-group">
-                <label for="incident-details">Incident Details</label>
-                <textarea 
-                  v-model="caseFormData.incidentDetails"
-                  class="form-control" 
-                  id="incident-details" 
-                  placeholder="Enter incident details"
-                  rows="4"
-                ></textarea>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" class="btn-secondary" @click="saveDraft">Save Draft</button>
-              <button type="submit" class="btn-primary">Save Case</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Minimized Case Form -->
-    <div v-if="caseFormMinimized" class="minimized-case-form" @click="restoreCaseForm">
-      <div class="minimized-content">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Case #{{ currentCaseId }}</span>
-        <span class="timer">{{ callDuration }}</span>
-      </div>
-    </div>
-
-    <!-- Call Disposition Modal -->
-    <div v-if="showDisposition" class="modal-overlay" @click="closeDisposition">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Call Disposition</h3>
-          <button class="modal-close" @click="closeDisposition">×</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitDisposition">
-            <div class="form-group">
-              <label>Call Outcome</label>
-              <select v-model="disposition.outcome" required>
-                <option value="">Select Outcome</option>
-                <option value="resolved">Resolved</option>
-                <option value="escalated">Escalated</option>
-                <option value="follow-up">Follow-up Required</option>
-                <option value="referred">Referred</option>
-                <option value="incomplete">Incomplete</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Category</label>
-              <select v-model="disposition.category" required>
-                <option value="">Select Category</option>
-                <option value="domestic-violence">Domestic Violence</option>
-                <option value="mental-health">Mental Health</option>
-                <option value="substance-abuse">Substance Abuse</option>
-                <option value="child-abuse">Child Abuse</option>
-                <option value="elder-abuse">Elder Abuse</option>
-                <option value="information">Information Request</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Priority</label>
-              <select v-model="disposition.priority" required>
-                <option value="">Select Priority</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Notes</label>
-              <textarea v-model="disposition.notes" rows="4" placeholder="Enter call notes..."></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn-secondary" @click="closeDisposition">Cancel</button>
-              <button type="submit" class="btn-primary">Save Disposition</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Case Link Modal -->
-    <div v-if="showCaseLink" class="modal-overlay" @click="closeCaseLink">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Link Call to Different Case</h3>
-          <button class="modal-close" @click="closeCaseLink">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="case-link-options">
-            <div class="case-option" @click="selectCaseLinkOption('existing')">
-              <div class="option-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="option-content">
-                <div class="option-title">Link to Existing Case</div>
-                <div class="option-description">Connect this call to a different existing case</div>
-              </div>
-            </div>
-            <div class="case-option" @click="selectCaseLinkOption('new')">
-              <div class="option-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="option-content">
-                <div class="option-title">Create New Case</div>
-                <div class="option-description">Create a new case and link this call to it</div>
               </div>
             </div>
           </div>
@@ -680,14 +198,780 @@
       </div>
     </div>
   </div>
+  
+  <!-- Call Details Panel -->
+  <div class="call-details-panel" :class="{ active: showCallDetails }" id="call-details-panel">
+    <div class="call-details-header">
+      <div class="call-details-title">{{ selectedCallDetails?.title || 'Call Details' }}</div>
+      <button class="close-details" @click="closeCallDetails">×</button>
+    </div>
+    <div class="call-details-content" v-if="selectedCallDetails">
+      <div class="detail-item">
+        <div class="detail-label">Call ID</div>
+        <div class="detail-value">#{{ selectedCallDetails.id }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Case ID</div>
+        <div class="detail-value">
+          <a href="#" @click.prevent="viewCase(selectedCallDetails.caseId)" class="case-link">
+            #{{ selectedCallDetails.caseId }}
+          </a>
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Call Title</div>
+        <div class="detail-value">{{ selectedCallDetails.callTitle }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Caller</div>
+        <div class="detail-value">{{ selectedCallDetails.callerName }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Duration</div>
+        <div class="detail-value">{{ selectedCallDetails.duration }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Call Start</div>
+        <div class="detail-value">{{ selectedCallDetails.callStart }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Call End</div>
+        <div class="detail-value">{{ selectedCallDetails.callEnd }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Disposition</div>
+        <div class="detail-value">{{ selectedCallDetails.disposition }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Date</div>
+        <div class="detail-value">{{ selectedCallDetails.date }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Escalated to</div>
+        <div class="detail-value">{{ selectedCallDetails.escalatedTo }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Priority</div>
+        <div class="detail-value">
+          <span class="priority-badge" :class="selectedCallDetails.priority">{{ selectedCallDetails.priority }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queue Popup Modal -->
+  <div v-if="showQueuePopup" class="modal-overlay" @click="closeQueuePopup">
+    <div class="queue-popup" @click.stop>
+      <div class="queue-popup-header">
+        <h3>Queue Members</h3>
+        <button class="modal-close" @click="closeQueuePopup">×</button>
+      </div>
+      <div class="queue-members">
+        <div v-for="member in queueMembers" :key="member.id" class="queue-member-card" @click="confirmJoinQueue">
+          <div class="member-avatar">
+            <img :src="member.avatar" :alt="member.name" />
+            <div class="status-indicator" :class="member.status"></div>
+          </div>
+          <div class="member-info">
+            <div class="member-name">{{ member.name }}</div>
+            <div class="member-role">{{ member.role }}</div>
+            <div class="member-status">{{ member.statusText }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="queue-popup-footer">
+        <button class="btn-primary" @click="confirmJoinQueue">Join Queue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ringing Call Interface -->
+  <div v-if="showRingingInterface && ringingCall" class="ringing-overlay">
+    <div class="ringing-container">
+      <div class="ringing-header">
+        <div class="call-type-badge" :class="ringingCall.priority">
+          {{ ringingCall.type }}
+        </div>
+      </div>
+      
+      <div class="caller-info">
+        <div class="caller-avatar">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="caller-name">{{ ringingCall.callerName }}</div>
+        <div class="caller-number">{{ ringingCall.number || 'Unknown Number' }}</div>
+        <div class="call-duration">{{ ringingDuration }}</div>
+      </div>
+
+      <div class="ringing-animation">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring delay-1"></div>
+        <div class="pulse-ring delay-2"></div>
+      </div>
+
+      <div class="call-actions">
+        <button class="call-btn decline" @click="declineCall">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="call-btn answer" @click="answerCall">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case Options Modal - Shows after answering call -->
+  <div v-if="showCaseOptions" class="modal-overlay" @click="closeCaseOptions">
+    <div class="case-options-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Case Management Options</h3>
+        <div class="call-timer-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ callDuration }}
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="case-options-grid">
+          <div class="case-option-card" @click="selectCaseOption('new')">
+            <div class="option-icon new-case">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Open New Case</div>
+              <div class="option-description">Create a new case for this call and start documenting the incident</div>
+            </div>
+            <div class="option-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="case-option-card" @click="selectCaseOption('existing')">
+            <div class="option-icon existing-case">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Open Existing Case</div>
+              <div class="option-description">Link this call to an existing case and edit case details</div>
+            </div>
+            <div class="option-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="case-option-card" @click="selectCaseOption('disposition')">
+            <div class="option-icon disposition-call">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Disposition Call</div>
+              <div class="option-description">Complete call disposition and end the call with proper documentation</div>
+            </div>
+            <div class="option-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Case Search Modal -->
+  <div v-if="showExistingCaseSearch" class="modal-overlay" @click="closeExistingCaseSearch">
+    <div class="existing-case-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Select Existing Case</h3>
+        <div class="call-timer-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ callDuration }}
+        </div>
+        <button class="modal-close" @click="closeExistingCaseSearch">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="case-search">
+          <input 
+            type="text" 
+            v-model="caseSearchQuery"
+            placeholder="Search cases by ID, name, or client..." 
+            class="search-input"
+          />
+        </div>
+        <div class="existing-cases-list">
+          <div 
+            v-for="existingCase in filteredExistingCases" 
+            :key="existingCase.id" 
+            class="existing-case-item"
+            @click="selectExistingCase(existingCase)"
+          >
+            <div class="case-info">
+              <div class="case-header">
+                <div class="case-id">#{{ existingCase.id }}</div>
+                <div class="case-priority" :class="existingCase.priority.toLowerCase()">{{ existingCase.priority }}</div>
+              </div>
+              <div class="case-title">{{ existingCase.title }}</div>
+              <div class="case-meta">
+                <span class="case-client">Client: {{ existingCase.client }}</span>
+                <span class="case-date">{{ existingCase.date }}</span>
+              </div>
+              <div class="case-status">
+                <span class="status-badge" :class="existingCase.status.toLowerCase()">{{ existingCase.status }}</span>
+              </div>
+            </div>
+            <div class="case-select-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case Form During Call -->
+  <div v-if="showCaseForm" class="case-form-overlay">
+    <div class="case-form-container">
+      <div class="case-form-header">
+        <div class="form-title">
+          <h3>{{ caseFormMode === 'new' ? 'Create New Case' : 'Edit Case' }}</h3>
+          <div class="case-id">Case #{{ currentCaseId }}</div>
+        </div>
+        <div class="call-timer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ callDuration }}
+        </div>
+        <button class="minimize-btn" @click="minimizeCaseForm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="case-form-content">
+        <form @submit.prevent="saveCaseForm">
+          <div class="form-section">
+            <div class="section-title">Basic Information</div>
+            <div class="form-group">
+              <label for="case-name">Case Name*</label>
+              <input 
+                v-model="caseFormData.caseName"
+                class="form-control" 
+                id="case-name" 
+                placeholder="Enter case name" 
+                required 
+                type="text"
+              />
+            </div>
+            <div class="form-group">
+              <label for="case-description">Description*</label>
+              <textarea 
+                v-model="caseFormData.description"
+                class="form-control" 
+                id="case-description" 
+                placeholder="Enter case description" 
+                required
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="case-priority">Priority*</label>
+                <select 
+                  v-model="caseFormData.priority"
+                  class="form-control" 
+                  id="case-priority" 
+                  required
+                >
+                  <option value="">Select priority</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="case-type">Type*</label>
+                <select 
+                  v-model="caseFormData.type"
+                  class="form-control" 
+                  id="case-type" 
+                  required
+                >
+                  <option value="">Select type</option>
+                  <option value="Domestic Violence">Domestic Violence</option>
+                  <option value="Sexual Assault">Sexual Assault</option>
+                  <option value="Human Trafficking">Human Trafficking</option>
+                  <option value="Child Abuse">Child Abuse</option>
+                  <option value="Elder Abuse">Elder Abuse</option>
+                  <option value="Stalking">Stalking</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="caller-info">Caller Information</label>
+              <textarea 
+                v-model="caseFormData.callerInfo"
+                class="form-control" 
+                id="caller-info" 
+                placeholder="Enter caller information and notes"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="incident-details">Incident Details</label>
+              <textarea 
+                v-model="caseFormData.incidentDetails"
+                class="form-control" 
+                id="incident-details" 
+                placeholder="Enter incident details"
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" @click="saveDraft">Save Draft</button>
+            <button type="submit" class="btn-primary">{{ caseFormMode === 'new' ? 'Create Case' : 'Update Case' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimized Case Form -->
+  <div v-if="caseFormMinimized" class="minimized-case-form" @click="restoreCaseForm">
+    <div class="minimized-content">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Case #{{ currentCaseId }}</span>
+      <span class="timer">{{ callDuration }}</span>
+    </div>
+  </div>
+
+  <!-- Call Disposition Modal -->
+  <div v-if="showDisposition" class="modal-overlay" @click="closeDisposition">
+    <div class="disposition-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Call Disposition</h3>
+        <div class="call-timer-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ callDuration }}
+        </div>
+        <button class="modal-close" @click="closeDisposition">×</button>
+      </div>
+      <div class="modal-body">
+        <form @submit.prevent="submitDisposition">
+          <div class="disposition-grid">
+            <div class="form-group">
+              <label>Call Outcome*</label>
+              <select v-model="disposition.outcome" required class="form-control">
+                <option value="">Select Outcome</option>
+                <option value="resolved">Resolved</option>
+                <option value="escalated">Escalated</option>
+                <option value="follow-up">Follow-up Required</option>
+                <option value="referred">Referred</option>
+                <option value="incomplete">Incomplete</option>
+                <option value="prank">Prank Call</option>
+                <option value="blank">Blank/Silent Call</option>
+                <option value="wrong-number">Wrong Number</option>
+                <option value="test-call">Test Call</option>
+                <option value="hang-up">Hang Up</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Call Category*</label>
+              <select v-model="disposition.category" required class="form-control">
+                <option value="">Select Category</option>
+                <option value="domestic-violence">Domestic Violence</option>
+                <option value="sexual-assault">Sexual Assault</option>
+                <option value="mental-health">Mental Health Crisis</option>
+                <option value="substance-abuse">Substance Abuse</option>
+                <option value="child-abuse">Child Abuse</option>
+                <option value="elder-abuse">Elder Abuse</option>
+                <option value="human-trafficking">Human Trafficking</option>
+                <option value="stalking">Stalking/Harassment</option>
+                <option value="information">Information Request</option>
+                <option value="resource-referral">Resource Referral</option>
+                <option value="safety-planning">Safety Planning</option>
+                <option value="legal-advocacy">Legal Advocacy</option>
+                <option value="housing">Housing Assistance</option>
+                <option value="financial">Financial Assistance</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Priority Level*</label>
+              <select v-model="disposition.priority" required class="form-control">
+                <option value="">Select Priority</option>
+                <option value="critical">Critical - Immediate Danger</option>
+                <option value="high">High - Urgent Response Needed</option>
+                <option value="medium">Medium - Standard Response</option>
+                <option value="low">Low - Information/Follow-up</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Call Duration</label>
+              <input 
+                type="text" 
+                :value="callDuration" 
+                readonly 
+                class="form-control duration-display"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Disposition Reason*</label>
+            <select v-model="disposition.reason" required class="form-control">
+              <option value="">Select Reason</option>
+              <optgroup label="Completed Calls">
+                <option value="crisis-resolved">Crisis Resolved</option>
+                <option value="information-provided">Information Provided</option>
+                <option value="referral-made">Referral Made</option>
+                <option value="safety-plan-created">Safety Plan Created</option>
+                <option value="follow-up-scheduled">Follow-up Scheduled</option>
+                <option value="escalated-supervisor">Escalated to Supervisor</option>
+                <option value="escalated-emergency">Escalated to Emergency Services</option>
+              </optgroup>
+              <optgroup label="Incomplete Calls">
+                <option value="caller-disconnected">Caller Disconnected</option>
+                <option value="caller-hung-up">Caller Hung Up</option>
+                <option value="technical-issues">Technical Issues</option>
+                <option value="language-barrier">Language Barrier</option>
+                <option value="caller-not-ready">Caller Not Ready to Talk</option>
+              </optgroup>
+              <optgroup label="Non-Crisis Calls">
+                <option value="prank-call">Prank Call</option>
+                <option value="blank-call">Blank/Silent Call</option>
+                <option value="wrong-number">Wrong Number</option>
+                <option value="test-call">Test Call</option>
+                <option value="misdial">Accidental Dial</option>
+                <option value="non-crisis">Non-Crisis Call</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Call Notes*</label>
+            <textarea 
+              v-model="disposition.notes" 
+              rows="4" 
+              placeholder="Enter detailed notes about the call, actions taken, and any follow-up needed..."
+              required
+              class="form-control"
+            ></textarea>
+          </div>
+
+          <div class="form-group" v-if="disposition.outcome === 'escalated'">
+            <label>Escalated To</label>
+            <select v-model="disposition.escalatedTo" class="form-control">
+              <option value="">Select Escalation Target</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="police">Police/Law Enforcement</option>
+              <option value="ems">Emergency Medical Services</option>
+              <option value="cps">Child Protective Services</option>
+              <option value="aps">Adult Protective Services</option>
+              <option value="mental-health">Mental Health Crisis Team</option>
+              <option value="legal-advocate">Legal Advocate</option>
+              <option value="other-agency">Other Agency</option>
+            </select>
+          </div>
+
+          <div class="form-group" v-if="disposition.outcome === 'referred'">
+            <label>Referred To</label>
+            <input 
+              type="text" 
+              v-model="disposition.referredTo"
+              placeholder="Enter organization or service referred to"
+              class="form-control"
+            />
+          </div>
+
+          <div class="disposition-summary" v-if="disposition.outcome && disposition.category && disposition.priority">
+            <h4>Call Summary</h4>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Outcome:</span>
+                <span class="summary-value">{{ disposition.outcome }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Category:</span>
+                <span class="summary-value">{{ disposition.category }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Priority:</span>
+                <span class="summary-value priority-indicator" :class="disposition.priority">{{ disposition.priority }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Duration:</span>
+                <span class="summary-value">{{ callDuration }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" @click="closeDisposition">Cancel</button>
+            <button type="submit" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Complete Call Disposition
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case Link Modal -->
+  <div v-if="showCaseLink" class="modal-overlay" @click="closeCaseLink">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>Link Call to Different Case</h3>
+        <button class="modal-close" @click="closeCaseLink">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="case-link-options">
+          <div class="case-option" @click="selectCaseLinkOption('existing')">
+            <div class="option-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Link to Existing Case</div>
+              <div class="option-description">Connect this call to a different existing case</div>
+            </div>
+          </div>
+          <div class="case-option" @click="selectCaseLinkOption('new')">
+            <div class="option-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Create New Case</div>
+              <div class="option-description">Create a new case and link this call to it</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Options Modal -->
+  <div v-if="showCallOptions" class="modal-overlay" @click="closeCallOptions">
+    <div class="modal-content call-options-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Make a Call</h3>
+        <button class="modal-close" @click="closeCallOptions">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="call-options">
+          <div class="call-option" @click="selectCallOption('contacts')">
+            <div class="option-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Call from Contacts</div>
+              <div class="option-description">Select a contact from your saved list</div>
+            </div>
+          </div>
+          <div class="call-option" @click="selectCallOption('new')">
+            <div class="option-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <div class="option-title">Make New Call</div>
+              <div class="option-description">Enter a phone number to call</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contacts Modal -->
+  <div v-if="showContactsModal" class="modal-overlay" @click="closeCallOptions">
+    <div class="modal-content contacts-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Select Contact</h3>
+        <button class="modal-close" @click="closeCallOptions">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="contacts-search">
+          <input 
+            type="text" 
+            placeholder="Search contacts..." 
+            class="search-input"
+          />
+        </div>
+        <div class="contacts-list">
+          <div 
+            v-for="contact in contacts" 
+            :key="contact.id" 
+            class="contact-item"
+            @click="callContact(contact)"
+          >
+            <div class="contact-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="contact-info">
+              <div class="contact-name">{{ contact.name }}</div>
+              <div class="contact-phone">{{ contact.phone }}</div>
+              <div class="contact-meta">
+                <span class="contact-type">{{ contact.type }}</span>
+                <span class="contact-last-call">Last call: {{ contact.lastCall }}</span>
+              </div>
+            </div>
+            <div class="contact-priority">
+              <span class="priority-indicator" :class="contact.priority"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Call Modal -->
+  <div v-if="showNewCallModal" class="modal-overlay" @click="closeCallOptions">
+    <div class="modal-content new-call-modal" @click.stop>
+      <div class="modal-header">
+        <h3>Make New Call</h3>
+        <button class="modal-close" @click="closeCallOptions">×</button>
+      </div>
+      <div class="modal-body">
+        <form @submit.prevent="makeNewCall">
+          <div class="form-group">
+            <label for="phone-number">Phone Number*</label>
+            <input 
+              v-model="newCallNumber"
+              type="tel" 
+              id="phone-number"
+              placeholder="Enter phone number (e.g., +1 555 123 4567)"
+              required
+              class="phone-input"
+            />
+          </div>
+          <div class="call-info">
+            <div class="info-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Call will be initiated immediately</span>
+            </div>
+            <div class="info-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>A new case will be created automatically</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" @click="closeCallOptions">Cancel</button>
+            <button type="submit" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Call Now
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success/Info Notification -->
+  <div v-if="showNotification" class="notification-overlay">
+    <div class="notification-container" :class="notificationType">
+      <div class="notification-icon">
+        <svg v-if="notificationType === 'success'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg v-else-if="notificationType === 'info'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="notification-content">
+        <div class="notification-message">{{ notificationMessage }}</div>
+      </div>
+      <button class="notification-close" @click="showNotification = false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import SidePanel from '@/components/SidePanel.vue'
+
+const router = useRouter()
 
 // Reactive state
-const isSidebarCollapsed = ref(false)
-const mobileOpen = ref(false)
 const activeView = ref('timeline')
 const selectedCallId = ref('1348456')
 const currentTheme = ref('dark')
@@ -708,10 +992,133 @@ const showRingingInterface = ref(false)
 const showCaseForm = ref(false)
 const caseFormMinimized = ref(false)
 
+// Case options modal states
+const showCaseOptions = ref(false)
+const showExistingCaseSearch = ref(false)
+const caseSearchQuery = ref('')
+const caseFormMode = ref('new') // 'new' or 'edit'
+
 // Modal states
 const showDisposition = ref(false)
 const showCaseLink = ref(false)
 const selectedCallForLink = ref(null)
+
+// Call initiation modal states
+const showCallOptions = ref(false)
+const showContactsModal = ref(false)
+const showNewCallModal = ref(false)
+const newCallNumber = ref('')
+const selectedContact = ref(null)
+
+// Notification state
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const notificationType = ref('success') // 'success', 'error', 'info'
+
+// Sample existing cases for search
+const existingCases = ref([
+  {
+    id: 'CASE-2025-1001',
+    title: 'Domestic Violence Support - Jane Doe',
+    client: 'Jane Doe',
+    priority: 'High',
+    status: 'Open',
+    date: '2025-01-15',
+    description: 'Ongoing domestic violence case requiring immediate attention'
+  },
+  {
+    id: 'CASE-2025-1002',
+    title: 'Child Abuse Investigation',
+    client: 'Anonymous',
+    priority: 'Critical',
+    status: 'In Progress',
+    date: '2025-01-14',
+    description: 'Child welfare investigation case'
+  },
+  {
+    id: 'CASE-2025-1003',
+    title: 'Mental Health Crisis Support',
+    client: 'John Smith',
+    priority: 'Medium',
+    status: 'Open',
+    date: '2025-01-13',
+    description: 'Mental health crisis intervention and support'
+  },
+  {
+    id: 'CASE-2025-1004',
+    title: 'Elder Abuse Report',
+    client: 'Mary Johnson',
+    priority: 'High',
+    status: 'Pending',
+    date: '2025-01-12',
+    description: 'Elder abuse investigation and support services'
+  },
+  {
+    id: 'CASE-2025-1005',
+    title: 'Sexual Assault Support',
+    client: 'Anonymous',
+    priority: 'Critical',
+    status: 'Open',
+    date: '2025-01-11',
+    description: 'Sexual assault survivor support and advocacy'
+  }
+])
+
+// Computed property for filtered existing cases
+const filteredExistingCases = computed(() => {
+  if (!caseSearchQuery.value) return existingCases.value
+  
+  const query = caseSearchQuery.value.toLowerCase()
+  return existingCases.value.filter(caseItem => 
+    caseItem.id.toLowerCase().includes(query) ||
+    caseItem.title.toLowerCase().includes(query) ||
+    caseItem.client.toLowerCase().includes(query)
+  )
+})
+
+// Sample contacts data
+const contacts = ref([
+  {
+    id: 1,
+    name: 'Sarah Johnson',
+    phone: '+1 (555) 123-4567',
+    type: 'Client',
+    lastCall: '2 days ago',
+    priority: 'high'
+  },
+  {
+    id: 2,
+    name: 'Michael Brown',
+    phone: '+1 (555) 987-6543',
+    type: 'Emergency Contact',
+    lastCall: '1 week ago',
+    priority: 'critical'
+  },
+  {
+    id: 3,
+    name: 'Emily Davis',
+    phone: '+1 (555) 456-7890',
+    type: 'Family Member',
+    lastCall: '3 days ago',
+    priority: 'medium'
+  },
+  {
+    id: 4,
+    name: 'Robert Wilson',
+    phone: '+1 (555) 321-0987',
+    type: 'Legal Advocate',
+    lastCall: '5 days ago',
+    priority: 'high'
+  },
+  {
+    id: 5,
+    name: 'Lisa Anderson',
+    phone: '+1 (555) 654-3210',
+    type: 'Counselor',
+    lastCall: '1 day ago',
+    priority: 'medium'
+  }
+])
 
 // Ringing call state
 const ringingCall = ref(null)
@@ -734,7 +1141,10 @@ const disposition = ref({
   outcome: '',
   category: '',
   priority: '',
-  notes: ''
+  reason: '',
+  notes: '',
+  escalatedTo: '',
+  referredTo: ''
 })
 
 // Queue members data
@@ -983,14 +1393,14 @@ const allCalls = computed(() => {
 
 const groupedCalls = computed(() => {
   const groups = {}
-  
+
   allCalls.value.forEach(call => {
     if (!groups[call.group]) {
       groups[call.group] = []
     }
     groups[call.group].push(call)
   })
-  
+
   return groups
 })
 
@@ -998,49 +1408,30 @@ const selectedCallDetails = computed(() => {
   return callData.value[selectedCallId.value] || null
 })
 
-const queueStatus = computed(() => {
-  if (currentCall.value) {
-    return currentCall.value.status === 'incoming' ? 'Incoming Call' : 'On Call'
-  }
-  return isInQueue.value ? 'In Queue' : 'Offline'
-})
-
-const queueButtonText = computed(() => {
-  if (isProcessingQueue.value) return 'Processing...'
-  if (currentCall.value) return 'End Call'
-  return isInQueue.value ? 'Leave Queue' : 'Join Queue'
-})
-
 // Methods
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-}
-
-const expandSidebar = () => {
-  isSidebarCollapsed.value = false
-}
-
-const toggleMobileMenu = () => {
-  mobileOpen.value = !mobileOpen.value
-}
-
-const navigateTo = (path) => {
-  console.log(`Navigating to: ${path}`)
-  alert(`Navigation to ${path} - In a real app, this would navigate to the page`)
-}
-
-const toggleQueue = async () => {
+const handleQueueToggle = async () => {
   if (currentCall.value) {
     endCall()
     return
   }
 
   isProcessingQueue.value = true
-  
+
   try {
     if (isInQueue.value) {
       // Leave queue
       isInQueue.value = false
+      
+      // Show leave queue notification
+      showNotification.value = true
+      notificationMessage.value = 'Left the queue successfully!'
+      notificationType.value = 'info'
+      
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => {
+        showNotification.value = false
+      }, 3000)
+      
       console.log('Left queue')
     } else {
       // Join queue - show queue popup first
@@ -1051,6 +1442,15 @@ const toggleQueue = async () => {
   }
 }
 
+const handleLogout = () => {
+  console.log('Logging out...')
+  alert('Logged out successfully!')
+}
+
+const handleSidebarToggle = (collapsed) => {
+  console.log('Sidebar toggled:', collapsed)
+}
+
 const closeQueuePopup = () => {
   showQueuePopup.value = false
 }
@@ -1058,35 +1458,100 @@ const closeQueuePopup = () => {
 const confirmJoinQueue = () => {
   isInQueue.value = true
   showQueuePopup.value = false
-  console.log('Joined queue')
   
-  // Simulate receiving a call after joining queue
+  // Show success notification instead of alert
+  showNotification.value = true
+  notificationMessage.value = 'Joined the queue successfully! Waiting for incoming calls...'
+  notificationType.value = 'success'
+  
+  // Auto-hide notification after 3 seconds
   setTimeout(() => {
-    if (isInQueue.value) {
+    showNotification.value = false
+  }, 3000)
+  
+  console.log('Joined queue successfully')
+
+  // Simulate receiving a call after joining queue (3 seconds delay)
+  setTimeout(() => {
+    if (isInQueue.value && !currentCall.value) {
+      console.log('Simulating incoming call...')
       simulateIncomingCall()
     }
   }, 3000)
 }
 
 const initiateNewCall = () => {
-  // Show ringing interface for outgoing call
+  showCallOptions.value = true
+}
+
+const closeCallOptions = () => {
+  showCallOptions.value = false
+  showContactsModal.value = false
+  showNewCallModal.value = false
+  newCallNumber.value = ''
+  selectedContact.value = null
+}
+
+const selectCallOption = (option) => {
+  if (option === 'contacts') {
+    showCallOptions.value = false
+    showContactsModal.value = true
+  } else if (option === 'new') {
+    showCallOptions.value = false
+    showNewCallModal.value = true
+  }
+}
+
+const callContact = (contact) => {
+  selectedContact.value = contact
+  showContactsModal.value = false
+  
+  // Initiate call with contact
   const outgoingCall = {
     id: `CALL-OUT-${Date.now()}`,
     type: 'Outgoing Call',
-    callerName: 'Outgoing Call',
-    number: '+1 (555) 123-4567',
+    callerName: contact.name,
+    number: contact.phone,
     status: 'outgoing',
-    priority: 'medium',
+    priority: contact.priority,
     caseId: generateCaseId()
   }
-  
+
   ringingCall.value = outgoingCall
   showRingingInterface.value = true
   ringingStartTime.value = new Date()
   startRingingTimer()
 }
 
+const makeNewCall = () => {
+  if (!newCallNumber.value.trim()) {
+    alert('Please enter a phone number')
+    return
+  }
+
+  showNewCallModal.value = false
+  
+  // Initiate call with new number
+  const outgoingCall = {
+    id: `CALL-OUT-${Date.now()}`,
+    type: 'Outgoing Call',
+    callerName: 'Unknown Contact',
+    number: newCallNumber.value,
+    status: 'outgoing',
+    priority: 'medium',
+    caseId: generateCaseId()
+  }
+
+  ringingCall.value = outgoingCall
+  showRingingInterface.value = true
+  ringingStartTime.value = new Date()
+  startRingingTimer()
+  
+  newCallNumber.value = ''
+}
+
 const simulateIncomingCall = () => {
+  console.log('Creating incoming call...')
   const caseId = generateCaseId()
   const incomingCall = {
     id: `CALL-${Date.now()}`,
@@ -1097,11 +1562,13 @@ const simulateIncomingCall = () => {
     priority: 'critical',
     caseId: caseId
   }
-  
+
   ringingCall.value = incomingCall
   showRingingInterface.value = true
   ringingStartTime.value = new Date()
   startRingingTimer()
+  
+  console.log('Incoming call interface should now be visible')
 }
 
 const startRingingTimer = () => {
@@ -1119,6 +1586,7 @@ const startRingingTimer = () => {
   }, 1000)
 }
 
+// Modified answerCall to show case options
 const answerCall = () => {
   if (ringingCall.value) {
     currentCall.value = {
@@ -1129,18 +1597,8 @@ const answerCall = () => {
     callStartTime.value = new Date()
     currentCaseId.value = ringingCall.value.caseId
     
-    // Initialize case form data
-    caseFormData.value = {
-      caseName: ringingCall.value.type,
-      description: '',
-      priority: ringingCall.value.priority,
-      type: '',
-      callerInfo: `Caller: ${ringingCall.value.callerName}\nNumber: ${ringingCall.value.number || 'Unknown'}`,
-      incidentDetails: ''
-    }
-    
     showRingingInterface.value = false
-    showCaseForm.value = true
+    showCaseOptions.value = true // Show case options instead of case form
     startCallTimer()
     
     // Add call to call data
@@ -1165,10 +1623,73 @@ const answerCall = () => {
       priority: currentCall.value.priority
     }
   }
-  
+
   ringingCall.value = null
   ringingStartTime.value = null
   ringingDuration.value = '00:00'
+}
+
+// Case options methods
+const closeCaseOptions = () => {
+  showCaseOptions.value = false
+}
+
+const selectCaseOption = (option) => {
+  showCaseOptions.value = false
+  
+  if (option === 'new') {
+    // Open new case creation form
+    caseFormMode.value = 'new'
+    currentCaseId.value = generateCaseId()
+    
+    // Initialize case form data with call info
+    caseFormData.value = {
+      caseName: currentCall.value?.type || '',
+      description: '',
+      priority: currentCall.value?.priority || '',
+      type: '',
+      callerInfo: `Caller: ${currentCall.value?.callerName || 'Unknown'}\nNumber: ${currentCall.value?.number || 'Unknown'}`,
+      incidentDetails: ''
+    }
+    
+    showCaseForm.value = true
+  } else if (option === 'existing') {
+    // Open existing case search
+    showExistingCaseSearch.value = true
+    caseSearchQuery.value = ''
+  } else if (option === 'disposition') {
+    // Open disposition form directly
+    showDisposition.value = true
+  }
+}
+
+const closeExistingCaseSearch = () => {
+  showExistingCaseSearch.value = false
+  caseSearchQuery.value = ''
+}
+
+const selectExistingCase = (existingCase) => {
+  // Link call to existing case and open edit form
+  currentCaseId.value = existingCase.id
+  caseFormMode.value = 'edit'
+  
+  // Pre-populate form with existing case data
+  caseFormData.value = {
+    caseName: existingCase.title,
+    description: existingCase.description,
+    priority: existingCase.priority,
+    type: '', // Would need to add type to existing cases data
+    callerInfo: `Caller: ${currentCall.value?.callerName || 'Unknown'}\nNumber: ${currentCall.value?.number || 'Unknown'}\n\nLinked to existing case for: ${existingCase.client}`,
+    incidentDetails: ''
+  }
+  
+  showExistingCaseSearch.value = false
+  showCaseForm.value = true
+  
+  // Update call data to link to selected case
+  if (currentCall.value && callData.value[currentCall.value.id]) {
+    callData.value[currentCall.value.id].caseId = existingCase.id
+  }
 }
 
 const declineCall = () => {
@@ -1194,9 +1715,6 @@ const endCall = () => {
     callDuration.value = '00:00'
     showCaseForm.value = false
     caseFormMinimized.value = false
-    
-    // Open disposition modal
-    showDisposition.value = true
   }
 }
 
@@ -1227,7 +1745,12 @@ const restoreCaseForm = () => {
 
 const saveCaseForm = () => {
   console.log('Saving case form:', caseFormData.value)
-  alert('Case saved successfully!')
+  alert(`Case ${caseFormMode.value === 'new' ? 'created' : 'updated'} successfully!`)
+  
+  // In a real app, this would save to the backend
+  // For demo, we'll just close the form
+  showCaseForm.value = false
+  caseFormMinimized.value = false
 }
 
 const saveDraft = () => {
@@ -1258,31 +1781,32 @@ const acceptQueueCall = (callId) => {
   }
 }
 
-const openDisposition = () => {
-  showDisposition.value = true
-}
-
 const closeDisposition = () => {
   showDisposition.value = false
   disposition.value = {
     outcome: '',
     category: '',
     priority: '',
-    notes: ''
+    reason: '',
+    notes: '',
+    escalatedTo: '',
+    referredTo: ''
   }
 }
 
 const submitDisposition = () => {
   console.log('Submitting disposition:', disposition.value)
-  
+
   // Update the call's case with disposition information
   if (currentCall.value && callData.value[currentCall.value.id]) {
-    callData.value[currentCall.value.id].disposition = disposition.value.outcome
+    callData.value[currentCall.value.id].disposition = disposition.value.reason
     callData.value[currentCall.value.id].priority = disposition.value.priority
   }
-  
+
+  // End the call after disposition
+  endCall()
   closeDisposition()
-  alert('Call disposition saved successfully!')
+  alert('Call disposition saved and call ended successfully!')
 }
 
 const viewCallDetails = (callId) => {
@@ -1309,25 +1833,21 @@ const selectCaseLinkOption = (option) => {
       alert(`Call linked to case ${caseId}`)
     }
   } else if (option === 'new') {
-    // Create new case
-    const caseTitle = prompt('Enter case title:')
-    if (caseTitle && selectedCallForLink.value) {
-      const caseId = generateCaseId()
-      callData.value[selectedCallForLink.value].caseId = caseId
-      alert(`New case ${caseId} created and linked to call`)
-    }
+    // Navigate to case creation
+    router.push('/case-creation')
   }
   closeCaseLink()
 }
 
 const viewCase = (caseId) => {
   console.log('Viewing case:', caseId)
-  alert(`Opening case ${caseId} - In a real app, this would navigate to the case details page`)
+  // Navigate to cases page
+  router.push('/cases')
 }
 
 const applyTheme = (theme) => {
   const root = document.documentElement
-  
+
   if (theme === 'light') {
     root.style.setProperty('--background-color', '#f5f5f5')
     root.style.setProperty('--sidebar-bg', '#ffffff')
@@ -1355,7 +1875,7 @@ const applyTheme = (theme) => {
     root.style.setProperty('--input-bg', '#333')
     root.setAttribute('data-theme', 'dark')
   }
-  
+
   // Set common variables
   root.style.setProperty('--accent-color', '#964B00')
   root.style.setProperty('--accent-hover', '#b25900')
@@ -1389,11 +1909,6 @@ const getStatusClass = (status) => {
   return status.toLowerCase().replace(/\s+/g, '-')
 }
 
-const logout = () => {
-  console.log('Logging out...')
-  alert('Logged out successfully!')
-}
-
 // Lifecycle
 onMounted(() => {
   // Load saved theme
@@ -1401,29 +1916,9 @@ onMounted(() => {
   if (savedTheme) {
     currentTheme.value = savedTheme
   }
-  
+
   // Apply theme immediately
   applyTheme(currentTheme.value)
-
-  // Handle window resize
-  const handleResize = () => {
-    if (window.innerWidth > 1024) {
-      mobileOpen.value = false
-    }
-  }
-  window.addEventListener('resize', handleResize)
-
-  // Handle click outside sidebar on mobile/tablet
-  const handleClickOutside = (event) => {
-    const isMobileOrTablet = window.innerWidth <= 1024
-    const sidebar = document.getElementById('sidebar')
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn')
-    
-    if (isMobileOrTablet && sidebar && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
-      mobileOpen.value = false
-    }
-  }
-  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
@@ -1455,314 +1950,9 @@ body {
   overflow: hidden;
 }
 
-.sidebar {
-  width: 250px;
-  background-color: var(--sidebar-bg);
-  color: var(--text-color);
-  height: 100vh;
-  position: fixed;
-  transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s;
-  overflow: hidden;
-  border-radius: 0 30px 30px 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-content {
-  width: 250px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  flex-shrink: 0;
-  padding: 20px;
-  text-align: center;
-}
-
-.nav-section {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0 15px;
-  margin-bottom: 0;
-  min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.nav-section::-webkit-scrollbar {
-  display: none;
-}
-
-.sidebar-bottom {
-  padding: 15px;
-  flex-shrink: 0;
-  background-color: var(--sidebar-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.toggle-btn {
-  position: absolute;
-  top: 50px;
-  right: -15px;
-  width: 30px;
-  height: 30px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 10;
-  border: none;
-  color: #333333;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-
-.toggle-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.expand-btn {
-  position: fixed;
-  top: 50px;
-  left: 5px;
-  width: 30px;
-  height: 30px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 101;
-  border: none;
-  color: #333333;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-
-.expand-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.sidebar.collapsed ~ .expand-btn {
-  display: flex;
-}
-
-.sidebar.collapsed {
-  width: 20px;
-  transform: translateX(-230px);
-}
-
-.sidebar.collapsed .sidebar-content {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.logo-container {
-  display: flex;
-  justify-content: center;
-}
-
-.logo {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--logo-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.logo img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  cursor: pointer;
-  margin-bottom: 4px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: var(--text-color);
-  transition: all 0.3s ease;
-  min-height: 44px;
-}
-
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateX(3px);
-}
-
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.nav-item:hover .nav-icon {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.nav-icon svg {
-  color: var(--text-color);
-  stroke: var(--text-color);
-  width: 18px;
-  height: 18px;
-}
-
-.nav-text {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-profile {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.user-avatar:hover {
-  transform: scale(1.05);
-}
-
-.user-avatar svg {
-  width: 24px;
-  height: 24px;
-  fill: var(--background-color);
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-secondary);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--unassigned-color);
-  margin-right: 6px;
-  transition: all 0.3s ease;
-}
-
-.status-dot.in-queue {
-  background-color: var(--success-color);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-.button-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.join-queue-btn {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 10px 14px;
-  width: 100%;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.join-queue-btn:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.join-queue-btn.in-queue {
-  background-color: var(--success-color);
-}
-
-.join-queue-btn.has-call {
-  background-color: var(--danger-color);
-}
-
-.join-queue-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.logout-btn {
-  background-color: var(--danger-color);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 10px 14px;
-  width: 100%;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.logout-btn:hover {
-  background-color: #e60000;
-  transform: translateY(-1px);
-}
-
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width, 250px);
   height: 100vh;
   background-color: var(--background-color);
   transition: margin-left 0.3s ease, background-color 0.3s;
@@ -1771,21 +1961,30 @@ body {
   overflow: hidden;
 }
 
-.sidebar.collapsed ~ .main-content {
-  margin-left: 20px;
-}
-
 .calls-container {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .calls-container::-webkit-scrollbar {
-  display: none;
+  width: 8px;
+}
+
+.calls-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calls-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.calls-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .header {
@@ -1799,7 +1998,7 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
 }
 
 .page-title {
@@ -1820,6 +2019,8 @@ body {
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 120px;
 }
 
 .theme-toggle:hover {
@@ -1845,6 +2046,8 @@ body {
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 100px;
 }
 
 .new-call-btn:hover {
@@ -1955,12 +2158,25 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .view-container::-webkit-scrollbar {
-  display: none;
+  width: 8px;
+}
+
+.view-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.view-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.view-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .time-section {
@@ -2309,6 +2525,10 @@ body {
   background-color: var(--success-color);
 }
 
+.status-badge.open {
+  background-color: var(--success-color);
+}
+
 .table-actions {
   display: flex;
   gap: 8px;
@@ -2362,12 +2582,25 @@ body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .call-details-panel::-webkit-scrollbar {
-  display: none;
+  width: 8px;
+}
+
+.call-details-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.call-details-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.call-details-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .call-details-panel.active {
@@ -2419,12 +2652,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .call-details-content::-webkit-scrollbar {
-  display: none;
+  width: 8px;
+}
+
+.call-details-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.call-details-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.call-details-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .detail-item {
@@ -2493,6 +2739,15 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: var(--text-color);
+}
+
+.call-timer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--success-color);
 }
 
 .modal-close {
@@ -2569,6 +2824,9 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-primary:hover {
@@ -2593,12 +2851,12 @@ body {
   transform: translateY(-1px);
 }
 
-/* Queue Popup Modal */
-.queue-popup {
+/* Case Options Modal Styles */
+.case-options-modal {
   background-color: var(--content-bg);
   border-radius: 20px;
   width: 90%;
-  max-width: 600px;
+  max-width: 700px;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -2614,6 +2872,231 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.case-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.case-option-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 25px;
+  background-color: var(--background-color);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+}
+
+.case-option-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
+}
+
+.option-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.option-icon.new-case {
+  background-color: var(--success-color);
+}
+
+.option-icon.existing-case {
+  background-color: var(--accent-color);
+}
+
+.option-icon.disposition-call {
+  background-color: var(--medium-color);
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.option-description {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.option-arrow {
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.case-option-card:hover .option-arrow {
+  color: var(--accent-color);
+  transform: translateX(5px);
+}
+
+/* Existing Case Search Modal */
+.existing-case-modal {
+  background-color: var(--content-bg);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.case-search {
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(150, 75, 0, 0.1);
+}
+
+.existing-cases-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.existing-case-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background-color: var(--background-color);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+}
+
+.existing-case-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-color);
+}
+
+.case-info {
+  flex: 1;
+}
+
+.case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.case-id {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.case-priority {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: white;
+}
+
+.case-priority.critical {
+  background-color: var(--critical-color);
+}
+
+.case-priority.high {
+  background-color: var(--high-color);
+}
+
+.case-priority.medium {
+  background-color: var(--medium-color);
+}
+
+.case-priority.low {
+  background-color: var(--low-color);
+}
+
+.case-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.case-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.case-client {
+  color: var(--text-color);
+}
+
+.case-status {
+  display: flex;
+  align-items: center;
+}
+
+.case-select-arrow {
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.existing-case-item:hover .case-select-arrow {
+  color: var(--accent-color);
+  transform: translateX(5px);
+}
+
+/* Queue Popup Modal */
+.queue-popup {
+  background-color: var(--content-bg);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
 }
 
 .queue-popup-header {
@@ -2675,7 +3158,7 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid var(--content-bg);
+  border: 2px solid var(--background-color);
 }
 
 .status-indicator.available {
@@ -2718,128 +3201,121 @@ body {
   padding: 20px 25px;
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
-/* Ringing Interface - iOS Style */
+/* Ringing Call Interface Styles */
 .ringing-overlay {
   position: fixed;
-  top: 50%;
-  right: 2%;
-  transform: translateY(-50%);
-  width: 25%;
-  height: auto;
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, #ff8c00, #000000); /* dark orange to black */
-  border-radius: 1.5rem;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 3000;
-  animation: fadeIn 0.3s ease-out;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  color: white;
-}
-
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .ringing-container {
+  background-color: var(--content-bg);
+  border-radius: 30px;
+  width: 90%;
+  max-width: 450px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   text-align: center;
-  color: white;
-  max-width: 400px;
-  padding: 40px 20px;
 }
 
 .ringing-header {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .call-type-badge {
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 30px;
+  color: white;
+  display: inline-block;
 }
 
 .call-type-badge.critical {
-  background-color: rgba(255, 59, 48, 0.3);
+  background-color: var(--critical-color);
 }
 
 .call-type-badge.high {
-  background-color: rgba(255, 149, 0, 0.3);
+  background-color: var(--high-color);
 }
 
 .call-type-badge.medium {
-  background-color: rgba(0, 122, 255, 0.3);
+  background-color: var(--medium-color);
+}
+
+.call-type-badge.low {
+  background-color: var(--low-color);
 }
 
 .caller-info {
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 .caller-avatar {
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--background-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
-  backdrop-filter: blur(10px);
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  margin: 0 auto 15px;
 }
 
 .caller-avatar svg {
-  width: 60px;
-  height: 60px;
-  stroke: white;
+  width: 40px;
+  height: 40px;
+  stroke: var(--text-color);
 }
 
 .caller-name {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
+  color: var(--text-color);
   margin-bottom: 8px;
 }
 
 .caller-number {
   font-size: 16px;
-  font-weight: 500;
-  opacity: 0.8;
+  font-weight: 600;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
 .call-duration {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  color: var(--success-color);
 }
 
 .ringing-animation {
   position: relative;
-  margin-bottom: 50px;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 30px;
 }
 
 .pulse-ring {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  animation: pulsate 2s ease-out infinite;
+  border: 3px solid var(--medium-color);
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  opacity: 0;
 }
 
 .pulse-ring.delay-1 {
@@ -2850,13 +3326,16 @@ body {
   animation-delay: 1s;
 }
 
-@keyframes pulsate {
+@keyframes pulse {
   0% {
-    transform: scale(0.8);
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
     opacity: 1;
   }
   100% {
-    transform: scale(2);
+    transform: scale(1.2);
     opacity: 0;
   }
 }
@@ -2864,12 +3343,12 @@ body {
 .call-actions {
   display: flex;
   justify-content: center;
-  gap: 60px;
+  gap: 20px;
 }
 
 .call-btn {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -2877,106 +3356,93 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.call-btn.decline {
-  background-color: rgba(255, 59, 48, 0.9);
-}
-
-.call-btn.answer {
-  background-color: rgba(52, 199, 89, 0.9);
-}
-
-.call-btn:hover {
-  transform: scale(1.1);
-}
-
-.call-btn:active {
-  transform: scale(0.95);
 }
 
 .call-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   stroke: white;
 }
 
-/* Case Form During Call */
+.call-btn.decline {
+  background-color: var(--danger-color);
+}
+
+.call-btn.decline:hover {
+  background-color: #d32f2f;
+  transform: scale(1.1);
+}
+
+.call-btn.answer {
+  background-color: var(--success-color);
+}
+
+.call-btn.answer:hover {
+  background-color: #43a047;
+  transform: scale(1.1);
+}
+
+/* Case Form Styles */
 .case-form-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  padding: 20px;
+  z-index: 4000;
 }
 
 .case-form-container {
   background-color: var(--content-bg);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 800px;
+  border-radius: 30px;
+  width: 95%;
+  max-width: 900px;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
 }
 
 .case-form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 25px;
+  padding: 25px 30px;
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--content-bg);
-  border-radius: 20px 20px 0 0;
+  flex-shrink: 0;
 }
 
 .form-title {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  flex: 1;
+  text-align: left;
 }
 
 .form-title h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-color);
-  margin: 0;
+  margin-bottom: 5px;
 }
 
 .case-id {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--accent-color);
-  background-color: rgba(150, 75, 0, 0.1);
-  padding: 2px 8px;
-  border-radius: 8px;
-  display: inline-block;
+  color: var(--text-secondary);
 }
 
 .call-timer {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--success-color);
-  background-color: rgba(76, 175, 80, 0.1);
-  padding: 8px 12px;
-  border-radius: 12px;
-}
-
-.call-timer svg {
-  width: 16px;
-  height: 16px;
-  stroke: var(--success-color);
+  flex-shrink: 0;
 }
 
 .minimize-btn {
@@ -2984,7 +3450,7 @@ body {
   border: none;
   color: var(--text-color);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 20px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -2999,28 +3465,29 @@ body {
 }
 
 .case-form-content {
-  padding: 25px;
+  flex: 1;
   overflow-y: auto;
-  max-height: calc(90vh - 100px);
+  padding: 30px;
 }
 
 .form-section {
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-color);
   margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
 }
 
 .form-control {
@@ -3033,63 +3500,152 @@ body {
   font-size: 14px;
   font-weight: 600;
   transition: all 0.3s ease;
-  resize: vertical;
 }
 
 .form-control:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(150, 75, 0, 0.1);
 }
 
-/* Minimized Case Form */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+/* Minimized Case Form Styles */
 .minimized-case-form {
   position: fixed;
   bottom: 20px;
   right: 20px;
   background-color: var(--content-bg);
-  border: 1px solid var(--border-color);
   border-radius: 15px;
-  padding: 15px 20px;
+  padding: 12px 20px;
   cursor: pointer;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
   transition: all 0.3s ease;
-  z-index: 1500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 4000;
 }
 
 .minimized-case-form:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .minimized-content {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
+  gap: 10px;
+}
+
+.minimized-content svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-color);
+}
+
+.minimized-content span {
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-color);
 }
 
-.minimized-content svg {
-  width: 16px;
-  height: 16px;
-  stroke: var(--accent-color);
-}
-
-.timer {
+.minimized-content .timer {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--success-color);
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
 
-/* Case Link Options */
-.case-link-options {
-  display: flex;
-  flex-direction: column;
+/* Enhanced Disposition Modal Styles */
+.disposition-modal {
+  background-color: var(--content-bg);
+  border-radius: 20px;
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.disposition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.duration-display {
+  background-color: var(--background-color) !important;
+  color: var(--success-color) !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+.disposition-summary {
+  background-color: var(--background-color);
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 25px;
+  border: 2px solid var(--border-color);
+}
+
+.disposition-summary h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 15px;
 }
 
-.case-option {
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.summary-value.priority-indicator {
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: white;
+  text-transform: uppercase;
+}
+
+/* Call Options Modal Styles */
+.call-options-modal {
+  max-width: 400px;
+}
+
+.call-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.call-option {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -3098,210 +3654,257 @@ body {
   border-radius: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-color);
 }
 
-.case-option:hover {
+.call-option:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   border-color: var(--accent-color);
 }
 
-.option-icon {
-  width: 50px;
-  height: 50px;
+.contacts-modal {
+  max-width: 600px;
+}
+
+.contacts-search {
+  margin-bottom: 20px;
+}
+
+.contacts-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: var(--background-color);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.contact-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: var(--accent-color);
+  background-color: var(--content-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.option-icon svg {
-  width: 24px;
-  height: 24px;
-  stroke: white;
+.contact-avatar svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--text-color);
 }
 
-.option-content {
+.contact-info {
   flex: 1;
 }
 
-.option-title {
-  font-size: 16px;
+.contact-name {
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-color);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
-.option-description {
+.contact-phone {
   font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.contact-meta {
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  line-height: 1.4;
+  display: flex;
+  gap: 10px;
 }
 
-/* Mobile Responsiveness */
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 40px;
-  height: 40px;
-  background-color: var(--content-bg);
-  border: 1px solid var(--border-color);
+.contact-priority {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.priority-indicator {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.priority-indicator.critical {
+  background-color: var(--critical-color);
+}
+
+.priority-indicator.high {
+  background-color: var(--high-color);
+}
+
+.priority-indicator.medium {
+  background-color: var(--medium-color);
+}
+
+.priority-indicator.low {
+  background-color: var(--low-color);
+}
+
+.new-call-modal {
+  max-width: 450px;
+}
+
+.phone-input {
+  width: 100%;
+  background-color: var(--input-bg);
   color: var(--text-color);
-  cursor: pointer;
-  z-index: 102;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 16px;
+  font-weight: 600;
   transition: all 0.3s ease;
 }
 
-.mobile-menu-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.call-info {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .mobile-menu-btn {
-    display: flex;
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.info-item svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-secondary);
+}
+
+/* Notification Styles */
+.notification-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 5000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
   }
-  
-  .sidebar {
-    transform: translateX(-100%);
-    z-index: 200;
-  }
-  
-  .sidebar.mobile-open {
+  to {
+    opacity: 1;
     transform: translateX(0);
   }
-  
-  .main-content {
-    margin-left: 0;
-  }
-  
-  .sidebar.collapsed ~ .main-content {
-    margin-left: 0;
-  }
-  
-  .expand-btn {
-    display: none !important;
-  }
-  
-  .call-details-panel {
-    width: 100%;
-    border-radius: 0;
-  }
-  
-  .case-form-container {
-    width: 95%;
-    max-width: none;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
 }
 
+.notification-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--content-bg);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.notification-container.success {
+  border-left-color: var(--success-color);
+}
+
+.notification-container.info {
+  border-left-color: var(--medium-color);
+}
+
+.notification-container.error {
+  border-left-color: var(--danger-color);
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--text-color);
+}
+
+.notification-container.success .notification-icon {
+  color: var(--success-color);
+}
+
+.notification-container.info .notification-icon {
+  color: var(--medium-color);
+}
+
+.notification-container.error .notification-icon {
+  color: var(--danger-color);
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-  
   .header-actions {
-    width: 100%;
-    justify-content: space-between;
+    gap: 12px;
   }
   
-  .status-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .queue-stats {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  
-  .queue-members {
-    grid-template-columns: 1fr;
-  }
-  
-  .calls-table-container {
-    border-radius: 15px;
-  }
-  
-  .calls-table th:first-child,
-  .calls-table th:last-child {
-    border-radius: 0;
-  }
-  
-  .calls-table tr:last-child td:first-child,
-  .calls-table tr:last-child td:last-child {
-    border-radius: 0;
-  }
-  
-  .ringing-container {
-    padding: 20px 15px;
-  }
-  
-  .caller-avatar {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .caller-avatar svg {
-    width: 50px;
-    height: 50px;
-  }
-  
-  .call-actions {
-    gap: 40px;
-  }
-  
-  .call-btn {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .call-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .status-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .queue-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .view-tabs {
-    font-size: 12px;
-  }
-  
-  .view-tab {
-    padding: 10px 16px;
-  }
-  
-  .minimized-case-form {
-    bottom: 10px;
-    right: 10px;
-    padding: 10px 15px;
-  }
-  
-  .minimized-content {
-    font-size: 12px;
-    gap: 8px;
+  .theme-toggle {
+    padding: 6px 12px;
+    font-size: 13px;
+    min-width: 100px;
   }
 }
 </style>
