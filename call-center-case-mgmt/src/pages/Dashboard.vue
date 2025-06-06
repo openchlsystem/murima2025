@@ -344,169 +344,184 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+  import { joinQueue } from '@/utils/sipClient.js'
 
-const route = useRoute()
-const router = useRouter()
+export default {
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
 
-// Reactive state
-const isSidebarCollapsed = ref(false)
-const mobileOpen = ref(false)
-const currentTheme = ref('dark')
-const userRole = ref('super-admin') // Set to super-admin to show the button
+    const isSidebarCollapsed = ref(false)
+    const mobileOpen = ref(false)
+    const currentTheme = ref('dark')
+    const userRole = ref('super-admin')
 
-// Data
-const queueAgents = ref([
-  { name: 'Sarah Davis', status: 'Available', statusClass: 'status-available', calls: 34 },
-  { name: 'Mark Reynolds', status: 'In Call', statusClass: 'status-in-call', calls: 28 },
-  { name: 'Emily Chan', status: 'On Break', statusClass: 'status-on-break', calls: 15 },
-  { name: 'David Lee', status: 'Available', statusClass: 'status-available', calls: 42 },
-  { name: 'Sophia Clark', status: 'In Call', statusClass: 'status-in-call', calls: 30 }
-])
+    const queueAgents = ref([
+      { name: 'Sarah Davis', status: 'Available', statusClass: 'status-available', calls: 34 },
+      { name: 'Mark Reynolds', status: 'In Call', statusClass: 'status-in-call', calls: 28 },
+      { name: 'Emily Chan', status: 'On Break', statusClass: 'status-on-break', calls: 15 },
+      { name: 'David Lee', status: 'Available', statusClass: 'status-available', calls: 42 },
+      { name: 'Sophia Clark', status: 'In Call', statusClass: 'status-in-call', calls: 30 }
+    ])
 
-const recentCalls = ref([
-  {
-    id: 1,
-    type: 'Emergency Crisis: Domestic Violence',
-    time: 'Today, 09:00AM',
-    status: 'In Progress',
-    statusClass: 'status-in-progress'
-  },
-  {
-    id: 2,
-    type: 'Survivor Follow-Up: Safety Planning',
-    time: 'Today, 10:30AM',
-    status: 'Pending',
-    statusClass: 'status-pending'
-  },
-  {
-    id: 3,
-    type: 'Wellness Check-In: Mental Health Support',
-    time: 'Yesterday, 11:15AM',
-    status: 'Completed',
-    statusClass: 'status-completed'
-  },
-  {
-    id: 4,
-    type: 'Resource Request: Shelter Information',
-    time: 'Today, 04:45PM',
-    status: 'Unassigned',
-    statusClass: 'status-unassigned'
-  }
-])
+    const recentCalls = ref([
+      {
+        id: 1,
+        type: 'Emergency Crisis: Domestic Violence',
+        time: 'Today, 09:00AM',
+        status: 'In Progress',
+        statusClass: 'status-in-progress'
+      },
+      {
+        id: 2,
+        type: 'Survivor Follow-Up: Safety Planning',
+        time: 'Today, 10:30AM',
+        status: 'Pending',
+        statusClass: 'status-pending'
+      },
+      {
+        id: 3,
+        type: 'Wellness Check-In: Mental Health Support',
+        time: 'Yesterday, 11:15AM',
+        status: 'Completed',
+        statusClass: 'status-completed'
+      },
+      {
+        id: 4,
+        type: 'Resource Request: Shelter Information',
+        time: 'Today, 04:45PM',
+        status: 'Unassigned',
+        statusClass: 'status-unassigned'
+      }
+    ])
 
-const chartData = ref([
-  { label: 'Mon', height: 60 },
-  { label: 'Tue', height: 90 },
-  { label: 'Wed', height: 120 },
-  { label: 'Thu', height: 150 },
-  { label: 'Fri', height: 100 },
-  { label: 'Sat', height: 70 },
-  { label: 'Sun', height: 40 }
-])
+    const chartData = ref([
+      { label: 'Mon', height: 60 },
+      { label: 'Tue', height: 90 },
+      { label: 'Wed', height: 120 },
+      { label: 'Thu', height: 150 },
+      { label: 'Fri', height: 100 },
+      { label: 'Sat', height: 70 },
+      { label: 'Sun', height: 40 }
+    ])
 
-// Methods
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-}
+    const toggleSidebar = () => {
+      isSidebarCollapsed.value = !isSidebarCollapsed.value
+    }
 
-const expandSidebar = () => {
-  isSidebarCollapsed.value = false
-}
+    const expandSidebar = () => {
+      isSidebarCollapsed.value = false
+    }
 
-const toggleMobileMenu = () => {
-  mobileOpen.value = !mobileOpen.value
-}
+    const toggleMobileMenu = () => {
+      mobileOpen.value = !mobileOpen.value
+    }
 
-const joinQueue = () => {
-  console.log('Joining queue...')
-  alert('Joined the queue successfully!')
-}
+    // const joinQueue = () => {
+    //   console.log('Joining queue...')
+    //   alert('Joined the queue successfully!')
+    // }
 
-const applyTheme = (theme) => {
-  const root = document.documentElement
-  
-  if (theme === 'light') {
-    root.style.setProperty('--background-color', '#f5f5f5')
-    root.style.setProperty('--sidebar-bg', '#ffffff')
-    root.style.setProperty('--content-bg', '#ffffff')
-    root.style.setProperty('--text-color', '#333')
-    root.style.setProperty('--text-secondary', '#666')
-    root.style.setProperty('--border-color', '#ddd')
-    root.style.setProperty('--card-bg', '#ffffff')
-    root.style.setProperty('--logo-bg', '#ffffff')
-    root.style.setProperty('--logo-color', '#333')
-    root.setAttribute('data-theme', 'light')
-  } else {
-    root.style.setProperty('--background-color', '#0a0a0a')
-    root.style.setProperty('--sidebar-bg', '#111')
-    root.style.setProperty('--content-bg', '#222')
-    root.style.setProperty('--text-color', '#fff')
-    root.style.setProperty('--text-secondary', '#aaa')
-    root.style.setProperty('--border-color', '#333')
-    root.style.setProperty('--card-bg', '#222')
-    root.style.setProperty('--logo-bg', '#fff')
-    root.style.setProperty('--logo-color', '#0a0a0a')
-    root.setAttribute('data-theme', 'dark')
-  }
-  
-  // Set common variables
-  root.style.setProperty('--accent-color', '#964B00')
-  root.style.setProperty('--accent-hover', '#b25900')
-  root.style.setProperty('--danger-color', '#ff3b30')
-  root.style.setProperty('--success-color', '#4CAF50')
-  root.style.setProperty('--pending-color', '#FFA500')
-  root.style.setProperty('--unassigned-color', '#808080')
-  root.style.setProperty('--highlight-color', '#ff3b30')
-  root.style.setProperty('--prank-color', '#9C27B0')
-  root.style.setProperty('--counsellor-color', '#2196F3')
-}
+    const applyTheme = (theme) => {
+      const root = document.documentElement
 
-const toggleTheme = () => {
-  currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', currentTheme.value)
-  applyTheme(currentTheme.value)
-}
+      if (theme === 'light') {
+        root.style.setProperty('--background-color', '#f5f5f5')
+        root.style.setProperty('--sidebar-bg', '#ffffff')
+        root.style.setProperty('--content-bg', '#ffffff')
+        root.style.setProperty('--text-color', '#333')
+        root.style.setProperty('--text-secondary', '#666')
+        root.style.setProperty('--border-color', '#ddd')
+        root.style.setProperty('--card-bg', '#ffffff')
+        root.style.setProperty('--logo-bg', '#ffffff')
+        root.style.setProperty('--logo-color', '#333')
+        root.setAttribute('data-theme', 'light')
+      } else {
+        root.style.setProperty('--background-color', '#0a0a0a')
+        root.style.setProperty('--sidebar-bg', '#111')
+        root.style.setProperty('--content-bg', '#222')
+        root.style.setProperty('--text-color', '#fff')
+        root.style.setProperty('--text-secondary', '#aaa')
+        root.style.setProperty('--border-color', '#333')
+        root.style.setProperty('--card-bg', '#222')
+        root.style.setProperty('--logo-bg', '#fff')
+        root.style.setProperty('--logo-color', '#0a0a0a')
+        root.setAttribute('data-theme', 'dark')
+      }
 
-const logout = () => {
-  console.log('Logging out...')
-  alert('Logged out successfully!')
-}
+      root.style.setProperty('--accent-color', '#964B00')
+      root.style.setProperty('--accent-hover', '#b25900')
+      root.style.setProperty('--danger-color', '#ff3b30')
+      root.style.setProperty('--success-color', '#4CAF50')
+      root.style.setProperty('--pending-color', '#FFA500')
+      root.style.setProperty('--unassigned-color', '#808080')
+      root.style.setProperty('--highlight-color', '#ff3b30')
+      root.style.setProperty('--prank-color', '#9C27B0')
+      root.style.setProperty('--counsellor-color', '#2196F3')
+    }
 
-// Lifecycle
-onMounted(() => {
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme')
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-  }
-  
-  // Apply theme immediately
-  applyTheme(currentTheme.value)
+    const toggleTheme = () => {
+      currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
+      localStorage.setItem('theme', currentTheme.value)
+      applyTheme(currentTheme.value)
+    }
 
-  // Handle window resize
-  const handleResize = () => {
-    if (window.innerWidth > 1024) {
-      mobileOpen.value = false
+    const logout = () => {
+      console.log('Logging out...')
+      alert('Logged out successfully!')
+    }
+
+    onMounted(() => {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme) {
+        currentTheme.value = savedTheme
+      }
+      applyTheme(currentTheme.value)
+
+      const handleResize = () => {
+        if (window.innerWidth > 1024) {
+          mobileOpen.value = false
+        }
+      }
+      window.addEventListener('resize', handleResize)
+
+      const handleClickOutside = (event) => {
+        const isMobileOrTablet = window.innerWidth <= 1024
+        const sidebar = document.getElementById('sidebar')
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn')
+
+        if (isMobileOrTablet && sidebar && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
+          mobileOpen.value = false
+        }
+      }
+      document.addEventListener('click', handleClickOutside)
+    })
+
+    return {
+      route,
+      router,
+      isSidebarCollapsed,
+      mobileOpen,
+      currentTheme,
+      userRole,
+      queueAgents,
+      recentCalls,
+      chartData,
+      toggleSidebar,
+      expandSidebar,
+      toggleMobileMenu,
+      joinQueue,
+      toggleTheme,
+      logout,
+
     }
   }
-  window.addEventListener('resize', handleResize)
-
-  // Handle click outside sidebar on mobile/tablet
-  const handleClickOutside = (event) => {
-    const isMobileOrTablet = window.innerWidth <= 1024
-    const sidebar = document.getElementById('sidebar')
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn')
-    
-    if (isMobileOrTablet && sidebar && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
-      mobileOpen.value = false
-    }
-  }
-  document.addEventListener('click', handleClickOutside)
-})
+}
 </script>
+
 
 <style>
 /* Global styles - not scoped */
