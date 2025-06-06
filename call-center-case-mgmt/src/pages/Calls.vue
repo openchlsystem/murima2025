@@ -171,48 +171,12 @@
               </svg>
               <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
             </button>
-          </div>
-        </div>
-
-        <!-- Active Call Banner -->
-        <div v-if="currentCall" class="active-call-banner">
-          <div class="call-banner-content">
-            <div class="call-banner-info">
-              <div class="call-banner-title">Active Call: {{ currentCall.type }}</div>
-              <div class="call-banner-details">
-                <span>Caller: {{ currentCall.callerName }}</span>
-                <span>Duration: {{ callDuration }}</span>
-                <span>Case: #{{ currentCall.caseId }}</span>
-              </div>
-            </div>
-            <div class="call-banner-actions">
-              <button class="call-action-btn answer-btn" v-if="currentCall.status === 'incoming'" @click="answerCall">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Answer
-              </button>
-              <button class="call-action-btn hold-btn" v-if="currentCall.status === 'active'" @click="holdCall">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="6" y="4" width="4" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <rect x="14" y="4" width="4" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Hold
-              </button>
-              <button class="call-action-btn end-btn" @click="endCall">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                End Call
-              </button>
-              <button class="call-action-btn disposition-btn" @click="openDisposition">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Disposition
-              </button>
-            </div>
+            <button class="new-call-btn" @click="initiateNewCall">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              New Call
+            </button>
           </div>
         </div>
         
@@ -432,6 +396,198 @@
       </div>
     </div>
 
+    <!-- Queue Popup Modal -->
+    <div v-if="showQueuePopup" class="modal-overlay" @click="closeQueuePopup">
+      <div class="queue-popup" @click.stop>
+        <div class="queue-popup-header">
+          <h3>Queue Members</h3>
+          <button class="modal-close" @click="closeQueuePopup">×</button>
+        </div>
+        <div class="queue-members">
+          <div v-for="member in queueMembers" :key="member.id" class="queue-member-card" @click="confirmJoinQueue">
+            <div class="member-avatar">
+              <img :src="member.avatar" :alt="member.name" />
+              <div class="status-indicator" :class="member.status"></div>
+            </div>
+            <div class="member-info">
+              <div class="member-name">{{ member.name }}</div>
+              <div class="member-role">{{ member.role }}</div>
+              <div class="member-status">{{ member.statusText }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="queue-popup-footer">
+          <button class="btn-primary" @click="confirmJoinQueue">Join Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringing Call Interface -->
+    <div v-if="showRingingInterface" class="ringing-overlay">
+      <div class="ringing-container">
+        <div class="ringing-header">
+          <div class="call-type-badge" :class="ringingCall.priority">
+            {{ ringingCall.type }}
+          </div>
+        </div>
+        
+        <div class="caller-info">
+          <div class="caller-avatar">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="caller-name">{{ ringingCall.callerName }}</div>
+          <div class="caller-number">{{ ringingCall.number || 'Unknown Number' }}</div>
+          <div class="call-duration">{{ ringingDuration }}</div>
+        </div>
+
+        <div class="ringing-animation">
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring delay-1"></div>
+          <div class="pulse-ring delay-2"></div>
+        </div>
+
+        <div class="call-actions">
+          <button class="call-btn decline" @click="declineCall">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="call-btn answer" @click="answerCall">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Form During Call -->
+    <div v-if="showCaseForm" class="case-form-overlay">
+      <div class="case-form-container">
+        <div class="case-form-header">
+          <div class="form-title">
+            <h3>Case Information</h3>
+            <div class="case-id">Case #{{ currentCaseId }}</div>
+          </div>
+          <div class="call-timer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {{ callDuration }}
+          </div>
+          <button class="minimize-btn" @click="minimizeCaseForm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="case-form-content">
+          <form @submit.prevent="saveCaseForm">
+            <div class="form-section">
+              <div class="section-title">Basic Information</div>
+              <div class="form-group">
+                <label for="case-name">Case Name*</label>
+                <input 
+                  v-model="caseFormData.caseName"
+                  class="form-control" 
+                  id="case-name" 
+                  placeholder="Enter case name" 
+                  required 
+                  type="text"
+                />
+              </div>
+              <div class="form-group">
+                <label for="case-description">Description*</label>
+                <textarea 
+                  v-model="caseFormData.description"
+                  class="form-control" 
+                  id="case-description" 
+                  placeholder="Enter case description" 
+                  required
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="case-priority">Priority*</label>
+                  <select 
+                    v-model="caseFormData.priority"
+                    class="form-control" 
+                    id="case-priority" 
+                    required
+                  >
+                    <option value="">Select priority</option>
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="case-type">Type*</label>
+                  <select 
+                    v-model="caseFormData.type"
+                    class="form-control" 
+                    id="case-type" 
+                    required
+                  >
+                    <option value="">Select type</option>
+                    <option value="Domestic Violence">Domestic Violence</option>
+                    <option value="Sexual Assault">Sexual Assault</option>
+                    <option value="Human Trafficking">Human Trafficking</option>
+                    <option value="Child Abuse">Child Abuse</option>
+                    <option value="Elder Abuse">Elder Abuse</option>
+                    <option value="Stalking">Stalking</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="caller-info">Caller Information</label>
+                <textarea 
+                  v-model="caseFormData.callerInfo"
+                  class="form-control" 
+                  id="caller-info" 
+                  placeholder="Enter caller information and notes"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="incident-details">Incident Details</label>
+                <textarea 
+                  v-model="caseFormData.incidentDetails"
+                  class="form-control" 
+                  id="incident-details" 
+                  placeholder="Enter incident details"
+                  rows="4"
+                ></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" @click="saveDraft">Save Draft</button>
+              <button type="submit" class="btn-primary">Save Case</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minimized Case Form -->
+    <div v-if="caseFormMinimized" class="minimized-case-form" @click="restoreCaseForm">
+      <div class="minimized-content">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Case #{{ currentCaseId }}</span>
+        <span class="timer">{{ callDuration }}</span>
+      </div>
+    </div>
+
     <!-- Call Disposition Modal -->
     <div v-if="showDisposition" class="modal-overlay" @click="closeDisposition">
       <div class="modal-content" @click.stop>
@@ -546,10 +702,32 @@ const currentCall = ref(null)
 const callStartTime = ref(null)
 const callDuration = ref('00:00')
 
+// New modal states
+const showQueuePopup = ref(false)
+const showRingingInterface = ref(false)
+const showCaseForm = ref(false)
+const caseFormMinimized = ref(false)
+
 // Modal states
 const showDisposition = ref(false)
 const showCaseLink = ref(false)
 const selectedCallForLink = ref(null)
+
+// Ringing call state
+const ringingCall = ref(null)
+const ringingDuration = ref('00:00')
+const ringingStartTime = ref(null)
+
+// Case form data
+const currentCaseId = ref('')
+const caseFormData = ref({
+  caseName: '',
+  description: '',
+  priority: '',
+  type: '',
+  callerInfo: '',
+  incidentDetails: ''
+})
 
 // Disposition form
 const disposition = ref({
@@ -558,6 +736,58 @@ const disposition = ref({
   priority: '',
   notes: ''
 })
+
+// Queue members data
+const queueMembers = ref([
+  {
+    id: 1,
+    name: 'Sarah Davis',
+    role: 'Senior Crisis Counselor',
+    status: 'available',
+    statusText: 'Available',
+    avatar: '/placeholder.svg?height=40&width=40'
+  },
+  {
+    id: 2,
+    name: 'Mark Reynolds',
+    role: 'Crisis Counselor',
+    status: 'busy',
+    statusText: 'On Call',
+    avatar: '/placeholder.svg?height=40&width=40'
+  },
+  {
+    id: 3,
+    name: 'Emily Chan',
+    role: 'Mental Health Specialist',
+    status: 'available',
+    statusText: 'Available',
+    avatar: '/placeholder.svg?height=40&width=40'
+  },
+  {
+    id: 4,
+    name: 'David Lee',
+    role: 'Legal Advocate',
+    status: 'away',
+    statusText: 'Break',
+    avatar: '/placeholder.svg?height=40&width=40'
+  },
+  {
+    id: 5,
+    name: 'Sophia Clark',
+    role: 'Housing Specialist',
+    status: 'available',
+    statusText: 'Available',
+    avatar: '/placeholder.svg?height=40&width=40'
+  },
+  {
+    id: 6,
+    name: 'Dr. Lisa Chen',
+    role: 'Supervisor',
+    status: 'busy',
+    statusText: 'In Meeting',
+    avatar: '/placeholder.svg?height=40&width=40'
+  }
+])
 
 // Queue stats
 const queueStats = ref({
@@ -813,20 +1043,47 @@ const toggleQueue = async () => {
       isInQueue.value = false
       console.log('Left queue')
     } else {
-      // Join queue
-      isInQueue.value = true
-      console.log('Joined queue')
-      
-      // Simulate receiving a call after joining queue
-      setTimeout(() => {
-        if (isInQueue.value) {
-          simulateIncomingCall()
-        }
-      }, 3000)
+      // Join queue - show queue popup first
+      showQueuePopup.value = true
     }
   } finally {
     isProcessingQueue.value = false
   }
+}
+
+const closeQueuePopup = () => {
+  showQueuePopup.value = false
+}
+
+const confirmJoinQueue = () => {
+  isInQueue.value = true
+  showQueuePopup.value = false
+  console.log('Joined queue')
+  
+  // Simulate receiving a call after joining queue
+  setTimeout(() => {
+    if (isInQueue.value) {
+      simulateIncomingCall()
+    }
+  }, 3000)
+}
+
+const initiateNewCall = () => {
+  // Show ringing interface for outgoing call
+  const outgoingCall = {
+    id: `CALL-OUT-${Date.now()}`,
+    type: 'Outgoing Call',
+    callerName: 'Outgoing Call',
+    number: '+1 (555) 123-4567',
+    status: 'outgoing',
+    priority: 'medium',
+    caseId: generateCaseId()
+  }
+  
+  ringingCall.value = outgoingCall
+  showRingingInterface.value = true
+  ringingStartTime.value = new Date()
+  startRingingTimer()
 }
 
 const simulateIncomingCall = () => {
@@ -835,29 +1092,58 @@ const simulateIncomingCall = () => {
     id: `CALL-${Date.now()}`,
     type: 'Emergency Crisis: Domestic Violence',
     callerName: 'Anonymous Caller',
-    extension: '2001',
+    number: '+1 (555) 987-6543',
     status: 'incoming',
     priority: 'critical',
     caseId: caseId
   }
   
-  currentCall.value = incomingCall
-  
-  // Auto-answer after 5 seconds if not manually answered
-  setTimeout(() => {
-    if (currentCall.value && currentCall.value.status === 'incoming') {
-      answerCall()
+  ringingCall.value = incomingCall
+  showRingingInterface.value = true
+  ringingStartTime.value = new Date()
+  startRingingTimer()
+}
+
+const startRingingTimer = () => {
+  const timer = setInterval(() => {
+    if (!ringingStartTime.value || !showRingingInterface.value) {
+      clearInterval(timer)
+      return
     }
-  }, 5000)
+    
+    const now = new Date()
+    const diff = now - ringingStartTime.value
+    const minutes = Math.floor(diff / 60000)
+    const seconds = Math.floor((diff % 60000) / 1000)
+    ringingDuration.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }, 1000)
 }
 
 const answerCall = () => {
-  if (currentCall.value) {
-    currentCall.value.status = 'active'
+  if (ringingCall.value) {
+    currentCall.value = {
+      ...ringingCall.value,
+      status: 'active'
+    }
+    
     callStartTime.value = new Date()
+    currentCaseId.value = ringingCall.value.caseId
+    
+    // Initialize case form data
+    caseFormData.value = {
+      caseName: ringingCall.value.type,
+      description: '',
+      priority: ringingCall.value.priority,
+      type: '',
+      callerInfo: `Caller: ${ringingCall.value.callerName}\nNumber: ${ringingCall.value.number || 'Unknown'}`,
+      incidentDetails: ''
+    }
+    
+    showRingingInterface.value = false
+    showCaseForm.value = true
     startCallTimer()
     
-    // Add call to call data with auto-generated case ID
+    // Add call to call data
     const newCallId = currentCall.value.id
     callData.value[newCallId] = {
       id: newCallId,
@@ -879,12 +1165,17 @@ const answerCall = () => {
       priority: currentCall.value.priority
     }
   }
+  
+  ringingCall.value = null
+  ringingStartTime.value = null
+  ringingDuration.value = '00:00'
 }
 
-const holdCall = () => {
-  if (currentCall.value) {
-    currentCall.value.status = 'hold'
-  }
+const declineCall = () => {
+  showRingingInterface.value = false
+  ringingCall.value = null
+  ringingStartTime.value = null
+  ringingDuration.value = '00:00'
 }
 
 const endCall = () => {
@@ -901,6 +1192,8 @@ const endCall = () => {
     currentCall.value = null
     callStartTime.value = null
     callDuration.value = '00:00'
+    showCaseForm.value = false
+    caseFormMinimized.value = false
     
     // Open disposition modal
     showDisposition.value = true
@@ -922,25 +1215,46 @@ const startCallTimer = () => {
   }, 1000)
 }
 
+const minimizeCaseForm = () => {
+  showCaseForm.value = false
+  caseFormMinimized.value = true
+}
+
+const restoreCaseForm = () => {
+  caseFormMinimized.value = false
+  showCaseForm.value = true
+}
+
+const saveCaseForm = () => {
+  console.log('Saving case form:', caseFormData.value)
+  alert('Case saved successfully!')
+}
+
+const saveDraft = () => {
+  console.log('Saving draft:', caseFormData.value)
+  alert('Draft saved successfully!')
+}
+
 const acceptQueueCall = (callId) => {
   const queueCall = queueCalls.value.find(call => call.id === callId)
   if (queueCall && isInQueue.value) {
-    currentCall.value = {
+    ringingCall.value = {
       id: `CALL-${Date.now()}`,
       type: queueCall.type,
       callerName: queueCall.callerName,
-      extension: '2001',
+      number: '+1 (555) 123-4567',
       status: 'incoming',
       priority: queueCall.priority,
       caseId: queueCall.caseId
     }
     
+    showRingingInterface.value = true
+    ringingStartTime.value = new Date()
+    startRingingTimer()
+    
     // Remove from queue
     queueCalls.value = queueCalls.value.filter(call => call.id !== callId)
     queueStats.value.waiting--
-    
-    // Auto-answer
-    setTimeout(() => answerCall(), 1000)
   }
 }
 
@@ -1025,6 +1339,7 @@ const applyTheme = (theme) => {
     root.style.setProperty('--logo-bg', '#ffffff')
     root.style.setProperty('--logo-color', '#333')
     root.style.setProperty('--header-bg', '#f0f0f0')
+    root.style.setProperty('--input-bg', '#ffffff')
     root.setAttribute('data-theme', 'light')
   } else {
     root.style.setProperty('--background-color', '#0a0a0a')
@@ -1037,6 +1352,7 @@ const applyTheme = (theme) => {
     root.style.setProperty('--logo-bg', '#fff')
     root.style.setProperty('--logo-color', '#0a0a0a')
     root.style.setProperty('--header-bg', '#333')
+    root.style.setProperty('--input-bg', '#333')
     root.setAttribute('data-theme', 'dark')
   }
   
@@ -1114,6 +1430,9 @@ onUnmounted(() => {
   // Clean up any timers
   if (callStartTime.value) {
     callStartTime.value = null
+  }
+  if (ringingStartTime.value) {
+    ringingStartTime.value = null
   }
 })
 </script>
@@ -1513,72 +1832,30 @@ body {
   height: 16px;
 }
 
-/* Active Call Banner */
-.active-call-banner {
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 25px;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.call-banner-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.call-banner-info {
-  flex: 1;
-}
-
-.call-banner-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.call-banner-details {
-  display: flex;
-  gap: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.9;
-}
-
-.call-banner-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.call-action-btn {
-  background-color: rgba(255, 255, 255, 0.2);
+.new-call-btn {
+  background-color: var(--success-color);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-size: 12px;
+  border-radius: 30px;
+  padding: 8px 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: all 0.3s ease;
 }
 
-.call-action-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+.new-call-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.call-action-btn.answer-btn {
-  background-color: var(--success-color);
-}
-
-.call-action-btn.end-btn {
-  background-color: var(--danger-color);
+.new-call-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .view-tabs {
@@ -2258,7 +2535,7 @@ body {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  background-color: var(--background-color);
+  background-color: var(--input-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -2316,7 +2593,496 @@ body {
   transform: translateY(-1px);
 }
 
-/* Case Link Modal */
+/* Queue Popup Modal */
+.queue-popup {
+  background-color: var(--content-bg);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.queue-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.queue-popup-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.queue-members {
+  padding: 25px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.queue-member-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: var(--background-color);
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.queue-member-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.member-avatar {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--content-bg);
+}
+
+.status-indicator.available {
+  background-color: var(--success-color);
+}
+
+.status-indicator.busy {
+  background-color: var(--danger-color);
+}
+
+.status-indicator.away {
+  background-color: var(--pending-color);
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 2px;
+}
+
+.member-role {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.member-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.queue-popup-footer {
+  padding: 20px 25px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+}
+
+/* Ringing Interface - iOS Style */
+.ringing-overlay {
+  position: fixed;
+  top: 50%;
+  right: 2%;
+  transform: translateY(-50%);
+  width: 25%;
+  height: auto;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #ff8c00, #000000); /* dark orange to black */
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: fadeIn 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ringing-container {
+  text-align: center;
+  color: white;
+  max-width: 400px;
+  padding: 40px 20px;
+}
+
+.ringing-header {
+  margin-bottom: 30px;
+}
+
+.call-type-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+}
+
+.call-type-badge.critical {
+  background-color: rgba(255, 59, 48, 0.3);
+}
+
+.call-type-badge.high {
+  background-color: rgba(255, 149, 0, 0.3);
+}
+
+.call-type-badge.medium {
+  background-color: rgba(0, 122, 255, 0.3);
+}
+
+.caller-info {
+  margin-bottom: 40px;
+}
+
+.caller-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.caller-avatar svg {
+  width: 60px;
+  height: 60px;
+  stroke: white;
+}
+
+.caller-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.caller-number {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+.call-duration {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.ringing-animation {
+  position: relative;
+  margin-bottom: 50px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: pulsate 2s ease-out infinite;
+}
+
+.pulse-ring.delay-1 {
+  animation-delay: 0.5s;
+}
+
+.pulse-ring.delay-2 {
+  animation-delay: 1s;
+}
+
+@keyframes pulsate {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.call-actions {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+}
+
+.call-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.call-btn.decline {
+  background-color: rgba(255, 59, 48, 0.9);
+}
+
+.call-btn.answer {
+  background-color: rgba(52, 199, 89, 0.9);
+}
+
+.call-btn:hover {
+  transform: scale(1.1);
+}
+
+.call-btn:active {
+  transform: scale(0.95);
+}
+
+.call-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
+}
+
+/* Case Form During Call */
+.case-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.case-form-container {
+  background-color: var(--content-bg);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.case-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--content-bg);
+  border-radius: 20px 20px 0 0;
+}
+
+.form-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-title h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.case-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-color);
+  background-color: rgba(150, 75, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.call-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--success-color);
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.call-timer svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--success-color);
+}
+
+.minimize-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.minimize-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.case-form-content {
+  padding: 25px;
+  overflow-y: auto;
+  max-height: calc(90vh - 100px);
+}
+
+.form-section {
+  margin-bottom: 25px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-control {
+  width: 100%;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  resize: vertical;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(150, 75, 0, 0.1);
+}
+
+/* Minimized Case Form */
+.minimized-case-form {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--content-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 15px;
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.minimized-case-form:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.minimized-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.minimized-content svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--accent-color);
+}
+
+.timer {
+  color: var(--success-color);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+/* Case Link Options */
 .case-link-options {
   display: flex;
   flex-direction: column;
@@ -2336,19 +3102,26 @@ body {
 }
 
 .case-option:hover {
-  border-color: var(--accent-color);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-color);
 }
 
 .option-icon {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
   background-color: var(--accent-color);
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  flex-shrink: 0;
+}
+
+.option-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
 }
 
 .option-content {
@@ -2359,48 +3132,49 @@ body {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-color);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .option-description {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-secondary);
+  line-height: 1.4;
 }
 
+/* Mobile Responsiveness */
 .mobile-menu-btn {
   display: none;
   position: fixed;
   top: 20px;
   left: 20px;
-  z-index: 101;
-  background-color: #ffffff;
-  color: #333333;
-  border: none;
+  width: 40px;
+  height: 40px;
+  background-color: var(--content-bg);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  color: var(--text-color);
+  cursor: pointer;
+  z-index: 102;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .mobile-menu-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Responsive styles */
-@media (max-width: 768px) {
+/* Responsive Design */
+@media (max-width: 1024px) {
   .mobile-menu-btn {
     display: flex;
   }
   
   .sidebar {
-    transform: translateX(-250px);
-    z-index: 1000;
+    transform: translateX(-100%);
+    z-index: 200;
   }
   
   .sidebar.mobile-open {
@@ -2410,31 +3184,124 @@ body {
   .main-content {
     margin-left: 0;
   }
-
-  .status-cards {
-    grid-template-columns: 1fr;
-    gap: 15px;
+  
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 0;
   }
-
-  .call-banner-content {
-    flex-direction: column;
-    gap: 15px;
+  
+  .expand-btn {
+    display: none !important;
   }
-
-  .call-banner-actions {
+  
+  .call-details-panel {
     width: 100%;
-    justify-content: center;
+    border-radius: 0;
   }
-
-  .queue-stats {
+  
+  .case-form-container {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .form-row {
     grid-template-columns: 1fr;
-    gap: 10px;
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
   .status-cards {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .queue-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  
+  .queue-members {
+    grid-template-columns: 1fr;
+  }
+  
+  .calls-table-container {
+    border-radius: 15px;
+  }
+  
+  .calls-table th:first-child,
+  .calls-table th:last-child {
+    border-radius: 0;
+  }
+  
+  .calls-table tr:last-child td:first-child,
+  .calls-table tr:last-child td:last-child {
+    border-radius: 0;
+  }
+  
+  .ringing-container {
+    padding: 20px 15px;
+  }
+  
+  .caller-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .caller-avatar svg {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .call-actions {
+    gap: 40px;
+  }
+  
+  .call-btn {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .call-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .queue-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .view-tabs {
+    font-size: 12px;
+  }
+  
+  .view-tab {
+    padding: 10px 16px;
+  }
+  
+  .minimized-case-form {
+    bottom: 10px;
+    right: 10px;
+    padding: 10px 15px;
+  }
+  
+  .minimized-content {
+    font-size: 12px;
+    gap: 8px;
   }
 }
 </style>
