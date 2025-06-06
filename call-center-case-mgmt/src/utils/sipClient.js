@@ -7,35 +7,63 @@ let incomingSession = null
 let eventListeners = {}
 
 export function initSIP({ uri, password, websocketURL }) {
-    const socket = new JsSIP.WebSocketInterface(websocketURL)
-    const config = {
-        sockets: [socket],
-        uri,
-        password,
-        session_timers: false
-    }
-
-    ua = new JsSIP.UA(config)
-
-    ua.on('registered', () => eventListeners['onRegistered']?.())
-    ua.on('registrationFailed', e => eventListeners['onRegistrationFailed']?.(e))
-    ua.on('disconnected', () => eventListeners['onDisconnected']?.())
-
-    ua.on('newRTCSession', e => {
-        const incoming = e.originator === 'remote'
-        if (incoming) {
-            incomingSession = e.session
-            setupCallEvents(incomingSession)
-            eventListeners['onIncomingCall']?.(incomingSession)
+    try {
+        if (!uri || !password || !websocketURL) {
+            throw new Error('Missing required parameters: uri, password, or websocketURL')
         }
-    })
-}
 
+        const socket = new JsSIP.WebSocketInterface(websocketURL)
+        const config = {
+            sockets: [socket],
+            uri,
+            password,
+            session_timers: false
+        }
+
+        try {
+            ua = new JsSIP.UA(config)
+        } catch (error) {
+            eventListeners['onRegistrationFailed']?.({ reason: 'UA initialization failed', error })
+            throw error
+        }
+
+        ua.on('registered', () => eventListeners['onRegistered']?.())
+        ua.on('registrationFailed', e => eventListeners['onRegistrationFailed']?.(e))
+        ua.on('disconnected', () => eventListeners['onDisconnected']?.())
+
+        ua.on('newRTCSession', e => {
+            try {
+                const incoming = e.originator === 'remote'
+                if (incoming) {
+                    incomingSession = e.session
+                    setupCallEvents(incomingSession)
+                    eventListeners['onIncomingCall']?.(incomingSession)
+                }
+            } catch (error) {
+                eventListeners['onRegistrationFailed']?.({ reason: 'Failed to handle incoming call', error })
+            }
+        })
+    } catch (error) {
+        eventListeners['onRegistrationFailed']?.({ reason: 'SIP initialization failed', error })
+        throw error
+    }
+}
 export function joinQueue() {
-    alert('Joing WS')
-    if (ua) ua.start()
+    try {
+        if (ua) {
+            alert('Joining queue...')
+            ua.start()
+            alert('Successfully joined queue')
+        } else {
+            alert('Error: SIP User Agent not initialized')
+            throw new Error('SIP User Agent not initialized')
+        }
+    } catch (error) {
+        alert(`Failed to join queue: ${error.message}`)
+        eventListeners['onRegistrationFailed']?.({ reason: 'Failed to join queue', error })
+        throw error
+    }
 }
-
 export function leaveQueue() {
     if (ua) ua.stop()
     session = null

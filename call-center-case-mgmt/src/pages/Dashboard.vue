@@ -347,7 +347,18 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-  import { joinQueue } from '@/utils/sipClient.js'
+  import {
+    initSIP,
+    joinQueue,
+    leaveQueue,
+    answerCall,
+    cancelCall,
+    hangupCall,
+    transferCall,
+    on,
+    getSessionStatus
+  } from '@/utils/sipClient.js'
+
 
 export default {
   setup() {
@@ -475,6 +486,18 @@ export default {
     }
 
     onMounted(() => {
+
+      const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'))
+
+      if (sipDetails?.uri && sipDetails?.password && sipDetails?.websocketURL) {
+        console.log('Initializing SIP with:', sipDetails)
+        initSIP(sipDetails) // Setup JsSIP UA
+        // joinQueue()         // Start the SIP UA connection
+      } else {
+        console.warn('SIP config not found in localStorage')
+      }
+
+
       const savedTheme = localStorage.getItem('theme')
       if (savedTheme) {
         currentTheme.value = savedTheme
@@ -516,6 +539,7 @@ export default {
       joinQueue,
       toggleTheme,
       logout,
+      initSIP,
 
     }
   }
