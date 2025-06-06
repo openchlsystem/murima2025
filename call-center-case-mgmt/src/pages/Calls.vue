@@ -2438,23 +2438,3 @@ body {
   }
 }
 </style>
-
-Perfect! I've successfully removed the status filter panel from the right side and created a clean horizontal layout for the status cards that appears right below the view tabs (Timeline, Table View, Call Queue). 
-
-Here are the key changes made:
-
-1. **Removed the right sidebar status container** - No more status panel on the right side
-2. **Added horizontal status cards** - Created a new `.status-cards` section that displays the status items in a responsive grid layout
-3. **Updated main content layout** - The main content now takes up the full width without the right sidebar
-4. **Responsive design** - The status cards adapt to different screen sizes:
-   - Desktop: 4 cards in a row (auto-fit with minimum 200px width)
-   - Tablet: 2 cards per row
-   - Mobile: 1 card per row
-
-The status cards now show:
-- **Unassigned**: 16 items
-- **Pending**: 5 items  
-- **In Progress**: 24 items
-- **Completed**: 8 items
-
-Each card displays the count prominently and includes a progress bar at the bottom. The layout is much cleaner and doesn't interfere with the main content area, giving you a better overall user experience.
