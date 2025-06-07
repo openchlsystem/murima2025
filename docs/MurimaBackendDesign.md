@@ -70,6 +70,7 @@ TENANT_APPS = [
     'documents',       # Document management
     'tasks',          # Task management
     'notifications',   # Notification system
+    'ai_services',     # AI integration management
 ]
 ```
 
@@ -560,6 +561,95 @@ class Notification(BaseModel):
     delivery_status = models.CharField(max_length=20, default='pending')
 ```
 
+### 10. ai_services/ (TENANT)
+**Purpose**: AI integration and configuration management
+
+#### Key Models:
+```python
+class AIProvider(BaseModel):
+    name = models.CharField(max_length=100)  # 'OpenAI', 'Azure', 'Google', 'AWS'
+    provider_type = models.CharField(max_length=50, choices=[
+        ('openai', 'OpenAI'),
+        ('azure_openai', 'Azure OpenAI'),
+        ('google_ai', 'Google AI'),
+        ('aws_bedrock', 'AWS Bedrock'),
+        ('local', 'Local/Self-hosted')
+    ])
+    api_endpoint = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+class AIService(BaseModel):
+    name = models.CharField(max_length=100)
+    service_type = models.CharField(max_length=50, choices=[
+        ('transcription', 'Call Transcription'),
+        ('sentiment', 'Sentiment Analysis'),
+        ('summarization', 'Text Summarization'),
+        ('translation', 'Language Translation'),
+        ('chatbot', 'Chatbot/Virtual Assistant'),
+        ('classification', 'Content Classification')
+    ])
+    provider = models.ForeignKey(AIProvider, on_delete=models.CASCADE)
+    configuration = models.JSONField(default=dict)  # Service-specific config
+    is_enabled = models.BooleanField(default=False)
+    usage_limit = models.IntegerField(null=True, blank=True)  # Monthly limit
+    cost_per_request = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+
+class AIRequest(BaseModel):
+    service = models.ForeignKey(AIService, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    entity_type = models.CharField(max_length=50)  # 'call', 'case', 'interaction'
+    entity_id = models.UUIDField()
+    input_data = models.JSONField()  # Input sent to AI service
+    output_data = models.JSONField(default=dict)  # Response from AI service
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
+    ], default='pending')
+    processing_time = models.DurationField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    error_message = models.TextField(blank=True)
+
+class AIUsageMetrics(BaseModel):
+    service = models.ForeignKey(AIService, on_delete=models.CASCADE)
+    date = models.DateField()
+    total_requests = models.IntegerField(default=0)
+    successful_requests = models.IntegerField(default=0)
+    failed_requests = models.IntegerField(default=0)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    average_processing_time = models.DurationField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['service', 'date']
+
+class CallTranscription(BaseModel):
+    """AI-generated call transcriptions"""
+    call = models.OneToOneField('calls.Call', on_delete=models.CASCADE, related_name='ai_transcription')
+    ai_request = models.ForeignKey(AIRequest, on_delete=models.CASCADE)
+    transcript = models.TextField()
+    confidence_score = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
+    speaker_diarization = models.JSONField(default=dict)  # Who spoke when
+    key_phrases = models.JSONField(default=list)
+    sentiment_analysis = models.JSONField(default=dict)
+    processing_duration = models.DurationField(null=True, blank=True)
+
+class CaseSummary(BaseModel):
+    """AI-generated case summaries"""
+    case = models.ForeignKey('cases.Case', on_delete=models.CASCADE, related_name='ai_summaries')
+    ai_request = models.ForeignKey(AIRequest, on_delete=models.CASCADE)
+    summary_type = models.CharField(max_length=50, choices=[
+        ('brief', 'Brief Summary'),
+        ('detailed', 'Detailed Summary'),
+        ('timeline', 'Timeline Summary'),
+        ('action_items', 'Action Items')
+    ])
+    summary_content = models.TextField()
+    key_points = models.JSONField(default=list)
+    recommended_actions = models.JSONField(default=list)
+    confidence_score = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)
+```
+
 ## API Structure
 
 ### URL Pattern
@@ -574,6 +664,7 @@ class Notification(BaseModel):
 /api/v1/documents/               # Document management
 /api/v1/tasks/                   # Task management
 /api/v1/notifications/           # Notifications
+/api/v1/ai-services/             # AI integration management
 
 /api/platform/tenants/           # Platform admin - tenant management
 /api/platform/users/             # Platform admin - user management
@@ -590,8 +681,8 @@ class Notification(BaseModel):
 
 ### Phase 2 (Enhanced Features)
 **Focus**: Advanced functionality and optimization
+- 🤖 ai_services/ (AI integration management)
 - 📊 analytics/ (advanced reporting)
-- 🤖 ai_services/ (AI integration)
 - 📚 knowledge/ (knowledge base)
 - 📋 surveys/ (feedback collection)
 
@@ -600,7 +691,7 @@ class Notification(BaseModel):
 - 📅 scheduling/ (appointment management)
 - 🔌 integrations/ (third-party integrations)
 - 🔍 search/ (Elasticsearch integration)
-- 🏥 Sector-specific modules
+- 🏥 Sector-specific modules (expanded helpline features)
 
 ## Key Design Decisions
 
