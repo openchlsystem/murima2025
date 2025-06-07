@@ -1,82 +1,20 @@
 <template>
-  <div class="dashboard-layout">
-    <button class="mobile-menu-btn" id="mobile-menu-btn" @click="toggleMobileMenu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+<div>
+  <!-- SidePanel Component -->
+  <SidePanel 
+    :userRole="userRole"
+    :isInQueue="isInQueue"
+    :isProcessingQueue="isProcessingQueue"
+    :currentCall="currentCall"
+    @toggle-queue="handleQueueToggle"
+    @logout="handleLogout"
+    @sidebar-toggle="handleSidebarToggle"
+  />
 
-    <div class="sidebar" id="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': mobileOpen }">
-      <div class="sidebar-content">
-        <div class="logo-container">
-          <div class="logo">
-            <img src="/Openchs logo-1.png" alt="OpenCHS Logo">
-          </div>
-        </div>
-        
-        <router-link to="/dashboard" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Dashboard</div>
-        </router-link>
-        
-        <router-link to="/calls" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Calls</div>
-        </router-link>
-        
-        <router-link to="/cases" class="nav-item active">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Cases</div>
-        </router-link>
-        
-        <router-link to="/chats" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Chats</div>
-        </router-link>
-        
-        <router-link to="/qa-statistics" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">QA Statistics</div>
-        </router-link>
-        
-        <router-link to="/wallboard" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Wallboard</div>
-        </router-link>
-        
-        <router-link to="/settings" class="nav-item">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Settings</div>
-        </router-link>
-        
-        <div class="user-profile">
-          <router-link to="/edit-profile" class="user-avatar">
-            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"/>
-              <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z"/>
-            </svg>
-          </router-link>
-        </div>
-        
-        <div class="status">
-          <div class="status-dot"></div>
-          <span>Status: Online</span>
-        </div>
-        
-        <div class="button-container">
-          <button class="join-queue-btn">Join Queue</button>
-          <button class="logout-btn" @click="logout">Logout</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="main-content" :style="{ marginLeft: mainContentMarginLeft }">
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="cases-container">
       <div class="header">
-        <button class="sidebar-toggle" @click="toggleSidebar">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
         <div class="header-left">
           <h1>Cases</h1>
           <router-link to="/case-creation" class="add-case-btn">
@@ -87,10 +25,10 @@
           </router-link>
         </div>
         <button class="theme-toggle" @click="toggleTheme">
-          <svg fill="none" height="24" id="moon-icon" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg" v-show="currentTheme === 'dark'">
+          <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <svg fill="none" height="24" id="sun-icon" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg" v-show="currentTheme === 'light'">
+          <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -101,7 +39,7 @@
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
+          <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
         </button>
       </div>
 
@@ -126,7 +64,7 @@
         </button>
       </div>
 
-      <div class="cases-container">
+      <div class="cases-container-inner">
         <div class="cases-list">
           <h2 class="cases-title">Cases</h2>
           
@@ -138,8 +76,8 @@
           >
             <div class="case-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="case-details">
@@ -147,10 +85,10 @@
               <div class="case-meta">
                 <div class="case-priority">
                   <div :class="['priority-dot', caseItem.priority.toLowerCase()]"></div>
-                  {{ caseItem.priority }} priority
+                  <span>{{ caseItem.priority }} priority</span>
                 </div>
                 <div class="case-assigned">
-                  {{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}
+                  <span>{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
                 </div>
               </div>
             </div>
@@ -159,19 +97,19 @@
         
         <div class="case-detail" v-if="selectedCaseDetails">
           <div class="case-detail-header">
-            <div class="case-detail-title">{{ selectedCaseDetails.caseTitle }}</div>
+            <div class="case-detail-title">{{ selectedCaseDetails.caseTitle || selectedCaseDetails.title }}</div>
             <div class="case-detail-id">Case ID: {{ selectedCaseDetails.id }}</div>
           </div>
           
           <div class="case-detail-content">
             <div class="detail-item">
               <div class="detail-label">Case Filer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseFiler }}</div>
+              <div class="detail-value">{{ selectedCaseDetails.caseFiler || 'N/A' }}</div>
             </div>
             
             <div class="detail-item">
               <div class="detail-label">Caseer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseer }}</div>
+              <div class="detail-value">{{ selectedCaseDetails.caseer || 'N/A' }}</div>
             </div>
             
             <div class="detail-item">
@@ -181,54 +119,54 @@
             
             <div class="detail-item">
               <div class="detail-label">Jurisdiction</div>
-              <div class="detail-value">{{ selectedCaseDetails.jurisdiction }}</div>
+              <div class="detail-value">{{ selectedCaseDetails.jurisdiction || 'N/A' }}</div>
             </div>
             
             <div class="detail-item">
               <div class="detail-label">Disposition</div>
-              <div :class="['detail-value', { abusive: selectedCaseDetails.disposition === 'Abusive Call' }]">{{ selectedCaseDetails.disposition }}</div>
+              <div :class="['detail-value', { abusive: selectedCaseDetails.disposition === 'Abusive Call' }]">
+                {{ selectedCaseDetails.disposition || 'N/A' }}
+              </div>
             </div>
             
             <div class="detail-item">
               <div class="detail-label">Date</div>
-              <div class="detail-value">{{ selectedCaseDetails.date }}</div>
+              <div class="detail-value">{{ selectedCaseDetails.date || 'N/A' }}</div>
             </div>
             
             <div class="detail-item">
               <div class="detail-label">Escalated to</div>
-              <div class="detail-value">{{ selectedCaseDetails.escalatedTo }}</div>
+              <div class="detail-value">{{ selectedCaseDetails.escalatedTo || 'N/A' }}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import SidePanel from '@/components/SidePanel.vue'
 
 const router = useRouter()
+
+// Reactive state
 const searchQuery = ref('')
 const activeFilter = ref('all')
-const selectedCaseId = ref(null)
+const selectedCaseId = ref('123456') // Default to first case
 const currentTheme = ref(localStorage.getItem('theme') || 'dark')
 
-const isSidebarCollapsed = ref(false)
-const mobileOpen = ref(false)
+// SidePanel related state
+const userRole = ref('super-admin')
+const isInQueue = ref(false)
+const isProcessingQueue = ref(false)
+const currentCall = ref(null)
 
-const mainContentMarginLeft = computed(() => {
-  if (window.innerWidth <= 768) {
-    return '0px'
-  } else if (isSidebarCollapsed.value) {
-    return '80px'
-  } else {
-    return '250px'
-  }
-})
-
-const filters = [
+// Filter options
+const filters = ref([
   { id: 'all', name: 'All' },
   { id: 'open', name: 'Open', status: 'open' },
   { id: 'pending', name: 'Pending', status: 'pending' },
@@ -236,8 +174,9 @@ const filters = [
   { id: 'closed', name: 'Closed', status: 'closed' },
   { id: 'today', name: 'Today' },
   { id: 'priority', name: 'Priority' }
-]
+])
 
+// Sample cases data
 const cases = ref([
   {
     id: '123456',
@@ -256,55 +195,108 @@ const cases = ref([
     id: '789012',
     title: 'Case #789012 - Assault',
     priority: 'Medium',
-    assignedTo: 'Sarah Mitchell'
+    assignedTo: 'Sarah Mitchell',
+    caseTitle: 'Assault Case',
+    caseFiler: 'Jane Doe',
+    caseer: 'John Smith',
+    jurisdiction: 'District Court',
+    disposition: 'Under Investigation',
+    date: '14th Aug 2025',
+    escalatedTo: 'Senior Detective'
   },
   {
     id: '345678-1',
     title: 'Case #345678-In-transit medical support',
     priority: 'Low',
-    assignedTo: null
+    assignedTo: null,
+    caseTitle: 'Medical Support',
+    caseFiler: 'Medical Team',
+    caseer: 'Emergency Services',
+    jurisdiction: 'Emergency Response',
+    disposition: 'Resolved',
+    date: '13th Aug 2025',
+    escalatedTo: 'Hospital Administration'
   },
   {
     id: '901234-1',
     title: 'Case #901234-battery coordination',
     priority: 'High',
-    assignedTo: 'Michael Lee'
+    assignedTo: 'Michael Lee',
+    caseTitle: 'Battery Case',
+    caseFiler: 'Police Department',
+    caseer: 'Detective Brown',
+    jurisdiction: 'Criminal Court',
+    disposition: 'Active Investigation',
+    date: '16th Aug 2025',
+    escalatedTo: 'District Attorney'
   },
   {
     id: '345678-2',
     title: 'Case #345678-In-transit medical support',
     priority: 'High',
-    assignedTo: 'Michael Lee'
+    assignedTo: 'Michael Lee',
+    caseTitle: 'Medical Emergency',
+    caseFiler: 'Paramedic Team',
+    caseer: 'Emergency Coordinator',
+    jurisdiction: 'Emergency Response',
+    disposition: 'In Progress',
+    date: '16th Aug 2025',
+    escalatedTo: 'Medical Director'
   },
   {
     id: '901234-2',
     title: 'Case #901234-Transport coordination',
     priority: 'High',
-    assignedTo: 'Michael Lee'
+    assignedTo: 'Michael Lee',
+    caseTitle: 'Transport Coordination',
+    caseFiler: 'Transport Authority',
+    caseer: 'Logistics Team',
+    jurisdiction: 'Transport Commission',
+    disposition: 'Pending Review',
+    date: '12th Aug 2025',
+    escalatedTo: 'Operations Manager'
   },
   {
     id: '901234-3',
     title: 'Case #901234-Transport coordination',
     priority: 'High',
-    assignedTo: 'Michael Lee'
+    assignedTo: 'Michael Lee',
+    caseTitle: 'Transport Emergency',
+    caseFiler: 'Emergency Services',
+    caseer: 'Transport Coordinator',
+    jurisdiction: 'Emergency Response',
+    disposition: 'Active',
+    date: '16th Aug 2025',
+    escalatedTo: 'Emergency Director'
   }
 ])
 
+// Computed properties
 const filteredCases = computed(() => {
   let filtered = cases.value
 
+  // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(c => 
       c.title.toLowerCase().includes(query) ||
-      (c.assignedTo && c.assignedTo.toLowerCase().includes(query))
+      (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
+      (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
     )
   }
 
+  // Status filter
   if (activeFilter.value !== 'all') {
-    const filterStatus = filters.find(f => f.id === activeFilter.value)?.status
+    const filterStatus = filters.value.find(f => f.id === activeFilter.value)?.status
     if (filterStatus) {
       filtered = filtered.filter(c => c.status === filterStatus)
+    } else if (activeFilter.value === 'assigned') {
+      filtered = filtered.filter(c => c.assignedTo)
+    } else if (activeFilter.value === 'priority') {
+      filtered = filtered.filter(c => c.priority === 'High')
+    } else if (activeFilter.value === 'today') {
+      // Filter for today's cases (simplified for demo)
+      filtered = filtered.filter(c => c.date && c.date.includes('16th Aug 2025'))
     }
   }
 
@@ -315,20 +307,59 @@ const selectedCaseDetails = computed(() => {
   return cases.value.find(caseItem => caseItem.id === selectedCaseId.value)
 })
 
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
+// SidePanel event handlers
+const handleQueueToggle = () => {
+  isInQueue.value = !isInQueue.value
+  console.log('Queue toggled:', isInQueue.value)
 }
 
-const toggleMobileMenu = () => {
-  mobileOpen.value = !mobileOpen.value
+const handleLogout = () => {
+  router.push('/')
 }
 
+const handleSidebarToggle = (collapsed) => {
+  console.log('Sidebar toggled:', collapsed)
+}
+
+// Methods
 const applyTheme = (theme) => {
+  const root = document.documentElement
+
   if (theme === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light')
+    root.style.setProperty('--background-color', '#f5f5f5')
+    root.style.setProperty('--sidebar-bg', '#ffffff')
+    root.style.setProperty('--content-bg', '#ffffff')
+    root.style.setProperty('--text-color', '#333')
+    root.style.setProperty('--text-secondary', '#666')
+    root.style.setProperty('--border-color', '#ddd')
+    root.style.setProperty('--card-bg', '#ffffff')
+    root.style.setProperty('--header-bg', '#f0f0f0')
+    root.style.setProperty('--input-bg', '#f0f0f0')
+    root.setAttribute('data-theme', 'light')
   } else {
-    document.documentElement.setAttribute('data-theme', 'dark')
+    root.style.setProperty('--background-color', '#0a0a0a')
+    root.style.setProperty('--sidebar-bg', '#111')
+    root.style.setProperty('--content-bg', '#222')
+    root.style.setProperty('--text-color', '#fff')
+    root.style.setProperty('--text-secondary', '#aaa')
+    root.style.setProperty('--border-color', '#333')
+    root.style.setProperty('--card-bg', '#222')
+    root.style.setProperty('--header-bg', '#333')
+    root.style.setProperty('--input-bg', '#1a1a1a')
+    root.setAttribute('data-theme', 'dark')
   }
+
+  // Set common variables
+  root.style.setProperty('--accent-color', '#964B00')
+  root.style.setProperty('--accent-hover', '#b25900')
+  root.style.setProperty('--danger-color', '#ff3b30')
+  root.style.setProperty('--success-color', '#4CAF50')
+  root.style.setProperty('--pending-color', '#FFA500')
+  root.style.setProperty('--unassigned-color', '#808080')
+  root.style.setProperty('--highlight-color', '#ff3b30')
+  root.style.setProperty('--high-priority', '#ff3b30')
+  root.style.setProperty('--medium-priority', '#FFA500')
+  root.style.setProperty('--low-priority', '#4CAF50')
 }
 
 const toggleTheme = () => {
@@ -350,80 +381,21 @@ const handleSearch = () => {
   // The filtering is handled by the computed property 'filteredCases'
 }
 
-const logout = () => {
-  router.push('/')
-}
-
+// Lifecycle hooks
 onMounted(() => {
-  applyTheme(currentTheme.value)
-  if (cases.value.length > 0) {
-    selectedCaseId.value = cases.value[0].id
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme) {
+    currentTheme.value = savedTheme
   }
 
-  // Add click outside listener for mobile menu
-  document.addEventListener('click', (event) => {
-    const sidebar = document.getElementById('sidebar')
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn')
-    if (window.innerWidth <= 768 && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
-      mobileOpen.value = false
-    }
-  })
-
-  // Add window resize listener
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      mobileOpen.value = false
-    }
-  })
+  // Apply theme immediately
+  applyTheme(currentTheme.value)
 })
 </script>
 
-<style scoped>
-:root {
-  /* Dark theme variables */
-  --background-color: #0a0a0a;
-  --sidebar-bg: #111;
-  --content-bg: #222;
-  --text-color: #fff;
-  --text-secondary: #aaa;
-  --border-color: #333;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-  --danger-color: #ff3b30;
-  --success-color: #4CAF50;
-  --pending-color: #FFA500;
-  --unassigned-color: #808080;
-  --highlight-color: #ff3b30;
-  --header-bg: #333;
-  --input-bg: #1a1a1a;
-  --high-priority: #ff3b30;
-  --medium-priority: #FFA500;
-  --low-priority: #4CAF50;
-  --card-bg: var(--content-bg);
-}
-
-[data-theme="light"] {
-  --background-color: #f5f5f5;
-  --sidebar-bg: #ffffff;
-  --content-bg: #ffffff;
-  --text-color: #333;
-  --text-secondary: #666;
-  --border-color: #ddd;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-  --danger-color: #ff3b30;
-  --success-color: #4CAF50;
-  --pending-color: #FFA500;
-  --unassigned-color: #808080;
-  --highlight-color: #ff3b30;
-  --header-bg: #f0f0f0;
-  --input-bg: #f0f0f0;
-  --high-priority: #ff3b30;
-  --medium-priority: #FFA500;
-  --low-priority: #4CAF50;
-  --card-bg: var(--content-bg);
-}
-
+<style>
+/* Global styles - not scoped */
 * {
   margin: 0;
   padding: 0;
@@ -432,210 +404,49 @@ onMounted(() => {
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
-  overflow-x: hidden;
-}
-
-h1, h2, h3, h4, h5, h6, strong {
-    font-weight: 700;
-}
-
-.nav-text, .card-title, .section-title, th {
-    font-weight: 600;
-}
-
-.dashboard-layout {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
   background-color: var(--background-color);
   color: var(--text-color);
+  display: flex;
+  min-height: 100vh;
   transition: background-color 0.3s, color 0.3s;
-}
-
-.sidebar {
-  width: 250px;
-  flex-shrink: 0;
-  position: fixed;
-  height: 100vh;
-  background-color: var(--sidebar-bg);
-  color: var(--text-color);
-  transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s;
-  overflow-x: hidden;
-  border-radius: 0 30px 30px 0;
-  z-index: 100;
-}
-
-.sidebar.collapsed {
-  width: 80px;
-  transform: translateX(0);
-}
-
-.sidebar-content {
-  padding: 30px 0;
-  width: 250px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.sidebar.collapsed .sidebar-content {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.logo {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background-color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
-}
-
-.logo img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  cursor: pointer;
-  margin-bottom: 5px;
-  border-radius: 30px 0 0 30px;
-  text-decoration: none;
-  color: var(--text-color);
-  transition: background-color 0.3s;
-}
-
-.nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--text-color);
-  margin-right: 15px;
-}
-
-.nav-text {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.user-profile {
-  display: flex;
-  justify-content: center;
-  margin: 30px 0 20px;
-}
-
-.user-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.user-avatar svg {
-  width: 30px;
-  height: 30px;
-  fill: var(--background-color);
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  margin: 0 20px 15px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--success-color);
-  margin-right: 5px;
-}
-
-.button-container {
-  padding: 0 20px;
-}
-
-.join-queue-btn {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 10px;
-  width: 100%;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 10px;
-  transition: background-color 0.3s;
-}
-
-.join-queue-btn:hover {
-    background-color: var(--accent-hover);
-}
-
-.logout-btn {
-    background-color: #800000; /* Maroon background */
-    color: white;
-    border: 1px solid #800000; /* Maroon border */
-    border-radius: 30px;
-    padding: 10px;
-    width: 100%;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s; /* Add border-color transition */
-}
-
-.logout-btn:hover {
-    background-color: var(--danger-color); /* Red background on hover */
-    border-color: var(--danger-color); /* Red border on hover */
 }
 
 .main-content {
   flex: 1;
-  padding: 20px;
-  min-height: 100vh;
+  margin-left: var(--sidebar-width, 250px);
+  height: 100vh;
   background-color: var(--background-color);
   transition: margin-left 0.3s ease, background-color 0.3s;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.sidebar.collapsed ~ .main-content {
-  margin-left: 80px;
-  width: auto;
+.cases-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-.mobile-menu-btn {
-  display: none;
+.cases-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cases-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cases-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.cases-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .header {
@@ -643,6 +454,7 @@ h1, h2, h3, h4, h5, h6, strong {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -673,7 +485,7 @@ h1, h2, h3, h4, h5, h6, strong {
 }
 
 .add-case-btn:hover {
-    background-color: var(--accent-hover);
+  background-color: var(--accent-hover);
 }
 
 .theme-toggle {
@@ -691,7 +503,7 @@ h1, h2, h3, h4, h5, h6, strong {
 }
 
 .theme-toggle:hover {
-    background-color: var(--border-color);
+  background-color: var(--border-color);
 }
 
 .theme-toggle svg {
@@ -701,13 +513,14 @@ h1, h2, h3, h4, h5, h6, strong {
 
 .search-container {
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .search-input {
   width: 100%;
   padding: 12px 20px;
   border-radius: 30px;
-  border: 1px solid var(--border-color);
+  border: none;
   background-color: var(--content-bg);
   color: var(--text-color);
   font-size: 14px;
@@ -720,24 +533,23 @@ h1, h2, h3, h4, h5, h6, strong {
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 0.1rem rgba(150, 75, 0, 0.25);
+  box-shadow: 0 0 0 2px var(--accent-color);
 }
 
 .filter-tabs {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
   overflow-x: auto;
   padding-bottom: 5px;
+  flex-shrink: 0;
 }
 
 .filter-tab {
   background-color: var(--content-bg);
   color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
+  border: none;
+  border-radius: 30px;
   padding: 8px 15px;
   font-size: 14px;
   cursor: pointer;
@@ -749,20 +561,42 @@ h1, h2, h3, h4, h5, h6, strong {
 .filter-tab.active {
   background-color: var(--accent-color);
   color: white;
-  border-color: var(--accent-color);
 }
 
 .filter-tab:hover:not(.active) {
-    background-color: rgba(150, 75, 0, 0.1);
+  background-color: rgba(150, 75, 0, 0.1);
 }
 
-.cases-container {
+.cases-container-inner {
   display: flex;
   gap: 20px;
+  flex: 1;
+  overflow: hidden;
 }
 
 .cases-list {
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.cases-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cases-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cases-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.cases-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .cases-title {
@@ -773,14 +607,15 @@ h1, h2, h3, h4, h5, h6, strong {
 
 .case-item {
   background-color: var(--content-bg);
-  border-radius: 20px;
+  border-radius: 15px;
   padding: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 15px;
+  min-height: 80px;
 }
 
 .case-item:hover {
@@ -800,6 +635,8 @@ h1, h2, h3, h4, h5, h6, strong {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .case-icon svg {
@@ -810,32 +647,53 @@ h1, h2, h3, h4, h5, h6, strong {
 
 .case-details {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .case-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 5px;
+  line-height: 1.3;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .case-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
   color: var(--text-secondary);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .case-priority {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+}
+
+.case-priority span {
+  white-space: nowrap;
+}
+
+.case-assigned {
+  display: flex;
+  align-items: center;
+}
+
+.case-assigned span {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .priority-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .priority-dot.high {
@@ -850,10 +708,6 @@ h1, h2, h3, h4, h5, h6, strong {
   background-color: var(--low-priority);
 }
 
-.case-assigned {
-  /* Styles for assigned info */
-}
-
 .case-detail {
   background-color: var(--content-bg);
   border-radius: 15px;
@@ -861,6 +715,26 @@ h1, h2, h3, h4, h5, h6, strong {
   width: 400px;
   flex-shrink: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.case-detail::-webkit-scrollbar {
+  width: 8px;
+}
+
+.case-detail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.case-detail::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.case-detail::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .case-detail-header {
@@ -900,16 +774,28 @@ h1, h2, h3, h4, h5, h6, strong {
   font-weight: 500;
 }
 
-.detail-value.high, .detail-value.medium, .detail-value.low {
-    font-weight: 600;
+.detail-value.high {
+  color: var(--high-priority);
+  font-weight: 600;
+}
+
+.detail-value.medium {
+  color: var(--medium-priority);
+  font-weight: 600;
+}
+
+.detail-value.low {
+  color: var(--low-priority);
+  font-weight: 600;
 }
 
 .detail-value.abusive {
   color: var(--high-priority);
 }
 
+/* Responsive styles */
 @media (max-width: 1024px) {
-  .cases-container {
+  .cases-container-inner {
     flex-direction: column;
   }
   
@@ -919,206 +805,32 @@ h1, h2, h3, h4, h5, h6, strong {
 }
 
 @media (max-width: 768px) {
-  .dashboard-layout {
-    flex-direction: column;
-  }
-
-  .mobile-menu-btn {
-    display: block;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    height: 100vh;
-    z-index: 1000;
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar.collapsed {
-    transform: translateX(0);
-    left: -250px;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(250px);
-    left: 0;
-  }
-
   .main-content {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
+    margin-left: 0;
+    padding: 15px;
   }
-
+  
   .header {
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .header-left {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .header h1 {
     font-size: 20px;
   }
 
-  .sidebar-toggle {
-    display: flex;
-  }
-}
-
-@media (min-width: 769px) {
-  .mobile-menu-btn {
-    display: none;
+  .cases-container {
+    padding: 10px;
   }
 
-  .sidebar {
-    width: 250px;
-    transition: width 0.3s ease;
-    transform: translateX(0);
-    left: 0;
+  .case-meta {
+    font-size: 11px;
   }
-
-  .sidebar.collapsed {
-    width: 80px;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-    left: 0;
-  }
-
-  .main-content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-  }
-
-  .sidebar-toggle {
-    display: flex;
-  }
-}
-
-.sidebar-toggle {
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 30px;
-  padding: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s;
-}
-
-.sidebar-toggle:hover {
-  background-color: var(--background-color);
-}
-
-.sidebar-toggle svg {
-  width: 20px;
-  height: 20px;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-}
-
-.status-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.status-card {
-  background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.status-card h2 {
-  margin-top: 0;
-  font-size: 1.1em;
-  color: #555;
-}
-
-.status-card p {
-  font-size: 1.8em;
-  font-weight: bold;
-  margin-bottom: 0;
-  color: #333;
-}
-
-.cases-list h2 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.5em;
-}
-
-.cases-list table {
-  width: 100%;
-  border-collapse: collapse;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.cases-list th,
-.cases-list td {
-  padding: 12px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-
-.cases-list th {
-  background-color: #f2f2f2;
-  font-weight: bold;
-}
-
-.cases-list tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.cases-list tr:hover {
-  background-color: #e9e9e9;
-}
-
-.btn-primary,
-.btn-secondary,
-.btn-danger {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-
-.btn-primary {
-  background-color: #007bff;
-  color: white;
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-  margin-right: 5px;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #0056b3;
-}
-
-.btn-secondary:hover {
-  background-color: #545b62;
-}
-
-.btn-danger:hover {
-  background-color: #c82333;
 }
 </style>
