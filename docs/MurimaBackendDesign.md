@@ -27,6 +27,7 @@ murima2025/
 │       ├── notifications/         # Notification system
 │       ├── reference_data/        # Lookup data
 │       ├── tasks/                 # Task management
+│       ├── ai_service/            # AI service configurations
 │       └── workflows/             # Workflow automation
 ├── config/                        # Django settings
 ├── deployment/                    # Docker, K8s configs
