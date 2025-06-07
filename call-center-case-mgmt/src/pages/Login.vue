@@ -225,9 +225,9 @@
 
       // sipDetails 
       const sipConnectionDetails = ref({
-        uri: 'sip:1001@18.179.24.235',
-        password: 'your_secure_password',
-        websocketURL: 'wss://18.179.24.235:8089/ws'
+        uri: 'sip:6001@54.238.49.155',
+        password: 'securepassword',
+        websocketURL: 'ws://54.238.49.155:8088/ws'
       })
 
       
@@ -326,6 +326,7 @@
           // Store ip iformation
           // localStorage.setItem('sipConnectionDetails', JSON.stringify(sipConnectionDetails.value));
           localStorage.setItem('sipConnectionDetails', JSON.stringify({
+            desc: 'SIP Connection Details',
             uri: sipConnectionDetails.value.uri,
             password: sipConnectionDetails.value.password,
             websocketURL: sipConnectionDetails.value.websocketURL
