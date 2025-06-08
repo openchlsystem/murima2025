@@ -37,7 +37,14 @@ CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_TASK_ALWAYS_EAGER = True  # Execute tasks synchronously in development
 
 # Email backend for development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.bitz-itc.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'support@bitz-itc.com'
+EMAIL_HOST_PASSWORD = 'SaccoCRM2024'
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = 'support@bitz-itc.com'
 
 # Development logging
 LOGGING = {
