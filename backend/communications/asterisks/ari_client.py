@@ -10,9 +10,9 @@ from urllib.parse import quote
 logger = logging.getLogger(__name__)
 
 class ARIClient:
-    def __init__(self, host='18.179.24.235', port=8089, username='djangoari',
-                 password='2001', app_name='django_app'):
-        self.ws_url = f"ws://{host}:{port}/ari/events?api_key={username}:{password}&app={app_name}"
+    def __init__(self, host='54.238.49.155', port=8088, username='asterisk',
+                 password='asteriskpass', app_name='asterisk'):
+        self.ws_url = f"wss://{host}:{port}/ari/events?api_key={username}:{password}&app={app_name}"
         self.base_url = f"http://{host}:{port}/ari"
         self.auth = (username, password)
         self.event_queue = Queue()
@@ -22,7 +22,6 @@ class ARIClient:
         self._initialize_logging()
         self.connected = False
         self.reconnect_delay = 5
-
     def _initialize_logging(self):
         """Configure logging settings"""
         logging.basicConfig(
