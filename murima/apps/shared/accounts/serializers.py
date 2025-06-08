@@ -1,11 +1,8 @@
 """
 Accounts App Serializers
 
-Provides API serializers for user management, authentication,
-tenant membership, and OTP-based verification workflows.
-
-Follows core app patterns and integrates with BaseModelSerializer
-for consistent audit trails and user tracking.
+Provides API serializers for simplified authentication with password OR OTP login,
+user management, tenant membership, and related functionality.
 """
 
 import re
@@ -26,28 +23,30 @@ from .models import (
 )
 
 
-# User Management Serializers
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
-    Serializer for user registration with email and password.
+    Serializer for user registration with optional password.
+    Users can register with password OR use OTP-only authentication.
     """
     
     password = serializers.CharField(
+        required=False,
         write_only=True,
         style={'input_type': 'password'},
-        help_text=_('Password must meet security requirements.')
+        help_text=_('Password for login (optional - you can use OTP-only authentication).')
     )
     password_confirm = serializers.CharField(
+        required=False,
         write_only=True,
         style={'input_type': 'password'},
-        help_text=_('Confirm your password.')
+        help_text=_('Confirm your password (required if password is provided).')
     )
     
     class Meta:
         model = User
         fields = [
             'email', 'password', 'password_confirm', 'full_name',
-            'first_name', 'last_name', 'phone', 'preferred_2fa_method'
+            'first_name', 'last_name', 'phone'
         ]
         extra_kwargs = {
             'email': {'required': True},
@@ -73,46 +72,58 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def validate_password(self, value):
         """Validate password meets Django's password requirements."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise ValidationError(list(e.messages))
+        if value:  # Only validate if password is provided
+            try:
+                validate_password(value)
+            except DjangoValidationError as e:
+                raise ValidationError(list(e.messages))
         return value
     
     def validate(self, data):
-        """Cross-field validation."""
-        if data['password'] != data['password_confirm']:
-            raise ValidationError({
-                'password_confirm': _('Password confirmation does not match.')
-            })
+        """Cross-field validation for optional password."""
+        password = data.get('password')
+        password_confirm = data.get('password_confirm')
         
-        # If phone is provided, ensure preferred_2fa_method is valid
-        if data.get('phone') and data.get('preferred_2fa_method') in ['sms', 'whatsapp']:
-            # Phone is required for SMS/WhatsApp 2FA
-            pass
-        elif not data.get('phone') and data.get('preferred_2fa_method') in ['sms', 'whatsapp']:
-            raise ValidationError({
-                'phone': _('Phone number is required for SMS or WhatsApp 2FA.')
-            })
+        # If either password field is provided, both must be provided and match
+        if password or password_confirm:
+            if not password:
+                raise ValidationError({
+                    'password': _('Password is required when password_confirm is provided.')
+                })
+            if not password_confirm:
+                raise ValidationError({
+                    'password_confirm': _('Password confirmation is required when password is provided.')
+                })
+            if password != password_confirm:
+                raise ValidationError({
+                    'password_confirm': _('Password confirmation does not match.')
+                })
         
         return data
     
     def create(self, validated_data):
-        """Create a new user with hashed password."""
-        validated_data.pop('password_confirm')
-        password = validated_data.pop('password')
+        """Create a new user with optional password."""
+        # Remove password fields from validated_data
+        password = validated_data.pop('password', None)
+        validated_data.pop('password_confirm', None)
         
         # Set username same as email for Django compatibility
         validated_data['username'] = validated_data['email']
         
-        user = User.objects.create_user(
-            password=password,
-            **validated_data
-        )
+        if password:
+            # Create user with password
+            user = User.objects.create_user(
+                password=password,
+                **validated_data
+            )
+        else:
+            # Create user without password (OTP-only authentication)
+            user = User.objects.create_user(**validated_data)
+            user.set_unusable_password()  # Django method for passwordless users
+            user.save()
         
         return user
-
-
+    
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for user profile management.
@@ -125,13 +136,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'full_name', 'first_name', 'last_name',
-            'phone', 'is_verified', 'email_verified_at', 'phone_verified_at',
-            'two_factor_enabled', 'preferred_2fa_method', 'last_login',
-            'date_joined', 'tenant_memberships', 'platform_roles'
+            'phone', 'is_verified', 'last_login', 'date_joined', 
+            'tenant_memberships', 'platform_roles'
         ]
         read_only_fields = [
-            'id', 'email', 'is_verified', 'email_verified_at',
-            'phone_verified_at', 'last_login', 'date_joined'
+            'id', 'email', 'is_verified', 'last_login', 'date_joined'
         ]
     
     def get_tenant_memberships(self, obj):
@@ -172,19 +181,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     _('Phone number must be between 9 and 15 digits.')
                 )
         return value
-    
-    def validate(self, data):
-        """Cross-field validation for profile updates."""
-        # If changing 2FA method to SMS/WhatsApp, ensure phone is present
-        preferred_2fa = data.get('preferred_2fa_method')
-        phone = data.get('phone') or self.instance.phone
-        
-        if preferred_2fa in ['sms', 'whatsapp'] and not phone:
-            raise ValidationError({
-                'phone': _('Phone number is required for SMS or WhatsApp 2FA.')
-            })
-        
-        return data
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -249,16 +245,28 @@ class ChangePasswordSerializer(serializers.Serializer):
 # Authentication Serializers
 class LoginSerializer(serializers.Serializer):
     """
-    Serializer for email/password authentication.
+    Serializer for email/password authentication OR OTP login initiation.
     """
     
     email = serializers.EmailField(
         help_text=_('Your email address.')
     )
     password = serializers.CharField(
+        required=False,
         write_only=True,
         style={'input_type': 'password'},
-        help_text=_('Your password.')
+        help_text=_('Your password (required for password login).')
+    )
+    login_method = serializers.ChoiceField(
+        choices=[('password', 'Password'), ('otp', 'OTP')],
+        default='password',
+        help_text=_('Choose login method: password or OTP.')
+    )
+    delivery_method = serializers.ChoiceField(
+        choices=[('email', 'Email'), ('sms', 'SMS'), ('whatsapp', 'WhatsApp')],
+        default='email',
+        required=False,
+        help_text=_('OTP delivery method (only for OTP login).')
     )
     remember_me = serializers.BooleanField(
         default=False,
@@ -266,18 +274,19 @@ class LoginSerializer(serializers.Serializer):
     )
     
     def validate(self, data):
-        """Authenticate user with email and password."""
+        """Authenticate user with email and password OR initiate OTP login."""
         email = data.get('email')
         password = data.get('password')
+        login_method = data.get('login_method', 'password')
         
-        if not email or not password:
-            raise ValidationError(_('Both email and password are required.'))
+        if not email:
+            raise ValidationError(_('Email is required.'))
         
         # Check if user exists
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise ValidationError(_('Invalid email or password.'))
+            raise ValidationError(_('Invalid email address.'))
         
         # Check if account is locked
         if user.is_account_locked():
@@ -287,92 +296,93 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise ValidationError(_('Account is disabled. Please contact support.'))
         
-        # Authenticate user
-        user = authenticate(request=self.context.get('request'), username=email, password=password)
-        
-        if not user:
-            # Increment failed login attempts
-            try:
-                user_obj = User.objects.get(email=email)
-                user_obj.failed_login_attempts += 1
+        if login_method == 'password':
+            # Password-based authentication
+            if not password:
+                raise ValidationError(_('Password is required for password login.'))
+            
+            # Authenticate user
+            authenticated_user = authenticate(
+                request=self.context.get('request'), 
+                username=email, 
+                password=password
+            )
+            
+            if not authenticated_user:
+                # Increment failed login attempts
+                user.failed_login_attempts += 1
                 
                 # Lock account after 5 failed attempts
-                if user_obj.failed_login_attempts >= 5:
-                    user_obj.lock_account(duration_minutes=30)
-                    user_obj.save(update_fields=['failed_login_attempts', 'account_locked_until'])
+                if user.failed_login_attempts >= 5:
+                    user.lock_account(duration_minutes=30)
+                    user.save(update_fields=['failed_login_attempts', 'account_locked_until'])
                     raise ValidationError(_('Too many failed attempts. Account locked for 30 minutes.'))
                 else:
-                    user_obj.save(update_fields=['failed_login_attempts'])
-            except User.DoesNotExist:
-                pass
+                    user.save(update_fields=['failed_login_attempts'])
+                
+                raise ValidationError(_('Invalid email or password.'))
             
-            raise ValidationError(_('Invalid email or password.'))
+            # Reset failed login attempts on successful authentication
+            if user.failed_login_attempts > 0:
+                user.failed_login_attempts = 0
+                user.save(update_fields=['failed_login_attempts'])
+            
+            data['user'] = authenticated_user
+            data['requires_otp'] = False
+            
+        elif login_method == 'otp':
+            # OTP-based authentication - just validate user exists and is active
+            # The actual OTP will be generated and sent in the view
+            data['user'] = user
+            data['requires_otp'] = True
         
-        # Reset failed login attempts on successful authentication
-        if user.failed_login_attempts > 0:
-            user.failed_login_attempts = 0
-            user.save(update_fields=['failed_login_attempts'])
+        else:
+            raise ValidationError(_('Invalid login method. Use "password" or "otp".'))
         
-        data['user'] = user
         return data
 
 
 class OTPRequestSerializer(serializers.Serializer):
     """
-    Serializer for requesting OTP tokens.
+    Serializer for requesting OTP tokens for various purposes.
     """
     
-    token_type = serializers.ChoiceField(
-        choices=OTPToken._meta.get_field('token_type').choices,
-        help_text=_('Type of OTP token to generate.')
+    email = serializers.EmailField(
+        help_text=_('Email address of the user.')
+    )
+    purpose = serializers.ChoiceField(
+        choices=[('login', 'Login'), ('password_reset', 'Password Reset')],
+        help_text=_('Purpose of the OTP request.')
     )
     delivery_method = serializers.ChoiceField(
-        choices=OTPToken._meta.get_field('delivery_method').choices,
+        choices=[('email', 'Email'), ('sms', 'SMS'), ('whatsapp', 'WhatsApp')],
+        default='email',
         help_text=_('How to deliver the OTP token.')
     )
-    recipient = serializers.CharField(
-        required=False,
-        help_text=_('Email or phone number to send OTP to. Uses user default if not provided.')
-    )
+    
+    def validate_email(self, value):
+        """Validate email exists in system."""
+        try:
+            user = User.objects.get(email=value, is_active=True)
+            self.user = user
+        except User.DoesNotExist:
+            # Don't reveal whether email exists or not for security
+            pass
+        return value
     
     def validate(self, data):
         """Validate OTP request parameters."""
-        user = self.context['request'].user
         delivery_method = data['delivery_method']
-        recipient = data.get('recipient')
         
-        # Set default recipient based on delivery method
-        if not recipient:
-            if delivery_method == 'email':
-                recipient = user.email
-            elif delivery_method in ['sms', 'whatsapp']:
-                if not user.phone:
-                    raise ValidationError({
-                        'delivery_method': _('User has no phone number for SMS/WhatsApp delivery.')
-                    })
-                recipient = user.phone
-            else:
+        # If we have a user, validate delivery method
+        if hasattr(self, 'user'):
+            user = self.user
+            
+            if delivery_method in ['sms', 'whatsapp'] and not user.phone:
                 raise ValidationError({
-                    'delivery_method': _('Invalid delivery method.')
+                    'delivery_method': _('User has no phone number for SMS/WhatsApp delivery.')
                 })
         
-        # Validate recipient format
-        if delivery_method == 'email':
-            email_validator = serializers.EmailField()
-            try:
-                email_validator.run_validation(recipient)
-            except ValidationError:
-                raise ValidationError({
-                    'recipient': _('Invalid email address.')
-                })
-        elif delivery_method in ['sms', 'whatsapp']:
-            digits_only = re.sub(r'\D', '', recipient)
-            if len(digits_only) < 9 or len(digits_only) > 15:
-                raise ValidationError({
-                    'recipient': _('Invalid phone number.')
-                })
-        
-        data['recipient'] = recipient
         return data
 
 
@@ -381,13 +391,21 @@ class OTPVerificationSerializer(serializers.Serializer):
     Serializer for OTP token verification.
     """
     
+    user_id = serializers.UUIDField(
+        help_text=_('User ID for OTP verification.')
+    )
     token = serializers.CharField(
         min_length=6,
         max_length=6,
         help_text=_('6-digit OTP token.')
     )
     token_type = serializers.ChoiceField(
-        choices=OTPToken._meta.get_field('token_type').choices,
+        choices=[
+            ('login', 'Login'),
+            ('email_verification', 'Email Verification'),
+            ('password_reset', 'Password Reset'),
+            ('account_unlock', 'Account Unlock')
+        ],
         help_text=_('Type of OTP token being verified.')
     )
     
@@ -397,9 +415,21 @@ class OTPVerificationSerializer(serializers.Serializer):
             raise ValidationError(_('OTP token must be numeric.'))
         return value
     
+    def validate_user_id(self, value):
+        """Validate user exists."""
+        try:
+            user = User.objects.get(id=value)
+            self.user = user
+        except User.DoesNotExist:
+            raise ValidationError(_('Invalid user ID.'))
+        return value
+    
     def validate(self, data):
         """Verify OTP token."""
-        user = self.context['request'].user
+        if not hasattr(self, 'user'):
+            raise ValidationError(_('Invalid user ID.'))
+        
+        user = self.user
         token = data['token']
         token_type = data['token_type']
         
@@ -412,6 +442,7 @@ class OTPVerificationSerializer(serializers.Serializer):
             raise ValidationError(_('Invalid or expired OTP token.'))
         
         data['otp_token'] = otp_token
+        data['user'] = user
         return data
 
 
@@ -422,6 +453,11 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     
     email = serializers.EmailField(
         help_text=_('Email address associated with your account.')
+    )
+    delivery_method = serializers.ChoiceField(
+        choices=[('email', 'Email'), ('sms', 'SMS'), ('whatsapp', 'WhatsApp')],
+        default='email',
+        help_text=_('How to deliver the reset OTP.')
     )
     
     def validate_email(self, value):

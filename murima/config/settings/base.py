@@ -1,8 +1,13 @@
+from datetime import timedelta
 import os
+from decouple import config
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-development-key-change-me')
 
 # Application definition
 # Shared applications (available to all tenants)
@@ -12,7 +17,9 @@ SHARED_APPS = [
     'django.contrib.contenttypes',    
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
     
     # Custom shared apps
@@ -98,19 +105,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Custom Murima settings
-MURIMA_SETTINGS = {
-    'OTP_EXPIRY_MINUTES': 15,
-    'OTP_LENGTH': 6,
-    'MAX_LOGIN_ATTEMPTS': 5,
-    'ACCOUNT_LOCKOUT_MINUTES': 30,
-    'PASSWORD_RESET_TIMEOUT': 3600,  # 1 hour
-    'INVITATION_EXPIRY_DAYS': 7,
-    'SESSION_TIMEOUT_MINUTES': 60,
-    'ENABLE_2FA_BY_DEFAULT': False,
-    'SUPPORTED_2FA_METHODS': ['email', 'sms', 'whatsapp'],
-}
-
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -121,11 +115,11 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
-# STATICFILES_DIRS = [
-#     BASE_DIR / 'static',
-# ]
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Media files
 MEDIA_URL = '/media/'
@@ -145,6 +139,31 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20
+}
+
+# JWT Configuration
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+    
+    'JTI_CLAIM': 'jti',
 }
 
 # Session configuration
