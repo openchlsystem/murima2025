@@ -142,22 +142,74 @@ class TemplateRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
 
 # Asterisks API
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .asterisks.ari_client import ARIClient
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from .asterisks.ari_client import ARIClient
 
-ari = ARIClient()
+# ari = ARIClient()
 
-@csrf_exempt
-def originate_call(request):
-    if request.method == 'POST':
-        endpoint = request.POST.get('endpoint')  # e.g., "PJSIP/1001"
-        extension = request.POST.get('extension')  # e.g., "1002"
-        result = ari.originate_call(endpoint, extension)
-        return JsonResponse(result)
-    return JsonResponse({'error': 'POST required'})
+# @csrf_exempt
+# def originate_call(request):
+#     if request.method == 'POST':
+#         endpoint = request.POST.get('endpoint')  # e.g., "PJSIP/1001"
+#         extension = request.POST.get('extension')  # e.g., "1002"
+#         result = ari.originate_call(endpoint, extension)
+#         return JsonResponse(result)
+#     return JsonResponse({'error': 'POST required'})
 
-def handle_ari_event(event):
-    """Process ARI events (e.g., call answered, hung up)."""
-    print("ARI Event:", event)
-    # Add your logic here (e.g., update database, trigger actions)
+# def handle_ari_event(event):
+#     """Process ARI events (e.g., call answered, hung up)."""
+#     print("ARI Event:", event)
+#     # Add your logic here (e.g., update database, trigger actions)
+
+
+# from django.http import JsonResponse
+# import requests
+
+
+# def test_ari_connection(request):
+#     """Simple test to check if Django can connect to Asterisk ARI"""
+    
+#     # ARI connection details
+#     host = '18.179.24.235'
+#     port = 8089
+#     username = 'djangoari'
+#     password = '2001'
+    
+#     try:
+#         # Test REST API connection
+#         url = f"http://{host}:{port}/ari/asterisk/info"
+#         auth = (username, password)
+        
+#         response = requests.get(url, auth=auth, timeout=5)
+        
+#         if response.status_code == 200:
+#             asterisk_info = response.json()
+#             return JsonResponse({
+#                 'success': True,
+#                 'message': 'Connected to Asterisk ARI successfully!',
+#                 'asterisk_version': asterisk_info.get('version', 'Unknown'),
+#                 'status_code': response.status_code
+#             })
+#         else:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': f'Connection failed with status code: {response.status_code}',
+#                 'status_code': response.status_code
+#             })
+            
+#     except requests.exceptions.ConnectionError:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Cannot connect to Asterisk server. Check if Asterisk is running and ARI is enabled.'
+#         })
+#     except requests.exceptions.Timeout:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Connection timeout. Asterisk server is not responding.'
+#         })
+#     except Exception as e:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Error: {str(e)}'
+#         })

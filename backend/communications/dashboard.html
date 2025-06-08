@@ -1,0 +1,43 @@
+# Test template - communications/templates/test.html
+"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ARI Connection Test</title>
+</head>
+<body>
+    <h1>Asterisk ARI Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script>
+    async function testConnection() {
+        try {
+            const response = await fetch('/communications/test/');
+            const data = await response.json();
+            
+            const resultDiv = document.getElementById('result');
+            
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: green;">✅ SUCCESS</h3>
+                    <p>${data.message}</p>
+                    <p>Asterisk Version: ${data.asterisk_version}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ FAILED</h3>
+                    <p>${data.message}</p>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('result').innerHTML = `
+                <h3 style="color: red;">❌ ERROR</h3>
+                <p>Request failed: ${error.message}</p>
+            `;
+        }
+    }
+    </script>
+</body>
+</html>
+"""

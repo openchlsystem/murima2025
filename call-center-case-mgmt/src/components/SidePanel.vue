@@ -16,6 +16,7 @@
       </div>
 
       <div class="sidebar-content">
+        <!-- Header with Logo -->
         <div class="sidebar-header">
           <div class="logo-container">
             <div class="logo">
@@ -24,6 +25,7 @@
           </div>
         </div>
         
+        <!-- Navigation Links -->
         <div class="nav-section">
           <router-link to="/dashboard" class="nav-item" :class="{ active: $route.path === '/dashboard' }">
             <div class="nav-icon">
@@ -100,7 +102,7 @@
             <div class="nav-text">Settings</div>
           </router-link>
 
-          <!-- Super Admin Dashboard Button -->
+          <!-- Super Admin Dashboard Button (conditional) -->
           <router-link to="/superadmin" class="nav-item" :class="{ active: $route.path === '/superadmin' }" v-if="userRole === 'super-admin'">
             <div class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -112,7 +114,9 @@
           </router-link>
         </div>
         
+        <!-- Bottom Section with Server Connection and Queue Controls -->
         <div class="sidebar-bottom">
+          <!-- User Profile -->
           <div class="user-profile">
             <router-link to="/edit-profile" class="user-avatar">
               <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -122,26 +126,66 @@
             </router-link>
           </div>
           
+          <!-- Server Connection Status -->
+          <div class="connection-section">
+            <div class="connection-status">
+              <span :class="['connection-indicator', connectionStatus.class]"></span>
+              <span class="connection-text">{{ connectionStatus.text }}</span>
+            </div>
+            
+            <!-- Show error and retry if connection failed -->
+            <div v-if="serverStatus.connectionError" class="error-section">
+              <p class="error-message">{{ serverStatus.connectionError }}</p>
+              <button @click="retryConnection" class="retry-btn">Retry</button>
+            </div>
+          </div>
+          
+          <!-- Queue Status -->
           <div class="status">
-            <div class="status-dot" :class="{ 'in-queue': isInQueue }"></div>
+            <div class="status-dot" :class="{ 'in-queue': sipStatus.isInQueue }"></div>
             <span>{{ queueStatus }}</span>
           </div>
           
+          <!-- Queue Control Button -->
           <div class="button-container">
             <button 
               class="join-queue-btn" 
-              :class="{ 'in-queue': isInQueue, 'has-call': currentCall }"
+              :class="{ 
+                'in-queue': sipStatus.isInQueue, 
+                'has-call': sipStatus.hasActiveCall || sipStatus.hasIncomingCall 
+              }"
               @click="handleQueueToggle"
-              :disabled="isProcessingQueue"
+              :disabled="!canJoinQueue || isProcessingQueue"
             >
               {{ queueButtonText }}
             </button>
+            
+            <!-- Queue Help Text -->
+            <div class="queue-help-text">
+              <p v-if="serverStatus.isTestingConnection" class="help-text">
+                Testing server connection...
+              </p>
+              <p v-else-if="!serverStatus.isServerAccessible" class="help-text">
+                Server must be accessible to join queue
+              </p>
+              <p v-else-if="sipStatus.isInQueue && sipStatus.isRegistered" class="help-text success">
+                ✓ Ready to receive calls
+              </p>
+              <p v-else-if="sipStatus.isInQueue && !sipStatus.isRegistered" class="help-text">
+                Registering extension...
+              </p>
+              <p v-else-if="canJoinQueue && !sipStatus.isInQueue" class="help-text">
+                Click to register extension and receive calls
+              </p>
+            </div>
+            
             <button class="logout-btn" @click="handleLogout">Logout</button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Expand Button (for collapsed sidebar) -->
     <button class="expand-btn" @click="expandSidebar" id="expand-btn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -151,148 +195,773 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import {
+  testServerConnection,
+  initSIP,
+  joinQueue,
+  leaveQueue,
+  answerCall,
+  rejectCall,
+  hangupCall,
+  muteCall,
+  sendDTMF,
+  on,
+  off,
+  cleanup,
+  getCallStatus,
+  getRegistrationStatus
+} from '@/utils/sipClient'
 
-// Router setup
+// ==========================================
+// ROUTER SETUP
+// ==========================================
 const router = useRouter()
 const route = useRoute()
 
-// Props
+// ==========================================
+// PROPS (Data coming from parent component)
+// ==========================================
 const props = defineProps({
   userRole: {
     type: String,
-    default: 'user'
+    default: 'user'  // Can be 'user' or 'super-admin'
   },
   isInQueue: {
     type: Boolean,
-    default: false
+    default: false   // Whether user is currently in queue
   },
   isProcessingQueue: {
     type: Boolean,
-    default: false
+    default: false   // Whether queue operation is in progress
   },
   currentCall: {
     type: Object,
-    default: null
+    default: null    // Current call information
   }
 })
 
-// Emits
+// ==========================================
+// EMITS (Events sent to parent component)
+// ==========================================
 const emit = defineEmits([
-  'toggle-queue',
-  'logout',
-  'sidebar-toggle'
+  'toggle-queue',     // When queue button is clicked
+  'logout',          // When logout button is clicked
+  'sidebar-toggle',  // When sidebar is collapsed/expanded
+  'incoming-call',   // When there's an incoming call
+  'call-answered',   // When call is answered
+  'call-ended'       // When call ends
 ])
 
-// Local state
-const isSidebarCollapsed = ref(false)
-const mobileOpen = ref(false)
+// ==========================================
+// LOCAL REACTIVE STATE
+// ==========================================
 
-// Computed properties
-const queueStatus = computed(() => {
-  if (props.currentCall) {
-    return props.currentCall.status === 'incoming' ? 'Incoming Call' : 'On Call'
-  }
-  return props.isInQueue ? 'In Queue' : 'Offline'
+// UI state for sidebar behavior
+const isSidebarCollapsed = ref(false)  // Is sidebar collapsed?
+const mobileOpen = ref(false)          // Is mobile menu open?
+
+// Server connection state (same as TestCall component)
+const serverStatus = ref({
+  isTestingConnection: false,  // Currently testing connection?
+  isServerAccessible: false,   // Is Asterisk server reachable?
+  connectionError: null        // Error message if connection failed
 })
 
+// SIP and call state (same as TestCall component)
+const sipStatus = ref({
+  isRegistered: false,    // Is SIP extension registered?
+  isInQueue: false,       // Is user in queue (extension registered)?
+  hasActiveCall: false,   // Is there an active call?
+  hasIncomingCall: false, // Is there an incoming call?
+  callDuration: '00:00:00' // Current call duration
+})
+
+// ==========================================
+// COMPUTED PROPERTIES (Calculated values)
+// ==========================================
+
+// Server connection status text and CSS class
+const connectionStatus = computed(() => {
+  if (serverStatus.value.isTestingConnection) {
+    return { text: 'Testing Connection...', class: 'testing' }
+  }
+  if (serverStatus.value.isServerAccessible) {
+    return { text: 'Server Connected', class: 'connected' }
+  }
+  if (serverStatus.value.connectionError) {
+    return { text: 'Connection Failed', class: 'error' }
+  }
+  return { text: 'Not Connected', class: 'disconnected' }
+})
+
+// Can user join queue? (only if server is accessible)
+const canJoinQueue = computed(() => {
+  return serverStatus.value.isServerAccessible && !serverStatus.value.isTestingConnection
+})
+
+// Current queue/call status text
+const queueStatus = computed(() => {
+  if (sipStatus.value.hasIncomingCall) {
+    return 'Incoming Call'
+  }
+  if (sipStatus.value.hasActiveCall) {
+    return 'On Call'
+  }
+  return sipStatus.value.isInQueue ? 'In Queue' : 'Offline'
+})
+
+// Queue button text based on current state
 const queueButtonText = computed(() => {
   if (props.isProcessingQueue) return 'Processing...'
-  if (props.currentCall) return 'End Call'
-  return props.isInQueue ? 'Leave Queue' : 'Join Queue'
+  if (sipStatus.value.hasActiveCall || sipStatus.value.hasIncomingCall) return 'End Call'
+  return sipStatus.value.isInQueue ? 'Leave Queue' : 'Join Queue'
 })
 
-// Methods
+// ==========================================
+// SERVER CONNECTION FUNCTIONS
+// ==========================================
+
+// Test if Asterisk server is accessible (same as TestCall)
+const testAsteriskConnection = async () => {
+  try {
+    // Set testing state
+    serverStatus.value.isTestingConnection = true
+    serverStatus.value.connectionError = null
+    
+    // Get SIP connection details from localStorage
+    const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'))
+    
+    if (!sipDetails?.websocketURL) {
+      throw new Error('Missing Asterisk server details')
+    }
+
+    console.log('Testing Asterisk server connection...')
+    
+    // Test server accessibility using WebSocket
+    const isAccessible = await testServerConnection(sipDetails.websocketURL)
+    
+    if (isAccessible) {
+      serverStatus.value.isServerAccessible = true
+      console.log('Asterisk server is accessible')
+    } else {
+      throw new Error('Asterisk server is not responding')
+    }
+
+  } catch (error) {
+    console.error('Server connection test failed:', error)
+    serverStatus.value.connectionError = error.message
+    serverStatus.value.isServerAccessible = false
+  } finally {
+    // Always stop testing state
+    serverStatus.value.isTestingConnection = false
+  }
+}
+
+// Retry server connection when it fails
+const retryConnection = () => {
+  testAsteriskConnection()
+}
+
+// ==========================================
+// QUEUE MANAGEMENT FUNCTIONS
+// ==========================================
+
+// Handle join/leave queue (same logic as TestCall)
+const handleQueueToggle = async () => {
+  // Don't proceed if server not accessible
+  if (!canJoinQueue.value) return
+  
+  try {
+    if (sipStatus.value.isInQueue) {
+      // LEAVE QUEUE = Unregister SIP extension
+      console.log('Leaving queue - unregistering extension...')
+      await leaveQueue()
+      sipStatus.value.isInQueue = false
+      sipStatus.value.isRegistered = false
+      console.log('Left queue and unregistered extension')
+      
+    } else {
+      // JOIN QUEUE = Initialize SIP and register extension
+      console.log('Joining queue - initializing SIP and registering extension...')
+      
+      // Get SIP credentials from localStorage
+      const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'))
+      
+      // Initialize SIP client
+      await initSIP({
+        Desc: sipDetails.Desc || 'Agent Extension',
+        sipUri: sipDetails.uri,
+        password: sipDetails.password,
+        websocketURL: sipDetails.websocketURL,
+        debug: true
+      })
+      
+      // Set up SIP event listeners
+      setupSipEventListeners()
+      
+      // Register extension (this makes it accessible for calls)
+      await joinQueue()
+      sipStatus.value.isInQueue = true
+      console.log('Successfully joined queue - extension registered')
+    }
+    
+    // Notify parent component about queue change
+    emit('toggle-queue')
+    
+  } catch (error) {
+    console.error('Queue operation failed:', error)
+    // Reset states on error
+    sipStatus.value.isInQueue = false
+    sipStatus.value.isRegistered = false
+  }
+}
+
+// ==========================================
+// SIP EVENT LISTENERS SETUP
+// ==========================================
+
+// Set up all SIP event listeners (same as TestCall)
+const setupSipEventListeners = () => {
+  
+  // EXTENSION REGISTRATION EVENTS
+  on('onRegistered', () => {
+    console.log('Extension registered - ready to receive calls')
+    sipStatus.value.isRegistered = true
+  })
+
+  on('onUnregistered', () => {
+    console.log('Extension unregistered - no longer accessible')
+    sipStatus.value.isRegistered = false
+    sipStatus.value.isInQueue = false
+  })
+
+  on('onRegistrationFailed', (error) => {
+    console.error('Extension registration failed:', error)
+    sipStatus.value.isRegistered = false
+    sipStatus.value.isInQueue = false
+  })
+
+  // INCOMING CALL EVENTS
+  on('onIncomingCall', (session) => {
+    console.log('Incoming call received from:', session.remote_identity.uri.user)
+    sipStatus.value.hasIncomingCall = true
+    
+    // Notify parent component about incoming call
+    emit('incoming-call', {
+      session,
+      callerId: session.remote_identity.uri.user,
+      callerName: session.remote_identity.display_name || session.remote_identity.uri.user
+    })
+  })
+
+  // CALL ANSWER/START EVENTS
+  on('onCallAnswered', (session) => {
+    console.log('Call answered successfully')
+    sipStatus.value.hasActiveCall = true
+    sipStatus.value.hasIncomingCall = false
+    
+    // Notify parent component about answered call
+    emit('call-answered', session)
+  })
+
+  // CALL END EVENTS
+  on('onCallEnded', () => {
+    console.log('Call ended')
+    sipStatus.value.hasActiveCall = false
+    sipStatus.value.hasIncomingCall = false
+    
+    // Notify parent component about call ending
+    emit('call-ended')
+  })
+
+  on('onCallRejected', () => {
+    console.log('Call rejected')
+    sipStatus.value.hasIncomingCall = false
+  })
+
+  // CONNECTION EVENTS
+  on('onDisconnected', () => {
+    console.log('SIP disconnected')
+    sipStatus.value.isRegistered = false
+    sipStatus.value.isInQueue = false
+  })
+
+  // QUEUE EVENTS
+  on('onQueueJoined', () => {
+    console.log('Successfully joined queue')
+    sipStatus.value.isInQueue = true
+  })
+
+  on('onQueueLeft', () => {
+    console.log('Successfully left queue')
+    sipStatus.value.isInQueue = false
+  })
+}
+
+// ==========================================
+// SIDEBAR UI FUNCTIONS
+// ==========================================
+
+// Toggle sidebar collapsed/expanded state
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
   emit('sidebar-toggle', isSidebarCollapsed.value)
 }
 
+// Expand sidebar (from collapsed state)
 const expandSidebar = () => {
   isSidebarCollapsed.value = false
   emit('sidebar-toggle', isSidebarCollapsed.value)
 }
 
+// Toggle mobile menu open/closed
 const toggleMobileMenu = () => {
   mobileOpen.value = !mobileOpen.value
 }
 
-const handleQueueToggle = () => {
-  // Simply emit to parent component - let parent handle notifications and SIP logic
-  emit('toggle-queue')
-}
-
+// Handle logout - clean up SIP and notify parent
 const handleLogout = () => {
+  // Clean up SIP connections before logout
+  cleanup()
   emit('logout')
 }
 
-// Close mobile menu after navigation
+// ==========================================
+// LIFECYCLE HOOKS
+// ==========================================
+
+// When component is mounted (appears on screen)
 onMounted(() => {
+  // Test server accessibility immediately
+  testAsteriskConnection()
+  
+  // Set up router behavior for mobile
   router.afterEach(() => {
+    // Close mobile menu after navigation on small screens
     if (window.innerWidth <= 1024) {
       mobileOpen.value = false
     }
   })
 })
+
+// When component is about to be destroyed
+onBeforeUnmount(() => {
+  // Clean up SIP connections
+  cleanup()
+  
+  // Remove all SIP event listeners to prevent memory leaks
+  off('onRegistered')
+  off('onUnregistered')
+  off('onRegistrationFailed')
+  off('onIncomingCall')
+  off('onCallAnswered')
+  off('onCallEnded')
+  off('onCallRejected')
+  off('onDisconnected')
+  off('onQueueJoined')
+  off('onQueueLeft')
+})
 </script>
 
 <style scoped>
-/* Sidebar styles */
+/* ==========================================
+   MAIN SIDEBAR CONTAINER
+   ========================================== */
 .sidebar {
-  width: 250px;
-  background-color: var(--sidebar-bg);
-  color: var(--text-color);
-  height: 100vh;
-  position: fixed;
+  width: 250px;                          /* Fixed width */
+  background-color: var(--sidebar-bg);   /* Uses CSS custom property */
+  color: var(--text-color);              /* Text color from theme */
+  height: 100vh;                         /* Full viewport height */
+  position: fixed;                       /* Stays in place when scrolling */
   transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s;
-  overflow: hidden;
-  border-radius: 0 30px 30px 0;
-  z-index: 100;
+  overflow: hidden;                      /* Hide overflow content */
+  border-radius: 0 30px 30px 0;         /* Rounded right corners */
+  z-index: 100;                          /* Layer above other content */
   display: flex;
-  flex-direction: column;
+  flex-direction: column;                /* Stack items vertically */
 }
 
+/* Sidebar content wrapper */
 .sidebar-content {
-  width: 250px;
+  width: 250px;                          /* Match sidebar width */
   height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: column;                /* Header, nav, bottom sections */
   overflow: hidden;
 }
 
+/* ==========================================
+   SIDEBAR HEADER (Logo area)
+   ========================================== */
 .sidebar-header {
-  flex-shrink: 0;
+  flex-shrink: 0;                        /* Don't shrink when space is tight */
   padding: 20px;
   text-align: center;
 }
 
-.nav-section {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0 15px;
-  margin-bottom: 0;
-  min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+.logo-container {
+  display: flex;
+  justify-content: center;
 }
 
+.logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;                    /* Make it circular */
+  background-color: var(--logo-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;                      /* Crop image if too big */
+}
+
+.logo img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;                   /* Maintain aspect ratio */
+}
+
+/* ==========================================
+   NAVIGATION SECTION
+   ========================================== */
+.nav-section {
+  flex: 1;                               /* Take up remaining space */
+  overflow-y: auto;                      /* Scroll if too many items */
+  overflow-x: hidden;                    /* No horizontal scroll */
+  padding: 0 15px;
+  margin-bottom: 0;
+  min-height: 0;                         /* Allow shrinking */
+  scrollbar-width: none;                 /* Hide scrollbar (Firefox) */
+  -ms-overflow-style: none;              /* Hide scrollbar (IE/Edge) */
+}
+
+/* Hide scrollbar for WebKit browsers */
 .nav-section::-webkit-scrollbar {
   display: none;
 }
 
-.sidebar-bottom {
-  padding: 15px;
-  flex-shrink: 0;
-  background-color: var(--sidebar-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* Individual navigation items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  text-decoration: none;                 /* Remove link underline */
+  color: var(--text-color);
+  transition: all 0.3s ease;             /* Smooth hover effects */
+  min-height: 44px;                      /* Minimum touch target */
 }
 
+/* Hover effects for nav items */
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);  /* Subtle highlight */
+  transform: translateX(3px);                    /* Slide right slightly */
+}
+
+/* Active/current page styling */
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.1);   /* More prominent highlight */
+}
+
+/* Icon container for nav items */
+.nav-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  flex-shrink: 0;                        /* Don't shrink icon */
+}
+
+/* Hover effect for icons */
+.nav-item:hover .nav-icon {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);                /* Slightly larger on hover */
+}
+
+/* SVG styling inside icons */
+.nav-icon svg {
+  color: var(--text-color);
+  stroke: var(--text-color);
+  width: 18px;
+  height: 18px;
+}
+
+/* Text styling for nav items */
+.nav-text {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;                   /* Don't wrap text */
+  overflow: hidden;                      /* Hide overflow */
+  text-overflow: ellipsis;               /* Show ... if text too long */
+}
+
+/* ==========================================
+   SIDEBAR BOTTOM SECTION
+   ========================================== */
+.sidebar-bottom {
+  padding: 15px;
+  flex-shrink: 0;                        /* Don't shrink this section */
+  background-color: var(--sidebar-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);  /* Subtle separator */
+}
+
+/* ==========================================
+   USER PROFILE SECTION
+   ========================================== */
+.user-profile {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;                    /* Circular avatar */
+  background-color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);                /* Slightly larger on hover */
+}
+
+.user-avatar svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--background-color);
+}
+
+/* ==========================================
+   SERVER CONNECTION STATUS (NEW!)
+   ========================================== */
+.connection-section {
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05); /* Subtle background */
+  border-radius: 8px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+/* Connection indicator dot */
+.connection-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Different states for connection indicator */
+.connection-indicator.testing {
+  background: #ffc107;                   /* Yellow for testing */
+  animation: pulse 1s infinite;          /* Pulsing animation */
+}
+
+.connection-indicator.connected {
+  background: #28a745;                   /* Green for connected */
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);  /* Glow effect */
+}
+
+.connection-indicator.disconnected {
+  background: #6c757d;                   /* Gray for disconnected */
+}
+
+.connection-indicator.error {
+  background: #dc3545;                   /* Red for error */
+}
+
+/* Pulsing animation for testing state */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.connection-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Error section styling */
+.error-section {
+  margin-top: 5px;
+  padding: 5px;
+  background: rgba(220, 53, 69, 0.1);    /* Light red background */
+  border: 1px solid rgba(220, 53, 69, 0.3);  /* Red border */
+  border-radius: 4px;
+}
+
+.error-message {
+  color: #ff6b6b;                        /* Red text */
+  font-size: 10px;
+  margin: 0 0 5px 0;
+  text-align: center;
+}
+
+.retry-btn {
+  padding: 3px 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  width: 100%;
+}
+
+.retry-btn:hover {
+  background: #c82333;                   /* Darker red on hover */
+}
+
+/* ==========================================
+   QUEUE STATUS SECTION
+   ========================================== */
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+/* Status indicator dot */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--unassigned-color);  /* Default gray */
+  margin-right: 6px;
+  transition: all 0.3s ease;
+}
+
+/* Green pulsing dot when in queue */
+.status-dot.in-queue {
+  background-color: var(--success-color);
+  animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* ==========================================
+   BUTTON CONTAINER AND BUTTONS
+   ========================================== */
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main queue join/leave button */
+.join-queue-btn {
+  background-color: var(--accent-color);  /* Default blue */
+  color: white;
+  border: none;
+  border-radius: 25px;                   /* Rounded pill shape */
+  padding: 10px 14px;
+  width: 100%;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.join-queue-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);           /* Lift up slightly on hover */
+}
+
+/* Green when in queue */
+.join-queue-btn.in-queue {
+  background-color: var(--success-color);
+}
+
+/* Red when on a call */
+.join-queue-btn.has-call {
+  background-color: var(--danger-color);
+}
+
+/* Disabled state */
+.join-queue-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;                       /* No hover effect when disabled */
+}
+
+/* Queue help text section */
+.queue-help-text {
+  margin-bottom: 8px;
+}
+
+.help-text {
+  text-align: center;
+  font-size: 10px;
+  color: #999;                           /* Light gray */
+  margin: 0;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+/* Success state for help text */
+.help-text.success {
+  color: #28a745;                        /* Green */
+  font-weight: 600;
+  font-style: normal;                    /* Not italic */
+}
+
+/* Logout button */
+.logout-btn {
+  background-color: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 14px;
+  width: 100%;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: #e60000;             /* Darker red on hover */
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   TOGGLE BUTTONS (Collapse/Expand)
+   ========================================== */
 .toggle-btn {
   position: absolute;
   top: 50px;
-  right: -15px;
+  right: -15px;                          /* Positioned outside sidebar */
   width: 30px;
   height: 30px;
   background-color: #ffffff;
@@ -321,7 +990,7 @@ onMounted(() => {
   height: 30px;
   background-color: #ffffff;
   border-radius: 50%;
-  display: none;
+  display: none;                         /* Hidden by default */
   justify-content: center;
   align-items: center;
   cursor: pointer;
@@ -337,215 +1006,29 @@ onMounted(() => {
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
+/* Show expand button when sidebar is collapsed */
 .sidebar.collapsed ~ .expand-btn {
   display: flex;
 }
 
+/* ==========================================
+   SIDEBAR COLLAPSED STATE
+   ========================================== */
 .sidebar.collapsed {
-  width: 20px;
-  transform: translateX(-230px);
+  width: 20px;                           /* Very narrow when collapsed */
+  transform: translateX(-230px);         /* Slide mostly off-screen */
 }
 
 .sidebar.collapsed .sidebar-content {
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0;                            /* Hide content when collapsed */
+  pointer-events: none;                  /* Disable interactions */
 }
 
-.logo-container {
-  display: flex;
-  justify-content: center;
-}
-
-.logo {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--logo-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.logo img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  cursor: pointer;
-  margin-bottom: 4px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: var(--text-color);
-  transition: all 0.3s ease;
-  min-height: 44px;
-}
-
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateX(3px);
-}
-
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.nav-item:hover .nav-icon {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.nav-icon svg {
-  color: var(--text-color);
-  stroke: var(--text-color);
-  width: 18px;
-  height: 18px;
-}
-
-.nav-text {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-profile {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.user-avatar:hover {
-  transform: scale(1.05);
-}
-
-.user-avatar svg {
-  width: 24px;
-  height: 24px;
-  fill: var(--background-color);
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-secondary);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--unassigned-color);
-  margin-right: 6px;
-  transition: all 0.3s ease;
-}
-
-.status-dot.in-queue {
-  background-color: var(--success-color);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-.button-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.join-queue-btn {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 10px 14px;
-  width: 100%;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.join-queue-btn:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.join-queue-btn.in-queue {
-  background-color: var(--success-color);
-}
-
-.join-queue-btn.has-call {
-  background-color: var(--danger-color);
-}
-
-.join-queue-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.logout-btn {
-  background-color: var(--danger-color);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 10px 14px;
-  width: 100%;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.logout-btn:hover {
-  background-color: #e60000;
-  transform: translateY(-1px);
-}
-
+/* ==========================================
+   MOBILE MENU BUTTON
+   ========================================== */
 .mobile-menu-btn {
-  display: none;
+  display: none;                         /* Hidden on desktop */
   position: fixed;
   top: 20px;
   left: 20px;
@@ -556,7 +1039,7 @@ onMounted(() => {
   border-radius: 50%;
   color: var(--text-color);
   cursor: pointer;
-  z-index: 102;
+  z-index: 102;                          /* Above sidebar */
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
@@ -567,21 +1050,27 @@ onMounted(() => {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Responsive Design */
+/* ==========================================
+   RESPONSIVE DESIGN (Mobile/Tablet)
+   ========================================== */
 @media (max-width: 1024px) {
+  /* Show mobile menu button */
   .mobile-menu-btn {
     display: flex;
   }
   
+  /* Hide sidebar by default on mobile */
   .sidebar {
-    transform: translateX(-100%);
-    z-index: 200;
+    transform: translateX(-100%);        /* Completely off-screen */
+    z-index: 200;                        /* Above other content */
   }
   
+  /* Show sidebar when mobile menu is open */
   .sidebar.mobile-open {
-    transform: translateX(0);
+    transform: translateX(0);            /* Slide back into view */
   }
   
+  /* Hide expand button on mobile */
   .expand-btn {
     display: none !important;
   }

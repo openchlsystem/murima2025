@@ -1,5 +1,7 @@
 # core/urls.py
 from django.urls import path
+
+
 from .views import (
     ChannelListCreateAPIView, ChannelRetrieveUpdateDestroyAPIView,
     ContactListCreateAPIView, ContactRetrieveUpdateDestroyAPIView,
@@ -7,7 +9,7 @@ from .views import (
     ConversationListCreateAPIView, ConversationRetrieveUpdateDestroyAPIView,
     TagListCreateAPIView, TagRetrieveUpdateDestroyAPIView,
     CallLogListAPIView, CallLogRetrieveAPIView,
-    TemplateListCreateAPIView, TemplateRetrieveUpdateDestroyAPIView,originate_call
+    TemplateListCreateAPIView, TemplateRetrieveUpdateDestroyAPIView
 )
 
 urlpatterns = [
@@ -41,5 +43,8 @@ urlpatterns = [
     
     
     # ARI (Automated Response Interface) URLs
-     path('originate_call/', originate_call, name='originate_call'),
+    #  path('originate_call/', originate_call, name='originate_call'),
+
+    #  path('test/', views.test_ari_connection, name='test_ari'),
 ]
+

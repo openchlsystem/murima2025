@@ -225,9 +225,9 @@
 
       // sipDetails 
       const sipConnectionDetails = ref({
-        uri: 'sip:6001@54.238.49.155',
-        password: 'securepassword',
-        websocketURL: 'ws://54.238.49.155:8088/ws'
+        uri: 'sip:1001@18.177.175.202',
+        password: '1001pass',
+        websocketURL: 'ws://18.177.175.202:8088/websocket'
       })
 
       
@@ -430,7 +430,7 @@
       onMounted(() => {
         checkRememberedData();
 
-        const checkWSConnection = new WebSocket("ws://18.179.24.235:8089/ws", "sip");
+        const checkWSConnection = new WebSocket("ws://18.177.175.202:8088/ws", "sip");
 
         console.log("checking WebSocket Connection", checkWSConnection)
 
