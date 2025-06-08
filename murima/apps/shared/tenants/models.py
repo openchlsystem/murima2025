@@ -6,7 +6,7 @@ class Tenant(TenantMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     subdomain = models.CharField(max_length=100, unique=True)
-    owner = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    owner = models.ForeignKey('accounts.User', on_delete=models.PROTECT, related_name='owned_tenants')
     sector = models.CharField(max_length=50, default='general')
     is_active = models.BooleanField(default=True)
     subscription_plan = models.CharField(max_length=50, default='basic')
@@ -20,4 +20,4 @@ class Tenant(TenantMixin):
         return self.name
 
 class Domain(DomainMixin):
-    pass
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='tenant_domains')

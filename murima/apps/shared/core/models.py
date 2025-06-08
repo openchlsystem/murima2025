@@ -65,13 +65,13 @@ class UserTrackingModel(models.Model):
     created_by = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name='%(class)s_created',
+        related_name='created_records_%(app_label)s_%(class)s',
         help_text="User who created this record"
     )
     updated_by = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name='%(class)s_updated',
+        related_name='updated_records_%(app_label)s_%(class)s',
         null=True,
         blank=True,
         help_text="User who last updated this record"
@@ -103,7 +103,7 @@ class SoftDeleteModel(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='%(class)s_deleted',
+        related_name='deleted_records_%(app_label)s_%(class)s',
         help_text="User who soft deleted this record"
     )
     

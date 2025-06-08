@@ -1,9 +1,114 @@
 from django.db import models
 from django.core.validators import validate_email, RegexValidator
 from django.contrib.auth import get_user_model
-from apps.shared.core.models import BaseModel, TenantModel
+from django_tenants.models import TenantMixin, DomainMixin
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+import uuid
 
 User = get_user_model()
+
+class TimestampedModel(models.Model):
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the record was first created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp when the record was last updated"
+    )
+
+    class Meta:
+        abstract = True
+
+class UUIDModel(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this record"
+    )
+
+    class Meta:
+        abstract = True
+
+class UserTrackingModel(models.Model):
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='%(class)s_created',
+        help_text="User who created this record"
+    )
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='%(class)s_updated',
+        null=True,
+        blank=True,
+        help_text="User who last updated this record"
+    )
+
+    class Meta:
+        abstract = True
+
+class SoftDeleteModel(models.Model):
+    is_deleted = models.BooleanField(
+        default=False,
+        help_text="Whether this record has been soft deleted"
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when the record was soft deleted"
+    )
+    deleted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_deleted',
+        help_text="User who soft deleted this record"
+    )
+
+    def soft_delete(self, user=None):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        if user:
+            self.deleted_by = user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by'])
+
+    class Meta:
+        abstract = True
+
+class BaseModel(TimestampedModel, UUIDModel, UserTrackingModel, SoftDeleteModel):
+    class Meta:
+        abstract = True
+
+class TenantModel(models.Model):
+    tenant = models.ForeignKey('contacts.Tenant', on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+class Tenant(TenantMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    subdomain = models.CharField(max_length=100, unique=True)
+    owner = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    sector = models.CharField(max_length=50, default='general')
+    is_active = models.BooleanField(default=True)
+    subscription_plan = models.CharField(max_length=50, default='basic')
+    created_at = models.DateTimeField(auto_now_add=True)
+    settings = models.JSONField(default=dict)
+
+    # Default database schema is 'public'
+    auto_create_schema = True
+
+    def __str__(self):
+        return self.name
+
+class Domain(DomainMixin):
+    pass
 
 # Communication method choices (customize as needed)
 COMMUNICATION_METHOD_CHOICES = [
@@ -76,7 +181,7 @@ class Contact(BaseModel, TenantModel):
     # Contact Information
     email = models.EmailField(validators=[validate_email], blank=True, null=True)
     phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$',
+        regex=r'^\+?1?\d{9,15}',
         message="Phone number must be entered in the format: '+999999999'."
     )
     phone = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True)

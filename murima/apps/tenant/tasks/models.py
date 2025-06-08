@@ -3,6 +3,10 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from apps.shared.core.models import BaseModel, AuditLog
 import uuid
 
 User = get_user_model()
@@ -84,7 +88,7 @@ class Task(models.Model):
         verbose_name=_('case')
     )
     workflow = models.ForeignKey(
-        'workflows.Workflow',
+        'workflows.WorkflowInstance',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
