@@ -15,6 +15,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from .managers import OTPTokenManager, UserManager, TenantMembershipManager, TenantRoleManager, UserSessionManager, UserInvitationManager
 
 from apps.shared.core.models import BaseModel, TimestampedModel, UUIDModel
 
@@ -44,7 +45,7 @@ class User(AbstractUser):
         validators=[phone_regex],
         max_length=17,
         blank=True,
-        help_text=_('Optional. Phone number for SMS notifications and 2FA.')
+        help_text=_('Optional. Phone number for SMS notifications.')
     )
     
     # Additional profile fields
@@ -67,39 +68,6 @@ class User(AbstractUser):
         _('verified'),
         default=False,
         help_text=_('Designates whether the user has verified their email address.')
-    )
-    
-    email_verified_at = models.DateTimeField(
-        _('email verified at'),
-        null=True,
-        blank=True,
-        help_text=_('Date and time when email was verified.')
-    )
-    
-    phone_verified_at = models.DateTimeField(
-        _('phone verified at'),
-        null=True,
-        blank=True,
-        help_text=_('Date and time when phone was verified.')
-    )
-    
-    # Security settings
-    two_factor_enabled = models.BooleanField(
-        _('two-factor authentication enabled'),
-        default=False,
-        help_text=_('Whether 2FA is enabled for this user.')
-    )
-    
-    preferred_2fa_method = models.CharField(
-        _('preferred 2FA method'),
-        max_length=20,
-        choices=[
-            ('email', _('Email')),
-            ('sms', _('SMS')),
-            ('whatsapp', _('WhatsApp')),
-        ],
-        default='email',
-        help_text=_('Preferred method for receiving 2FA codes.')
     )
     
     # Account management
@@ -127,6 +95,8 @@ class User(AbstractUser):
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
     
+    objects = UserManager()  # Custom manager for user operations
+
     # Use email as username field
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']  # Required for createsuperuser
@@ -235,6 +205,8 @@ class TenantMembership(BaseModel):
         related_name='deactivated_memberships',
         help_text=_('The user who deactivated this membership.')
     )
+
+    objects = TenantMembershipManager()  # Custom manager for tenant membership operations
     
     class Meta:
         verbose_name = _('Tenant Membership')
@@ -326,6 +298,8 @@ class TenantRole(BaseModel):
         default=0,
         help_text=_('Order for displaying roles in lists.')
     )
+
+    objects = TenantRoleManager()  # Custom manager for tenant role operations
     
     class Meta:
         verbose_name = _('Tenant Role')
@@ -425,7 +399,7 @@ class OTPToken(TimestampedModel):
     """
     One-Time Password tokens for authentication and verification.
     
-    Used for 2FA, email verification, phone verification, and password reset.
+    Used for email verification, phone verification, and password reset.
     """
     
     user = models.ForeignKey(
@@ -445,9 +419,8 @@ class OTPToken(TimestampedModel):
         _('token type'),
         max_length=20,
         choices=[
-            ('login_2fa', _('Two-Factor Authentication')),
+            ('login', _('Login Authentication')),
             ('email_verification', _('Email Verification')),
-            ('phone_verification', _('Phone Verification')),
             ('password_reset', _('Password Reset')),
             ('account_unlock', _('Account Unlock')),
         ],
@@ -507,6 +480,8 @@ class OTPToken(TimestampedModel):
         blank=True,
         help_text=_('User agent string from the request.')
     )
+
+    objects = OTPTokenManager()
     
     class Meta:
         verbose_name = _('OTP Token')
@@ -550,11 +525,11 @@ class UserSession(TimestampedModel):
         help_text=_('The user this session belongs to.')
     )
     
-    session_key = models.CharField(
-        _('session key'),
-        max_length=40,
-        unique=True,
-        help_text=_('Django session key.')
+    session_key = models.CharField(max_length=255, unique=True)  # Store JWT ID (jti)
+    token_type = models.CharField(
+        max_length=20, 
+        choices=[('session', 'Session'), ('jwt', 'JWT')], 
+        default='jwt'
     )
     
     device_type = models.CharField(
@@ -614,6 +589,8 @@ class UserSession(TimestampedModel):
         blank=True,
         help_text=_('Date and time when this session ended.')
     )
+
+    objects = UserSessionManager()  # Custom manager for user session operations
     
     class Meta:
         verbose_name = _('User Session')
@@ -707,6 +684,8 @@ class UserInvitation(BaseModel):
         related_name='user_invitations_accepted',
         help_text=_('The user who accepted this invitation.')
     )
+
+    objects = UserInvitationManager()  # Custom manager for user invitation operations
     
     class Meta:
         verbose_name = _('User Invitation')

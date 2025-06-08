@@ -9,6 +9,7 @@ support for email, SMS, and WhatsApp delivery channels.
 """
 
 from datetime import timedelta
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
@@ -35,6 +36,9 @@ from .serializers import (
     TenantMembershipSerializer, TenantRoleSerializer, UserInvitationSerializer,
     InvitationAcceptSerializer, UserSessionSerializer, PlatformRoleSerializer
 )
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 def get_client_ip(request):
@@ -47,124 +51,141 @@ def get_client_ip(request):
     return ip
 
 
-# Authentication Views
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom JWT token serializer with additional user data."""
+    
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        
+        # Add custom claims
+        token['email'] = user.email
+        token['full_name'] = user.get_full_name()
+        token['is_verified'] = user.is_verified
+        token['tenant_count'] = user.tenant_memberships.filter(is_active=True).count()
+        
+        return token
+
+# apps/shared/accounts/views.py
+
 class AuthViewSet(GenericViewSet):
     """
-    ViewSet for authentication operations.
-    
-    Provides endpoints for registration, login, logout, OTP operations,
-    and password reset functionality.
+    Updated AuthViewSet for simplified authentication with password OR OTP login.
     """
     
     permission_classes = [AllowAny]
     
     @action(detail=False, methods=['post'])
     def register(self, request):
-        """
-        Register a new user account.
-        
-        Creates a new user and optionally sends email verification OTP.
-        """
+        """Register a new user account."""
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            with transaction.atomic():
-                user = serializer.save()
-                
-                # Generate email verification OTP if email is provided
-                if user.email:
-                    otp_token = OTPToken.objects.create_otp(
-                        user=user,
-                        token_type='email_verification',
-                        delivery_method='email',
-                        recipient=user.email,
-                        expires_in_minutes=30,
-                        ip_address=get_client_ip(request),
-                        user_agent=request.META.get('HTTP_USER_AGENT', '')
-                    )
-                    
-                    # TODO: Send email with OTP token
-                    # send_verification_email(user, otp_token.token)
-                
-                return Response({
-                    'user': UserProfileSerializer(user).data,
-                    'message': 'Registration successful. Please check your email for verification code.',
-                    'requires_verification': True
-                }, status=status.HTTP_201_CREATED)
+            user = serializer.save()
+            
+            # Generate email verification OTP
+            otp_token = OTPToken.objects.create_otp(
+                user=user,
+                token_type='email_verification',
+                delivery_method='email',
+                recipient=user.email,
+                expires_in_minutes=30,
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            
+            return Response({
+                'message': 'Registration successful. Please verify your email.',
+                'user_id': str(user.id),
+                'verification_sent': True,
+                'delivery_method': 'email'
+            }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
     def login(self, request):
         """
-        Authenticate user with email and password.
-        
-        Returns user data and session info. May require 2FA if enabled.
+        Authenticate user with password OR initiate OTP login.
         """
         serializer = LoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            requires_otp = serializer.validated_data['requires_otp']
             remember_me = serializer.validated_data.get('remember_me', False)
             
-            # Check if 2FA is required
-            requires_2fa = user.two_factor_enabled and user.is_verified
-            
-            if requires_2fa:
-                # Generate 2FA OTP
+            if requires_otp:
+                # OTP login flow - generate and send OTP
+                delivery_method = request.data.get('delivery_method', 'email')
+                
+                # Validate delivery method and recipient
+                if delivery_method == 'email':
+                    recipient = user.email
+                elif delivery_method in ['sms', 'whatsapp']:
+                    if not user.phone:
+                        return Response({
+                            'error': 'Phone number required for SMS/WhatsApp delivery'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    recipient = user.phone
+                else:
+                    return Response({
+                        'error': 'Invalid delivery method. Use email, sms, or whatsapp.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Generate login OTP
                 otp_token = OTPToken.objects.create_otp(
                     user=user,
-                    token_type='login_2fa',
-                    delivery_method=user.preferred_2fa_method,
-                    recipient=user.email if user.preferred_2fa_method == 'email' else user.phone,
+                    token_type='login',
+                    delivery_method=delivery_method,
+                    recipient=recipient,
                     expires_in_minutes=10,
                     ip_address=get_client_ip(request),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
                 
-                # TODO: Send OTP via selected method
-                # send_otp_token(user, otp_token, user.preferred_2fa_method)
-                
                 return Response({
-                    'requires_2fa': True,
-                    'delivery_method': user.preferred_2fa_method,
-                    'message': f'2FA code sent via {user.preferred_2fa_method}',
-                    'user_id': user.id  # Temporary for 2FA completion
+                    'requires_otp': True,
+                    'delivery_method': delivery_method,
+                    'message': f'Login OTP sent via {delivery_method}',
+                    'user_id': str(user.id),
+                    'expires_in': 10  # minutes
                 }, status=status.HTTP_200_OK)
             
-            # Complete login without 2FA
-            login(request, user)
-            
-            # Set session expiry based on remember_me
-            if remember_me:
-                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days
             else:
-                request.session.set_expiry(0)  # Browser session
-            
-            # Create session record
-            UserSession.objects.create_session(
-                user=user,
-                session_key=request.session.session_key,
-                ip_address=get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-            
-            return Response({
-                'user': UserProfileSerializer(user).data,
-                'session_key': request.session.session_key,
-                'message': 'Login successful'
-            }, status=status.HTTP_200_OK)
+                # Password login flow - generate JWT tokens immediately
+                refresh = RefreshToken.for_user(user)
+                access_token = refresh.access_token
+                
+                # Extend refresh token lifetime if remember_me
+                if remember_me:
+                    refresh.set_exp(lifetime=timedelta(days=30))
+                
+                # Create session record for tracking
+                session_data = self._create_user_session(user, request, str(refresh['jti']))
+                
+                return Response({
+                    'access_token': str(access_token),
+                    'refresh_token': str(refresh),
+                    'token_type': 'Bearer',
+                    'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                    'user': UserProfileSerializer(user).data,
+                    'session_id': session_data['session_id'],
+                    'message': 'Login successful'
+                }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
-    def verify_2fa(self, request):
+    def verify_login_otp(self, request):
         """
-        Complete login with 2FA verification.
+        Complete OTP login and return JWT tokens.
         """
-        # Get user from request data (temporary during 2FA flow)
         user_id = request.data.get('user_id')
-        if not user_id:
+        token = request.data.get('token')
+        remember_me = request.data.get('remember_me', False)
+        
+        if not user_id or not token:
             return Response({
-                'error': 'User ID required for 2FA verification'
+                'error': 'Both user_id and token are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -175,241 +196,251 @@ class AuthViewSet(GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Verify OTP
-        serializer = OTPVerificationSerializer(
-            data=request.data, 
-            context={'request': type('obj', (object,), {'user': user})()}
-        )
+        is_valid, otp_token = OTPToken.objects.verify_otp(user, token, 'login')
         
-        if serializer.is_valid():
-            # Complete login
-            login(request, user)
-            
-            # Set session expiry
-            remember_me = request.data.get('remember_me', False)
-            if remember_me:
-                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days
-            else:
-                request.session.set_expiry(0)  # Browser session
-            
-            # Create session record
-            UserSession.objects.create_session(
-                user=user,
-                session_key=request.session.session_key,
-                ip_address=get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-            
+        if not is_valid:
+            if otp_token and otp_token.attempts >= 3:
+                return Response({
+                    'error': 'Too many failed attempts. Please request a new OTP.'
+                }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
-                'user': UserProfileSerializer(user).data,
-                'session_key': request.session.session_key,
-                'message': '2FA verification successful'
-            }, status=status.HTTP_200_OK)
+                'error': 'Invalid or expired OTP token'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
-    def logout(self, request):
-        """
-        Log out the current user and end session.
-        """
-        # End user session record
-        if hasattr(request, 'session') and request.session.session_key:
-            UserSession.objects.filter(
-                session_key=request.session.session_key,
-                is_active=True
-            ).update(
-                is_active=False,
-                ended_at=timezone.now()
-            )
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = refresh.access_token
         
-        logout(request)
+        if remember_me:
+            refresh.set_exp(lifetime=timedelta(days=30))
+        
+        # Create session record
+        session_data = self._create_user_session(user, request, str(refresh['jti']))
+        
         return Response({
-            'message': 'Logout successful'
+            'access_token': str(access_token),
+            'refresh_token': str(refresh),
+            'token_type': 'Bearer',
+            'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+            'user': UserProfileSerializer(user).data,
+            'session_id': session_data['session_id'],
+            'message': 'OTP verification successful'
         }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def request_otp(self, request):
         """
-        Request an OTP token for various purposes.
-        
-        Can be used for email verification, phone verification, 2FA, etc.
+        Request OTP for login or password reset.
         """
-        # For non-authenticated requests (like password reset)
-        if not request.user.is_authenticated:
-            email = request.data.get('email')
-            if not email:
-                return Response({
-                    'error': 'Email required for OTP request'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            try:
-                user = User.objects.get(email=email, is_active=True)
-            except User.DoesNotExist:
-                # Don't reveal if email exists for security
-                return Response({
-                    'message': 'If the email exists, an OTP has been sent.'
-                }, status=status.HTTP_200_OK)
-        else:
-            user = request.user
+        email = request.data.get('email')
+        purpose = request.data.get('purpose', 'login')  # 'login' or 'password_reset'
+        delivery_method = request.data.get('delivery_method', 'email')
         
-        serializer = OTPRequestSerializer(
-            data=request.data,
-            context={'request': type('obj', (object,), {'user': user})()}
-        )
-        
-        if serializer.is_valid():
-            otp_token = OTPToken.objects.create_otp(
-                user=user,
-                token_type=serializer.validated_data['token_type'],
-                delivery_method=serializer.validated_data['delivery_method'],
-                recipient=serializer.validated_data['recipient'],
-                expires_in_minutes=15,
-                ip_address=get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-            
-            # TODO: Send OTP via selected method
-            # send_otp_token(user, otp_token, delivery_method)
-            
+        if not email:
             return Response({
-                'message': f'OTP sent via {serializer.validated_data["delivery_method"]}',
-                'delivery_method': serializer.validated_data['delivery_method'],
-                'recipient': serializer.validated_data['recipient']
+                'error': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if purpose not in ['login', 'password_reset']:
+            return Response({
+                'error': 'Invalid purpose. Use "login" or "password_reset".'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email, is_active=True)
+        except User.DoesNotExist:
+            # Don't reveal if email exists for security
+            return Response({
+                'message': f'If the email exists, an OTP has been sent via {delivery_method}'
             }, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Check if account is locked
+        if user.is_account_locked():
+            return Response({
+                'error': 'Account is temporarily locked. Please try again later.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate delivery method and recipient
+        if delivery_method == 'email':
+            recipient = user.email
+        elif delivery_method in ['sms', 'whatsapp']:
+            if not user.phone:
+                return Response({
+                    'error': 'Phone number not available for SMS/WhatsApp delivery'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            recipient = user.phone
+        else:
+            return Response({
+                'error': 'Invalid delivery method. Use email, sms, or whatsapp.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Generate OTP
+        otp_token = OTPToken.objects.create_otp(
+            user=user,
+            token_type=purpose,
+            delivery_method=delivery_method,
+            recipient=recipient,
+            expires_in_minutes=10,
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+        
+        return Response({
+            'message': f'OTP sent via {delivery_method}',
+            'delivery_method': delivery_method,
+            'user_id': str(user.id),
+            'expires_in': 10  # minutes
+        }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def verify_otp(self, request):
         """
-        Verify an OTP token.
-        
-        Used for email verification, phone verification, etc.
+        Verify OTP for email verification or other purposes.
         """
-        # Handle both authenticated and non-authenticated requests
-        if request.user.is_authenticated:
-            user = request.user
-        else:
-            # For password reset and other non-authenticated flows
-            email = request.data.get('email')
-            if not email:
+        user_id = request.data.get('user_id')
+        token = request.data.get('token')
+        token_type = request.data.get('token_type', 'email_verification')
+        
+        if not user_id or not token:
+            return Response({
+                'error': 'Both user_id and token are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'Invalid user ID'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify OTP
+        is_valid, otp_token = OTPToken.objects.verify_otp(user, token, token_type)
+        
+        if not is_valid:
+            if otp_token and otp_token.attempts >= 3:
                 return Response({
-                    'error': 'Email required for OTP verification'
+                    'error': 'Too many failed attempts. Please request a new OTP.'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-            try:
-                user = User.objects.get(email=email, is_active=True)
-            except User.DoesNotExist:
-                return Response({
-                    'error': 'Invalid email address'
-                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': 'Invalid or expired OTP token'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer = OTPVerificationSerializer(
-            data=request.data,
-            context={'request': type('obj', (object,), {'user': user})()}
-        )
+        # Handle different token types
+        if token_type == 'email_verification':
+            user.is_verified = True
+            user.save(update_fields=['is_verified'])
+            
+            return Response({
+                'message': 'Email verified successfully',
+                'user': UserProfileSerializer(user).data
+            }, status=status.HTTP_200_OK)
         
-        if serializer.is_valid():
-            otp_token = serializer.validated_data['otp_token']
-            token_type = serializer.validated_data['token_type']
-            
-            # Handle different verification types
-            if token_type == 'email_verification':
-                user.is_verified = True
-                user.email_verified_at = timezone.now()
-                user.save(update_fields=['is_verified', 'email_verified_at'])
-                
-                return Response({
-                    'message': 'Email verified successfully',
-                    'user': UserProfileSerializer(user).data
-                }, status=status.HTTP_200_OK)
-            
-            elif token_type == 'phone_verification':
-                user.phone_verified_at = timezone.now()
-                user.save(update_fields=['phone_verified_at'])
-                
-                return Response({
-                    'message': 'Phone verified successfully',
-                    'user': UserProfileSerializer(user).data
-                }, status=status.HTTP_200_OK)
-            
-            else:
-                return Response({
-                    'message': 'OTP verified successfully',
-                    'verified': True
-                }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'message': 'OTP verified successfully',
+            'token_type': token_type
+        }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def reset_password_request(self, request):
         """
-        Request password reset via email.
+        Request password reset OTP.
         """
-        serializer = PasswordResetRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            
-            # Check if user exists (don't reveal in response)
-            try:
-                user = User.objects.get(email=email, is_active=True)
-                
-                # Generate password reset OTP
-                otp_token = OTPToken.objects.create_otp(
-                    user=user,
-                    token_type='password_reset',
-                    delivery_method='email',
-                    recipient=user.email,
-                    expires_in_minutes=30,
-                    ip_address=get_client_ip(request),
-                    user_agent=request.META.get('HTTP_USER_AGENT', '')
-                )
-                
-                # TODO: Send password reset email
-                # send_password_reset_email(user, otp_token.token)
-                
-            except User.DoesNotExist:
-                # Don't reveal if email exists
-                pass
-            
-            return Response({
-                'message': 'If the email exists, a password reset code has been sent.'
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self.request_otp(request)  # Reuse the request_otp logic
     
     @action(detail=False, methods=['post'])
     def reset_password_confirm(self, request):
         """
-        Confirm password reset with OTP.
+        Reset password using OTP verification.
         """
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             new_password = serializer.validated_data['new_password']
             
-            # Update password
+            # Set new password
             user.set_password(new_password)
             user.last_password_change = timezone.now()
-            user.failed_login_attempts = 0  # Reset failed attempts
-            user.account_locked_until = None  # Unlock account
-            user.save(update_fields=[
-                'password', 'last_password_change', 
-                'failed_login_attempts', 'account_locked_until'
-            ])
+            user.save(update_fields=['password', 'last_password_change'])
             
-            # End all existing sessions for security
-            UserSession.objects.filter(user=user, is_active=True).update(
+            # End all user sessions for security
+            UserSession.objects.filter(
+                user=user, 
+                is_active=True
+            ).update(
                 is_active=False,
                 ended_at=timezone.now()
             )
             
             return Response({
-                'message': 'Password reset successful. Please log in with your new password.'
+                'message': 'Password reset successful'
             }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def logout(self, request):
+        """Logout user and blacklist refresh token."""
+        try:
+            refresh_token = request.data.get('refresh_token')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            
+            # End user session record
+            session_id = request.data.get('session_id')
+            if session_id:
+                UserSession.objects.filter(
+                    session_key=session_id,
+                    user=request.user,
+                    is_active=True
+                ).update(
+                    is_active=False,
+                    ended_at=timezone.now()
+                )
+            
+            return Response({
+                'message': 'Logout successful'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Logout failed',
+                'detail': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def refresh_token(self, request):
+        """Refresh access token using refresh token."""
+        try:
+            refresh_token = request.data.get('refresh_token')
+            if not refresh_token:
+                return Response({
+                    'error': 'Refresh token required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            token = RefreshToken(refresh_token)
+            access_token = token.access_token
+            
+            return Response({
+                'access_token': str(access_token),
+                'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+            })
+            
+        except Exception as e:
+            return Response({
+                'error': 'Token refresh failed',
+                'detail': str(e)
+            }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    def _create_user_session(self, user, request, jti):
+        """Create session record for JWT tracking."""
+        session = UserSession.objects.create_session(
+            user=user,
+            session_key=jti,  # Use JWT ID as session key
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+        return {'session_id': str(session.id)}
 
 # User Profile Management
 class UserProfileViewSet(GenericViewSet):

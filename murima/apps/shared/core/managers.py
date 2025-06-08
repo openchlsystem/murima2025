@@ -6,11 +6,8 @@ Provides common data access patterns and query optimizations for the Murima plat
 
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from datetime import timedelta
-
-User = get_user_model()
 
 
 class SoftDeleteQuerySet(models.QuerySet):

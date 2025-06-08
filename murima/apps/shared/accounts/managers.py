@@ -357,10 +357,22 @@ class OTPTokenQuerySet(models.QuerySet):
         """Return tokens created in the last N hours."""
         cutoff_time = timezone.now() - timedelta(hours=hours)
         return self.filter(created_at__gte=cutoff_time)
+    
+    def for_login(self):
+        """Return login tokens."""
+        return self.filter(token_type='login')
+    
+    def for_password_reset(self):
+        """Return password reset tokens."""
+        return self.filter(token_type='password_reset')
+    
+    def for_verification(self):
+        """Return email verification tokens."""
+        return self.filter(token_type='email_verification')
 
 
 class OTPTokenManager(models.Manager):
-    """Custom manager for OTPToken model."""
+    """Custom manager for OTPToken model with simplified authentication flow."""
     
     def get_queryset(self):
         """Return custom queryset."""
@@ -375,22 +387,46 @@ class OTPTokenManager(models.Manager):
         return self.get_queryset().for_user(user)
     
     def create_otp(self, user, token_type, delivery_method, recipient, 
-                   expires_in_minutes=10, ip_address=None, user_agent=None):
-        """Create a new OTP token."""
+                   expires_in_minutes=None, ip_address=None, user_agent=None):
+        """
+        Create a new OTP token with smart expiration based on purpose.
+        
+        Args:
+            user: User instance
+            token_type: 'login', 'password_reset', 'email_verification', 'account_unlock'
+            delivery_method: 'email', 'sms', 'whatsapp'
+            recipient: email address or phone number
+            expires_in_minutes: optional override for expiration time
+            ip_address: client IP address
+            user_agent: client user agent string
+        """
         import random
         import string
         
         # Generate 6-digit numeric token
         token = ''.join(random.choices(string.digits, k=6))
         
-        # Set expiration time
+        # Set smart expiration times based on token type
+        if expires_in_minutes is None:
+            expiration_map = {
+                'login': 10,                    # Login OTP expires in 10 minutes
+                'password_reset': 15,           # Password reset OTP expires in 15 minutes
+                'email_verification': 30,       # Email verification expires in 30 minutes
+                'account_unlock': 10            # Account unlock expires in 10 minutes
+            }
+            expires_in_minutes = expiration_map.get(token_type, 10)
+        
         expires_at = timezone.now() + timedelta(minutes=expires_in_minutes)
         
         # Invalidate any existing valid tokens of the same type for this user
+        # This prevents OTP spam and ensures only one valid token per purpose
         self.valid().filter(
             user=user,
             token_type=token_type
-        ).update(is_used=True, used_at=timezone.now())
+        ).update(
+            is_used=True, 
+            used_at=timezone.now()
+        )
         
         # Create new token
         otp_token = self.create(
@@ -404,11 +440,21 @@ class OTPTokenManager(models.Manager):
             user_agent=user_agent
         )
         
+        # TODO: Send OTP via chosen delivery method
+        # This would integrate with email/SMS/WhatsApp services
+        self._send_otp(otp_token)
+        
         return otp_token
     
     def verify_otp(self, user, token, token_type):
-        """Verify an OTP token."""
+        """
+        Verify an OTP token for the given user and purpose.
+        
+        Returns:
+            tuple: (is_valid: bool, otp_token: OTPToken|None)
+        """
         try:
+            # Find valid token matching criteria
             otp_token = self.valid().get(
                 user=user,
                 token=token,
@@ -420,29 +466,255 @@ class OTPTokenManager(models.Manager):
             return True, otp_token
             
         except self.model.DoesNotExist:
-            # Check if token exists but is invalid
+            # Check if token exists but is invalid (expired or used)
             try:
                 otp_token = self.get(
                     user=user,
                     token=token,
                     token_type=token_type
                 )
-                # Increment attempts
+                # Increment attempts for rate limiting
                 otp_token.attempts += 1
                 otp_token.save(update_fields=['attempts'])
                 return False, otp_token
                 
             except self.model.DoesNotExist:
+                # Token doesn't exist at all
                 return False, None
     
-    def cleanup_expired(self, older_than_days=30):
-        """Clean up expired tokens older than specified days."""
+    def verify_login_otp(self, user, token):
+        """Convenience method for login OTP verification."""
+        return self.verify_otp(user, token, 'login')
+    
+    def verify_password_reset_otp(self, user, token):
+        """Convenience method for password reset OTP verification."""
+        return self.verify_otp(user, token, 'password_reset')
+    
+    def verify_email_verification_otp(self, user, token):
+        """Convenience method for email verification OTP."""
+        return self.verify_otp(user, token, 'email_verification')
+    
+    def create_login_otp(self, user, delivery_method='email', recipient=None):
+        """Create OTP for login authentication."""
+        if not recipient:
+            recipient = user.email if delivery_method == 'email' else user.phone
+        
+        return self.create_otp(
+            user=user,
+            token_type='login',
+            delivery_method=delivery_method,
+            recipient=recipient,
+            expires_in_minutes=10
+        )
+    
+    def create_password_reset_otp(self, user, delivery_method='email', recipient=None):
+        """Create OTP for password reset."""
+        if not recipient:
+            recipient = user.email if delivery_method == 'email' else user.phone
+        
+        return self.create_otp(
+            user=user,
+            token_type='password_reset',
+            delivery_method=delivery_method,
+            recipient=recipient,
+            expires_in_minutes=15
+        )
+    
+    def create_email_verification_otp(self, user):
+        """Create OTP for email verification."""
+        return self.create_otp(
+            user=user,
+            token_type='email_verification',
+            delivery_method='email',
+            recipient=user.email,
+            expires_in_minutes=30
+        )
+    
+    def get_user_recent_attempts(self, user, token_type, hours=1):
+        """Get count of recent OTP requests for rate limiting."""
+        cutoff_time = timezone.now() - timedelta(hours=hours)
+        return self.filter(
+            user=user,
+            token_type=token_type,
+            created_at__gte=cutoff_time
+        ).count()
+    
+    def can_request_otp(self, user, token_type, max_attempts_per_hour=5):
+        """Check if user can request another OTP (rate limiting)."""
+        recent_attempts = self.get_user_recent_attempts(user, token_type)
+        return recent_attempts < max_attempts_per_hour
+    
+    def cleanup_expired(self, older_than_days=7):
+        """
+        Clean up expired tokens older than specified days.
+        Default is 7 days to maintain some audit trail.
+        """
         cutoff_date = timezone.now() - timedelta(days=older_than_days)
         deleted_count, _ = self.filter(
             expires_at__lt=cutoff_date
         ).delete()
         return deleted_count
-
+    
+    def cleanup_used_tokens(self, older_than_hours=24):
+        """Clean up used tokens older than specified hours."""
+        cutoff_time = timezone.now() - timedelta(hours=older_than_hours)
+        deleted_count, _ = self.filter(
+            is_used=True,
+            used_at__lt=cutoff_time
+        ).delete()
+        return deleted_count
+    
+    def get_delivery_stats(self, user=None, days=30):
+        """Get delivery method statistics for analytics."""
+        queryset = self.filter(
+            created_at__gte=timezone.now() - timedelta(days=days)
+        )
+        if user:
+            queryset = queryset.filter(user=user)
+        
+        from django.db.models import Count
+        return queryset.values('delivery_method').annotate(
+            count=Count('id')
+        ).order_by('-count')
+    
+    def _send_otp(self, otp_token):
+        """
+        Send OTP via the specified delivery method.
+        This is a placeholder for actual delivery service integration.
+        """
+        # TODO: Implement actual OTP delivery
+        # This would integrate with:
+        # - Email service (SMTP, SendGrid, etc.)
+        # - SMS service (Twilio, Africa's Talking, etc.) 
+        # - WhatsApp Business API
+        
+        delivery_methods = {
+            'email': self._send_email_otp,
+            'sms': self._send_sms_otp,
+            'whatsapp': self._send_whatsapp_otp
+        }
+        
+        send_method = delivery_methods.get(otp_token.delivery_method)
+        if send_method:
+            try:
+                send_method(otp_token)
+            except Exception as e:
+                # Log the error but don't fail the OTP creation
+                # In production, you'd want proper logging here
+                print(f"Failed to send OTP via {otp_token.delivery_method}: {e}")
+    
+    def _send_email_otp(self, otp_token):
+        """Send OTP via email."""
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        user = otp_token.user
+        
+        # Determine email subject based on token type
+        subject_map = {
+            'login': 'Your Login OTP Code',
+            'password_reset': 'Password Reset OTP Code',
+            'email_verification': 'Email Verification Code',
+            'account_unlock': 'Account Unlock Code'
+        }
+        
+        subject = subject_map.get(otp_token.token_type, 'Your OTP Code')
+        
+        # Create personalized message based on token type
+        user_name = user.get_full_name() or user.first_name or user.email.split('@')[0]
+        
+        if otp_token.token_type == 'login':
+            message = (
+                f"Hello {user_name},\n\n"
+                f"Your login verification code is: {otp_token.token}\n\n"
+                f"This code will expire in 10 minutes.\n"
+                f"If you didn't request this code, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"Murima Support Team"
+            )
+        elif otp_token.token_type == 'password_reset':
+            message = (
+                f"Hello {user_name},\n\n"
+                f"You requested to reset your password. Your verification code is: {otp_token.token}\n\n"
+                f"This code will expire in 15 minutes.\n"
+                f"If you didn't request a password reset, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"Murima Support Team"
+            )
+        elif otp_token.token_type == 'email_verification':
+            message = (
+                f"Hello {user_name},\n\n"
+                f"Welcome to Murima! Please verify your email address with this code: {otp_token.token}\n\n"
+                f"This code will expire in 30 minutes.\n"
+                f"If you didn't create an account, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"Murima Support Team"
+            )
+        elif otp_token.token_type == 'account_unlock':
+            message = (
+                f"Hello {user_name},\n\n"
+                f"Your account unlock verification code is: {otp_token.token}\n\n"
+                f"This code will expire in 10 minutes.\n"
+                f"If you didn't request account unlock, please contact support.\n\n"
+                f"Best regards,\n"
+                f"Murima Support Team"
+            )
+        else:
+            message = (
+                f"Hello {user_name},\n\n"
+                f"Your OTP code is: {otp_token.token}\n\n"
+                f"This code will expire soon.\n\n"
+                f"Best regards,\n"
+                f"Murima Support Team"
+            )
+        
+        try:
+            # Get sender email from settings, fallback to default
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'support@bitz-itc.com')
+            
+            send_mail(
+                subject,
+                message,
+                from_email,
+                [otp_token.recipient],
+                fail_silently=False,
+            )
+            print(f"✅ OTP email sent to {otp_token.recipient}")
+            
+        except Exception as e:
+            print(f"❌ EMAIL ERROR: Failed to send OTP to {otp_token.recipient} - {e}")
+            # In production, you might want to log this error properly
+            # and potentially retry or use an alternative delivery method
+            raise
+    
+    def _send_sms_otp(self, otp_token):
+        """Send OTP via SMS."""
+        # Placeholder for SMS delivery (Twilio, Africa's Talking, etc.)
+        user = otp_token.user
+        user_name = user.get_full_name() or user.first_name or "User"
+        
+        message = f"Hello {user_name}, your Murima verification code is: {otp_token.token}. It expires in {self._get_expiry_minutes(otp_token)} minutes."
+        
+        print(f"📱 SMS OTP: Sending '{message}' to {otp_token.recipient}")
+        # TODO: Integrate with SMS service provider
+        # Example: send_sms(to=otp_token.recipient, message=message)
+    
+    def _send_whatsapp_otp(self, otp_token):
+        """Send OTP via WhatsApp."""
+        # Placeholder for WhatsApp Business API
+        user = otp_token.user
+        user_name = user.get_full_name() or user.first_name or "User"
+        
+        message = f"Hello {user_name}, your Murima verification code is: {otp_token.token}. It expires in {self._get_expiry_minutes(otp_token)} minutes."
+        
+        print(f"💬 WhatsApp OTP: Sending '{message}' to {otp_token.recipient}")
+        # TODO: Integrate with WhatsApp Business API
+        # Example: send_whatsapp_message(to=otp_token.recipient, message=message)
+    
+    def _get_expiry_minutes(self, otp_token):
+        """Calculate remaining minutes until OTP expires."""
+        remaining = otp_token.expires_at - timezone.now()
+        return max(1, int(remaining.total_seconds() / 60))
 
 class UserSessionQuerySet(models.QuerySet):
     """Custom queryset for UserSession model."""

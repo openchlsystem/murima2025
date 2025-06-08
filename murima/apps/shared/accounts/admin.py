@@ -64,8 +64,7 @@ class UserAdmin(BaseUserAdmin):
     
     list_filter = [
         'is_active', 'is_verified', 'is_platform_admin', 'is_staff', 
-        'is_superuser', 'two_factor_enabled', 'preferred_2fa_method',
-        'date_joined', 'last_login'
+        'is_superuser', 'date_joined', 'last_login'
     ]
     
     search_fields = ['email', 'full_name', 'first_name', 'last_name', 'phone']
@@ -73,8 +72,8 @@ class UserAdmin(BaseUserAdmin):
     ordering = ['-date_joined']
     
     readonly_fields = [
-        'date_joined', 'last_login', 'email_verified_at', 'phone_verified_at',
-        'last_password_change', 'failed_login_attempts', 'account_locked_until',
+        'date_joined', 'last_login', 'last_password_change', 
+        'failed_login_attempts', 'account_locked_until',
         'tenant_memberships_display'
     ]
     
@@ -87,15 +86,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('full_name', 'first_name', 'last_name', 'phone')
         }),
         ('Verification Status', {
-            'fields': (
-                'is_verified', 'email_verified_at', 'phone_verified_at'
-            ),
-            'classes': ('collapse',)
-        }),
-        ('Two-Factor Authentication', {
-            'fields': (
-                'two_factor_enabled', 'preferred_2fa_method'
-            ),
+            'fields': ('is_verified',),
             'classes': ('collapse',)
         }),
         ('Permissions', {
@@ -181,14 +172,11 @@ class UserAdmin(BaseUserAdmin):
     tenant_memberships_display.short_description = 'Active Memberships'
     
     # Actions
-    actions = ['verify_users', 'unverify_users', 'unlock_accounts', 'enable_2fa']
+    actions = ['verify_users', 'unverify_users', 'unlock_accounts', 'send_verification_otp']
     
     def verify_users(self, request, queryset):
         """Bulk action to verify users."""
-        count = queryset.filter(is_verified=False).update(
-            is_verified=True,
-            email_verified_at=timezone.now()
-        )
+        count = queryset.filter(is_verified=False).update(is_verified=True)
         self.message_user(
             request, 
             f'{count} user(s) were successfully verified.'
@@ -197,10 +185,7 @@ class UserAdmin(BaseUserAdmin):
     
     def unverify_users(self, request, queryset):
         """Bulk action to unverify users."""
-        count = queryset.filter(is_verified=True).update(
-            is_verified=False,
-            email_verified_at=None
-        )
+        count = queryset.filter(is_verified=True).update(is_verified=False)
         self.message_user(
             request, 
             f'{count} user(s) were successfully unverified.'
@@ -221,18 +206,27 @@ class UserAdmin(BaseUserAdmin):
         )
     unlock_accounts.short_description = 'Unlock selected accounts'
     
-    def enable_2fa(self, request, queryset):
-        """Bulk action to enable 2FA."""
-        count = queryset.filter(two_factor_enabled=False).update(
-            two_factor_enabled=True
-        )
+    def send_verification_otp(self, request, queryset):
+        """Bulk action to send verification OTP to unverified users."""
+        from .models import OTPToken
+        
+        count = 0
+        for user in queryset.filter(is_verified=False):
+            try:
+                OTPToken.objects.create_email_verification_otp(user)
+                count += 1
+            except Exception as e:
+                self.message_user(
+                    request, 
+                    f'Failed to send OTP to {user.email}: {str(e)}',
+                    level='ERROR'
+                )
+        
         self.message_user(
             request, 
-            f'2FA enabled for {count} user(s).'
+            f'Verification OTP sent to {count} user(s).'
         )
-    enable_2fa.short_description = 'Enable 2FA for selected users'
-
-
+    send_verification_otp.short_description = 'Send verification OTP to selected users'
 @admin.register(TenantMembership)
 class TenantMembershipAdmin(admin.ModelAdmin):
     """Admin for tenant membership management."""
