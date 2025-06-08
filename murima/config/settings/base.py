@@ -144,5 +144,5 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 
 # Email configuration (base settings)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@murima.com'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# DEFAULT_FROM_EMAIL = 'noreply@murima.com'
