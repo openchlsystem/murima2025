@@ -7,13 +7,13 @@ common functionality across all tenant applications.
 
 import uuid
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 # Get the User model - this will work with custom user models
-User = get_user_model()
+# User = get_user_model()
 
 
 class TimestampedModel(models.Model):
@@ -63,13 +63,13 @@ class UserTrackingModel(models.Model):
     and should be set whenever the object is modified.
     """
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='%(class)s_created',
         help_text="User who created this record"
     )
     updated_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='%(class)s_updated',
         null=True,
@@ -99,7 +99,7 @@ class SoftDeleteModel(models.Model):
         help_text="Timestamp when the record was soft deleted"
     )
     deleted_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -161,7 +161,7 @@ class AuditLog(TimestampedModel):
     """
     # Who performed the action
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -397,7 +397,7 @@ class ErrorLog(TimestampedModel):
     
     # Context information
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -450,7 +450,7 @@ class ErrorLog(TimestampedModel):
         help_text="When this error was marked as resolved"
     )
     resolved_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
