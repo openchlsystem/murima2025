@@ -276,7 +276,7 @@ const extensionStatusText = computed(() => {
     return 'Registering...'
   }
   if (extensionStatus.value.error) {
-    return 'Registration Failed'
+    return 'Registering ...'
   }
   if (extensionStatus.value.isRegistered) {
     return 'Ready for Calls'
@@ -297,9 +297,9 @@ const startCallsButtonText = computed(() => {
     return props.currentCall.status === 'incoming' ? 'End Call' : 'Hang Up'
   }
   if (extensionStatus.value.isRegistered) {
-    return 'Stop Calls'
+    return 'Leave Queue'
   }
-  return 'Start Calls'
+  return 'Join Queue'
 })
 
 // Server connection methods
