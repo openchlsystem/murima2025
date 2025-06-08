@@ -1,4 +1,4 @@
-<script setup>
+<script>
     import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
     import {
         initSIP,
@@ -16,107 +16,131 @@
         getCallStatus
     } from '@/utils/sipClient';
 
-    // Component state
-    const sipStatus = ref({
-        isRegistered: false,
-        isInQueue: false,
-        hasActiveCall: false,
-        hasIncomingCall: false,
-        callDuration: '00:00:00'
-    });
-
-    const callInfo = ref({
-        active: null,
-        incoming: null
-    });
-
-    const isMuted = ref(false);
-
-    // Computed properties
-    const callButtonsDisabled = computed(() => !sipStatus.value.isRegistered);
-    const callDurationFormatted = computed(() => {
-        // Format call duration for display
-        return sipStatus.value.callDuration;
-    });
-
-    // Initialize SIP client
-    const initializeSip = async () => {
-        try {
-            const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'));
-
-            if (!sipDetails?.uri || !sipDetails?.password || !sipDetails?.websocketURL) {
-                throw new Error('Missing SIP connection details');
-            }
-
-            await initSIP({
-                sipUri: sipDetails.uri,
-                password: sipDetails.password,
-                websocketURL: sipDetails.websocketURL,
-                debug: true
+    export default {
+        setup() {
+            // Component state
+            const sipStatus = ref({
+                isRegistered: false,
+                isInQueue: false,
+                hasActiveCall: false,
+                hasIncomingCall: false,
+                callDuration: '00:00:00'
             });
 
-            setupEventListeners();
+            const callInfo = ref({
+                active: null,
+                incoming: null
+            });
 
-        } catch (error) {
-            console.error('SIP initialization failed:', error);
-        }
-    };
+            const isMuted = ref(false);
 
-    // Set up all event listeners
-    const setupEventListeners = () => {
-        on('onRegistered', () => {
-            sipStatus.value.isRegistered = true;
-            console.log('SIP registered successfully');
-        });
+            // Computed properties
+            const callButtonsDisabled = computed(() => !sipStatus.value.isRegistered);
+            const callDurationFormatted = computed(() => {
+                // Format call duration for display
+                return sipStatus.value.callDuration;
+            });
 
-        on('onRegistrationFailed', (error) => {
-            sipStatus.value.isRegistered = false;
-            console.error('Registration failed:', error);
-        });
+            // Initialize SIP client
+            const initializeSip = async () => {
+                try {
+                    const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'));
 
-        on('onIncomingCall', (session) => {
-            callInfo.value.incoming = {
-                session,
-                callerId: session.remote_identity.uri.user,
-                callerName: session.remote_identity.display_name || session.remote_identity.uri.user
+                    if (!sipDetails?.uri || !sipDetails?.password || !sipDetails?.websocketURL) {
+                        throw new Error('Missing SIP connection details');
+                    }
+
+                    await initSIP({
+                        sipUri: sipDetails.uri,
+                        password: sipDetails.password,
+                        websocketURL: sipDetails.websocketURL,
+                        debug: true
+                    });
+
+                    setupEventListeners();
+
+                } catch (error) {
+                    console.error('SIP initialization failed:', error);
+                }
             };
-            sipStatus.value.hasIncomingCall = true;
-        });
 
-        // ... other event listeners
-    };
+            // Set up all event listeners
+            const setupEventListeners = () => {
+                on('onRegistered', () => {
+                    sipStatus.value.isRegistered = true;
+                    console.log('SIP registered successfully');
+                });
 
-    // Call control functions
-    const answerIncomingCall = async () => {
-        try {
-            await answerCall();
-            startCallTimer();
-        } catch (error) {
-            console.error('Failed to answer call:', error);
+                on('onRegistrationFailed', (error) => {
+                    sipStatus.value.isRegistered = false;
+                    console.error('Registration failed:', error);
+                });
+
+                on('onIncomingCall', (session) => {
+                    callInfo.value.incoming = {
+                        session,
+                        callerId: session.remote_identity.uri.user,
+                        callerName: session.remote_identity.display_name || session.remote_identity.uri.user
+                    };
+                    sipStatus.value.hasIncomingCall = true;
+                });
+
+                // ... other event listeners
+            };
+
+            // Call control functions
+            const answerIncomingCall = async () => {
+                try {
+                    await answerCall();
+                    startCallTimer();
+                } catch (error) {
+                    console.error('Failed to answer call:', error);
+                }
+            };
+
+            const transferActiveCall = (extension) => {
+                try {
+                    transferCall(extension);
+                } catch (error) {
+                    console.error('Transfer failed:', error);
+                }
+            };
+
+            // Clean up on component unmount
+            onBeforeUnmount(() => {
+                cleanup();
+                // Remove all event listeners
+                off('onRegistered');
+                off('onRegistrationFailed');
+                off('onIncomingCall');
+                // ... other event listeners
+            });
+
+            onMounted(() => {
+                initializeSip();
+            });
+
+            return {
+                sipStatus,
+                callInfo,
+                isMuted,
+                callButtonsDisabled,
+                callDurationFormatted,
+                initSIP,
+                joinQueue,
+                leaveQueue,
+                answerCall,
+                rejectCall,
+                hangupCall,
+                transferCall,
+                muteCall,
+                sendDTMF,
+                on,
+                off,
+                cleanup,
+            };
         }
-    };
-
-    const transferActiveCall = (extension) => {
-        try {
-            transferCall(extension);
-        } catch (error) {
-            console.error('Transfer failed:', error);
-        }
-    };
-
-    // Clean up on component unmount
-    onBeforeUnmount(() => {
-        cleanup();
-        // Remove all event listeners
-        off('onRegistered');
-        off('onRegistrationFailed');
-        off('onIncomingCall');
-        // ... other event listeners
-    });
-
-    onMounted(() => {
-        initializeSip();
-    });
+    }
 </script>
 
 <template>
