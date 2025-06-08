@@ -3,8 +3,8 @@
     import {
         testServerConnection,
         initSIP,
-        joinQueue,
-        leaveQueue,
+        // joinQueue,
+        // leaveQueue,
         answerCall,
         rejectCall,
         hangupCall,

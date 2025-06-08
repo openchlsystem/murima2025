@@ -5,14 +5,13 @@ let ua = null;
 let activeSession = null;
 let incomingSession = null;
 let eventListeners = {};
-let isInQueue = false;
 let isRegistered = false;
 let iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
 ];
 
-// Test server connection
+// Test server connection - Check if Asterisk server is accessible
 export const testServerConnection = async (websocketURL) => {
     return new Promise((resolve) => {
         try {
@@ -41,11 +40,10 @@ export const testServerConnection = async (websocketURL) => {
     });
 };
 
-// Initialize SIP client with WebRTC support
+// Initialize SIP client
 export function initSIP({ Desc, sipUri, password, websocketURL, debug = false }) {
     return new Promise((resolve, reject) => {
         try {
-            // Validate parameters first
             const connectionDetails = {
                 Desc,
                 sipUri,
@@ -54,18 +52,13 @@ export function initSIP({ Desc, sipUri, password, websocketURL, debug = false })
                 debug
             };
 
-            console.log('Initializing SIP with:', connectionDetails);
+            console.log('Initializing SIP client...');
 
             if (!connectionDetails.sipUri || !connectionDetails.password || !connectionDetails.websocketURL) {
                 throw new Error('Missing required SIP connection parameters');
             }
 
-            console.log('Initializing SIP with:', {
-                uri: connectionDetails.sipUri,
-                ws: connectionDetails.websocketURL
-            });
-
-            // Configure WebSocket with error handling
+            // Configure WebSocket
             const socket = new JsSIP.WebSocketInterface(connectionDetails.websocketURL, {
                 useSipCreds: true,
                 connectionTimeout: 10000,
@@ -75,79 +68,86 @@ export function initSIP({ Desc, sipUri, password, websocketURL, debug = false })
                 keepAliveInterval: 30000
             });
 
-            // Enhanced UA configuration
+            // UA configuration
             const config = {
                 sockets: [socket],
                 uri: connectionDetails.sipUri,
                 password: connectionDetails.password,
                 realm: '172.31.11.85',
-                register: false, // We'll register manually when joining queue
+                register: false, // We'll register manually
                 session_timers: false,
                 debug: connectionDetails.debug
             };
 
             ua = new JsSIP.UA(config);
 
-            // Set up registration events
-            ua.on('registered', () => {
-                console.log('Extension registered - ready to receive calls');
-                isRegistered = true;
-                eventListeners['onRegistered']?.();
-            });
-
-            ua.on('unregistered', () => {
-                console.log('Extension unregistered - no longer accessible');
-                isRegistered = false;
-                eventListeners['onUnregistered']?.();
-            });
-
-            ua.on('registrationFailed', (data) => {
-                console.error('Extension registration failed:', data.cause);
-                isRegistered = false;
-                eventListeners['onRegistrationFailed']?.(data);
-            });
-
-            // Handle incoming calls
-            ua.on('newRTCSession', (session) => {
-                if (session.direction === 'incoming') {
-                    console.log('Incoming call received');
-                    incomingSession = session.session;
-                    setupCallEvents(session.session);
-                    eventListeners['onIncomingCall']?.(session.session);
-                }
-            });
-
-            ua.on('connected', () => {
-                console.log('SIP UA connected');
-                eventListeners['onConnected']?.();
-            });
-
-            ua.on('disconnected', () => {
-                console.log('SIP UA disconnected');
-                isRegistered = false;
-                isInQueue = false;
-                eventListeners['onDisconnected']?.();
-            });
-
-            // Add transport-level error handling
-            ua.on('transportError', (error) => {
-                console.error('Transport Error:', error);
-                eventListeners['onTransportError']?.(error);
-            });
+            // Set up UA events
+            setupUAEvents();
 
             // Start the UA
             ua.start();
+            console.log('SIP client initialized successfully');
             resolve();
 
         } catch (error) {
-            console.error('SIP Init Failed:', error);
+            console.error('SIP initialization failed:', error);
             reject(error);
         }
     });
 }
 
-// Join Queue = Register Extension (Ready to Receive Calls)
-export function joinQueue(queueNumber = '') {
+// Set up User Agent events
+function setupUAEvents() {
+    // Extension registration events
+    ua.on('registered', () => {
+        console.log('Extension registered - ready to receive calls');
+        isRegistered = true;
+        eventListeners['onRegistered']?.();
+    });
+
+    ua.on('unregistered', () => {
+        console.log('Extension unregistered - no longer accessible');
+        isRegistered = false;
+        eventListeners['onUnregistered']?.();
+    });
+
+    ua.on('registrationFailed', (data) => {
+        console.error('Extension registration failed:', data.cause);
+        isRegistered = false;
+        eventListeners['onRegistrationFailed']?.(data);
+    });
+
+    // Handle incoming calls
+    ua.on('newRTCSession', (session) => {
+        if (session.direction === 'incoming') {
+            console.log('Incoming call received');
+            incomingSession = session.session;
+            setupCallEvents(session.session);
+            eventListeners['onIncomingCall']?.(session.session);
+        }
+    });
+
+    // Connection events
+    ua.on('connected', () => {
+        console.log('SIP UA connected to server');
+        eventListeners['onConnected']?.();
+    });
+
+    ua.on('disconnected', () => {
+        console.log('SIP UA disconnected from server');
+        isRegistered = false;
+        eventListeners['onDisconnected']?.();
+    });
+
+    // Transport error handling
+    ua.on('transportError', (error) => {
+        console.error('SIP transport error:', error);
+        eventListeners['onTransportError']?.(error);
+    });
+}
+
+// Register Extension - Make it accessible to receive calls
+export function registerExtension() {
     return new Promise((resolve, reject) => {
         if (!ua) {
             reject(new Error('SIP client not initialized'));
@@ -157,62 +157,57 @@ export function joinQueue(queueNumber = '') {
         try {
             console.log('Registering extension to receive calls...');
             
-            // Register the extension - makes it accessible
-            const options = {
-                extraHeaders: queueNumber ? [`X-Queue: ${queueNumber}`] : []
-            };
-
-            // Wait for registration success
             if (isRegistered) {
-                isInQueue = true;
-                console.log('Extension already registered - ready to receive calls');
-                eventListeners['onQueueJoined']?.();
+                console.log('Extension already registered');
                 resolve();
                 return;
             }
 
+            // Set up temporary event listeners for this registration attempt
             const onRegistered = () => {
-                isInQueue = true;
-                console.log('Extension registered successfully - ready to receive calls');
-                eventListeners['onQueueJoined']?.();
-                eventListeners['onRegistered'] = null; // Remove temp listener
+                console.log('Extension registration successful');
+                cleanup();
                 resolve();
             };
 
             const onFailed = (error) => {
-                console.error('Failed to register extension:', error);
-                eventListeners['onQueueJoinFailed']?.(error);
-                eventListeners['onRegistrationFailed'] = null; // Remove temp listener
-                reject(error);
+                console.error('Extension registration failed:', error);
+                cleanup();
+                reject(new Error(`Registration failed: ${error.cause || error}`));
             };
 
-            // Set temporary event listeners for this registration attempt
+            const cleanup = () => {
+                clearTimeout(timeout);
+                eventListeners['onRegistered'] = originalOnRegistered;
+                eventListeners['onRegistrationFailed'] = originalOnFailed;
+            };
+
+            // Store original listeners
             const originalOnRegistered = eventListeners['onRegistered'];
             const originalOnFailed = eventListeners['onRegistrationFailed'];
 
-            eventListeners['onRegistered'] = () => {
-                onRegistered();
-                if (originalOnRegistered) eventListeners['onRegistered'] = originalOnRegistered;
-            };
+            // Set temporary listeners
+            eventListeners['onRegistered'] = onRegistered;
+            eventListeners['onRegistrationFailed'] = onFailed;
 
-            eventListeners['onRegistrationFailed'] = (error) => {
-                onFailed(error);
-                if (originalOnFailed) eventListeners['onRegistrationFailed'] = originalOnFailed;
-            };
+            // Set timeout for registration
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Registration timeout'));
+            }, 15000);
 
             // Trigger registration
-            ua.register(options);
+            ua.register();
 
         } catch (error) {
-            console.error('Error joining queue:', error);
-            eventListeners['onQueueJoinFailed']?.(error);
+            console.error('Error during extension registration:', error);
             reject(error);
         }
     });
 }
 
-// Leave Queue = Unregister Extension (No Longer Accessible)
-export function leaveQueue() {
+// Unregister Extension - Make it no longer accessible
+export function unregisterExtension() {
     return new Promise((resolve, reject) => {
         if (!ua) {
             reject(new Error('SIP client not initialized'));
@@ -223,39 +218,34 @@ export function leaveQueue() {
             console.log('Unregistering extension...');
             
             if (!isRegistered) {
-                isInQueue = false
                 console.log('Extension already unregistered');
-                eventListeners['onQueueLeft']?.();
                 resolve();
                 return;
             }
 
+            // Set up temporary event listener
             const onUnregistered = () => {
-                isInQueue = false;
-                console.log('Extension unregistered - no longer accessible');
-                eventListeners['onQueueLeft']?.();
+                console.log('Extension unregistered successfully');
+                clearTimeout(timeout);
+                eventListeners['onUnregistered'] = originalOnUnregistered;
                 resolve();
             };
 
-            const onFailed = (error) => {
-                console.error('Failed to unregister extension:', error);
-                eventListeners['onQueueLeaveFailed']?.(error);
-                reject(error);
-            };
-
-            // Set temporary event listener
+            // Store original listener
             const originalOnUnregistered = eventListeners['onUnregistered'];
-            eventListeners['onUnregistered'] = () => {
-                onUnregistered();
-                if (originalOnUnregistered) eventListeners['onUnregistered'] = originalOnUnregistered;
-            };
+            eventListeners['onUnregistered'] = onUnregistered;
+
+            // Set timeout
+            const timeout = setTimeout(() => {
+                eventListeners['onUnregistered'] = originalOnUnregistered;
+                resolve(); // Don't reject on timeout for unregister
+            }, 10000);
 
             // Trigger unregistration
             ua.unregister();
 
         } catch (error) {
-            console.error('Error leaving queue:', error);
-            eventListeners['onQueueLeaveFailed']?.(error);
+            console.error('Error during extension unregistration:', error);
             reject(error);
         }
     });
@@ -265,13 +255,13 @@ export function leaveQueue() {
 export function getRegistrationStatus() {
     return {
         isRegistered: isRegistered,
-        isInQueue: isInQueue,
         canReceiveCalls: isRegistered,
-        sipUA: ua ? 'initialized' : 'not initialized'
+        sipUA: ua ? 'initialized' : 'not initialized',
+        connectionState: ua?.connectionState || 'disconnected'
     };
 }
 
-// Enhanced call control with WebRTC options
+// Answer incoming call
 export function answerCall() {
     if (!incomingSession) {
         throw new Error('No incoming call to answer');
@@ -305,6 +295,7 @@ export function answerCall() {
     }
 }
 
+// Reject incoming call
 export function rejectCall() {
     if (!incomingSession) {
         throw new Error('No incoming call to reject');
@@ -325,6 +316,7 @@ export function rejectCall() {
     }
 }
 
+// Hang up active call
 export function hangupCall() {
     if (!activeSession) {
         throw new Error('No active call to hang up');
@@ -342,7 +334,7 @@ export function hangupCall() {
     }
 }
 
-// Enhanced call features
+// Mute/unmute call
 export function muteCall(mute = true) {
     if (!activeSession) {
         throw new Error('No active call to mute');
@@ -364,6 +356,7 @@ export function muteCall(mute = true) {
     }
 }
 
+// Send DTMF tone
 export function sendDTMF(tone, duration = 100, interToneGap = 500) {
     if (!activeSession) {
         throw new Error('No active call to send DTMF');
@@ -383,27 +376,24 @@ export function sendDTMF(tone, duration = 100, interToneGap = 500) {
     }
 }
 
-// Enhanced status information
+// Get call status
 export function getCallStatus() {
-    const status = {
+    return {
         isInCall: !!activeSession,
         hasIncomingCall: !!incomingSession,
-        isInQueue: isInQueue,
         isRegistered: isRegistered,
-        registrationState: ua?.registrationState || 'unregistered',
-        connectionState: ua?.connectionState || 'disconnected'
+        registrationState: isRegistered ? 'registered' : 'unregistered',
+        connectionState: ua?.connectionState || 'disconnected',
+        activeCall: activeSession ? {
+            direction: activeSession.direction,
+            remoteIdentity: activeSession.remote_identity.display_name || activeSession.remote_identity.uri.toString(),
+            startTime: activeSession.start_time,
+            isMuted: isCallMuted()
+        } : null
     };
-
-    if (activeSession) {
-        status.callDirection = activeSession.direction;
-        status.remoteIdentity = activeSession.remote_identity.display_name || activeSession.remote_identity.uri.toString();
-        status.startTime = activeSession.start_time;
-        status.isMuted = isCallMuted();
-    }
-
-    return status;
 }
 
+// Check if call is muted
 function isCallMuted() {
     if (!activeSession) return false;
     const audioTrack = activeSession.connection.getSenders()
@@ -411,19 +401,7 @@ function isCallMuted() {
     return audioTrack ? !audioTrack.track.enabled : false;
 }
 
-// Enhanced event management
-export function on(event, callback) {
-    if (typeof callback !== 'function') {
-        throw new Error('Callback must be a function');
-    }
-    eventListeners[event] = callback;
-}
-
-export function off(event) {
-    delete eventListeners[event];
-}
-
-// Enhanced internal call event setup
+// Set up call event listeners
 function setupCallEvents(session) {
     session.on('progress', (data) => {
         console.log('Call progress:', data);
@@ -467,11 +445,6 @@ function setupCallEvents(session) {
         eventListeners['onPeerConnection']?.(session, data);
     });
 
-    session.on('sending', (data) => {
-        console.log('Sending media:', data);
-        eventListeners['onMediaSending']?.(session, data);
-    });
-
     session.on('addstream', (data) => {
         console.log('Remote stream added:', data);
         eventListeners['onRemoteStreamAdded']?.(session, data);
@@ -488,69 +461,14 @@ function setupCallEvents(session) {
     });
 }
 
-// Enhanced transfer functionality
-export function transferCall(targetExtension, isBlind = true) {
-    if (!activeSession || !activeSession.isEstablished()) {
-        throw new Error('No active call to transfer');
-    }
-
-    try {
-        const domain = ua.configuration.uri.split('@')[1];
-        const targetUri = `sip:${targetExtension}@${domain}`;
-
-        if (isBlind) {
-            activeSession.terminate({
-                status_code: 302,
-                reason_phrase: 'Moved Temporarily',
-                extraHeaders: [`Refer-To: <${targetUri}>`]
-            });
-        } else {
-            activeSession.refer(targetUri);
-        }
-
-        console.log(`Call ${isBlind ? 'blind' : 'attended'} transferred to:`, targetExtension);
-        eventListeners['onCallTransferred']?.(targetExtension, isBlind);
-    } catch (error) {
-        console.error('Failed to transfer call:', error);
-        eventListeners['onCallTransferFailed']?.(error);
-        throw error;
-    }
-}
-
-// Enhanced cleanup
-export function cleanup() {
-    try {
-        if (activeSession) {
-            activeSession.terminate();
-            activeSession = null;
-        }
-
-        if (incomingSession) {
-            incomingSession.terminate();
-            incomingSession = null;
-        }
-
-        if (ua) {
-            ua.unregister()
-                .then(() => ua.stop())
-                .catch(err => console.error('Error during cleanup:', err));
-            ua = null;
-        }
-
-        isInQueue = false;
-        isRegistered = false;
-        eventListeners = {};
-        console.log('SIP client cleaned up successfully');
-    } catch (error) {
-        console.error('Error during cleanup:', error);
-        throw error;
-    }
-}
-
-// Additional utility functions
+// Make outgoing call
 export function makeCall(target, options = {}) {
     if (!ua) {
         throw new Error('SIP client not initialized');
+    }
+
+    if (!isRegistered) {
+        throw new Error('Extension not registered - cannot make calls');
     }
 
     try {
@@ -585,6 +503,78 @@ export function makeCall(target, options = {}) {
     }
 }
 
+// Transfer call
+export function transferCall(targetExtension, isBlind = true) {
+    if (!activeSession || !activeSession.isEstablished()) {
+        throw new Error('No active call to transfer');
+    }
+
+    try {
+        const domain = ua.configuration.uri.split('@')[1];
+        const targetUri = `sip:${targetExtension}@${domain}`;
+
+        if (isBlind) {
+            activeSession.terminate({
+                status_code: 302,
+                reason_phrase: 'Moved Temporarily',
+                extraHeaders: [`Refer-To: <${targetUri}>`]
+            });
+        } else {
+            activeSession.refer(targetUri);
+        }
+
+        console.log(`Call ${isBlind ? 'blind' : 'attended'} transferred to:`, targetExtension);
+        eventListeners['onCallTransferred']?.(targetExtension, isBlind);
+    } catch (error) {
+        console.error('Failed to transfer call:', error);
+        eventListeners['onCallTransferFailed']?.(error);
+        throw error;
+    }
+}
+
+// Event management
+export function on(event, callback) {
+    if (typeof callback !== 'function') {
+        throw new Error('Callback must be a function');
+    }
+    eventListeners[event] = callback;
+}
+
+export function off(event) {
+    delete eventListeners[event];
+}
+
+// Clean up
+export function cleanup() {
+    try {
+        if (activeSession) {
+            activeSession.terminate();
+            activeSession = null;
+        }
+
+        if (incomingSession) {
+            incomingSession.terminate();
+            incomingSession = null;
+        }
+
+        if (ua) {
+            if (isRegistered) {
+                ua.unregister();
+            }
+            ua.stop();
+            ua = null;
+        }
+
+        isRegistered = false;
+        eventListeners = {};
+        console.log('SIP client cleaned up successfully');
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+        throw error;
+    }
+}
+
+// Update ICE servers
 export function updateIceServers(newIceServers) {
     if (!Array.isArray(newIceServers)) {
         throw new Error('ICE servers must be an array');
