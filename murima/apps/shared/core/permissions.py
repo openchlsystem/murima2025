@@ -54,3 +54,60 @@ class IsContactOwnerOrTenantAdmin(permissions.BasePermission):
             return obj.created_by == request.user
             
         return False
+    
+#  Cases Permissions
+
+class IsCaseOwnerOrTeamMember(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        return (
+            obj.created_by == user or
+            obj.assigned_to == user or
+            (obj.assigned_team and user in obj.assigned_team.members.all())
+        )
+
+
+class IsCaseTeamMember(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        return obj.assigned_team and user in obj.assigned_team.members.all()
+
+
+class CanEditCase(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        return (
+            user.has_perm('cases.change_case') or
+            obj.assigned_to == user or
+            (obj.assigned_team and user in obj.assigned_team.members.all() and
+             user.has_perm('cases.change_assigned_case'))
+        )
+
+
+class CanAccessCaseDocuments(permissions.BasePermission):
+    def has_permission(self, request, view):
+        case_pk = view.kwargs.get('case_pk')
+        if not case_pk:
+            return True
+            
+        case = Case.objects.get(pk=case_pk)
+        return IsCaseOwnerOrTeamMember().has_object_permission(request, view, case)
+
+    def has_object_permission(self, request, view, obj):
+        return IsCaseOwnerOrTeamMember().has_object_permission(request, view, obj.case)
+
+
+class CanAccessCaseNotes(permissions.BasePermission):
+    def has_permission(self, request, view):
+        case_pk = view.kwargs.get('case_pk')
+        if not case_pk:
+            return True
+            
+        case = Case.objects.get(pk=case_pk)
+        return IsCaseOwnerOrTeamMember().has_object_permission(request, view, case)
+
+    def has_object_permission(self, request, view, obj):
+        # Additional check for internal notes
+        if obj.is_internal and not request.user.has_perm('cases.view_internal_notes'):
+            return False
+        return IsCaseOwnerOrTeamMember().has_object_permission(request, view, obj.case)

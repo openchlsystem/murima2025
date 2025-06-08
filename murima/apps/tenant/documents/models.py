@@ -4,7 +4,6 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 from apps.shared.core.models import (
     BaseModel,
-    TenantModel,
 )
 from enum import Enum
 import uuid
@@ -16,13 +15,13 @@ def document_upload_path(instance, filename):
     """Generate upload path for documents"""
     return f"documents/{instance.tenant_id}/{uuid.uuid4()}/{filename}"
 
-class DocumentType(TenantModel):
+class DocumentType(BaseModel):
     """Classification for different document types"""
+    name = models.CharField(max_length=255)
     icon = models.CharField(max_length=50, blank=True)
     allowed_extensions = models.JSONField(default=list)
     
     class Meta:
-        unique_together = ('tenant', 'name')
         verbose_name = _("Document Type")
         verbose_name_plural = _("Document Types")
 
@@ -36,7 +35,7 @@ class DocumentPermissionLevel(Enum):
     def choices(cls):
         return [(key.value, key.name) for key in cls]
 
-class Document(BaseModel, TenantModel):
+class Document(BaseModel):
     """Core document model with versioning and access control"""
     DOCUMENT_CATEGORIES = [
         ('case', 'Case Document'),
@@ -80,7 +79,7 @@ class Document(BaseModel, TenantModel):
     case = models.ForeignKey(
         'cases.Case',
         on_delete=models.CASCADE,
-        related_name='documents',
+        related_name='related_case',
         null=True,
         blank=True
     )
@@ -137,7 +136,7 @@ class Document(BaseModel, TenantModel):
         from django.urls import reverse
         return reverse('document-download', kwargs={'pk': self.pk})
 
-class DocumentVersion(BaseModel, TenantModel):
+class DocumentVersion(BaseModel):
     """Track complete version history"""
     document = models.ForeignKey(
         Document,
@@ -164,7 +163,7 @@ class DocumentVersion(BaseModel, TenantModel):
     def __str__(self):
         return f"{self.document.title} - v{self.version}"
 
-class DocumentAccessLog(TenantModel):
+class DocumentAccessLog(BaseModel):
     """Audit trail for document access"""
     ACCESS_TYPES = [
         ('view', 'View'),
@@ -188,7 +187,7 @@ class DocumentAccessLog(TenantModel):
         verbose_name = _("Document Access Log")
         verbose_name_plural = _("Document Access Logs")
 
-class DocumentShareLink(BaseModel, TenantModel):
+class DocumentShareLink(BaseModel):
     """Temporary sharing links for documents"""
     document = models.ForeignKey(
         Document,
@@ -213,7 +212,7 @@ class DocumentShareLink(BaseModel, TenantModel):
     def __str__(self):
         return f"Share link for {self.document.title}"
 
-class DocumentPreview(BaseModel, TenantModel):
+class DocumentPreview(BaseModel):
     """Generated previews for documents"""
     document = models.OneToOneField(
         Document,
@@ -242,7 +241,7 @@ class DocumentPreview(BaseModel, TenantModel):
         verbose_name = _("Document Preview")
         verbose_name_plural = _("Document Previews")
 
-class DocumentTemplate(BaseModel, TenantModel):
+class DocumentTemplate(BaseModel):
     """Reusable document templates"""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -256,7 +255,6 @@ class DocumentTemplate(BaseModel, TenantModel):
     is_system = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('tenant', 'name')
         verbose_name = _("Document Template")
         verbose_name_plural = _("Document Templates")
 

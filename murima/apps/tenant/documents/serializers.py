@@ -12,7 +12,10 @@ from apps.tenant.contacts.models import Contact
 from apps.tenant.tasks.models import Task
 from apps.shared.core.models import (
     BaseModel,
-    TenantModel
+    TimestampedModel,
+    UUIDModel,
+    UserTrackingModel,
+    SoftDeleteModel
 )
 import hashlib
 import uuid
@@ -443,5 +446,6 @@ class DocumentBulkUpdateSerializer(serializers.Serializer):
     )
     tags = serializers.ListField(
         child=serializers.CharField(max_length=50),
-        required=False
+        required=False,
+        default=list
     )
