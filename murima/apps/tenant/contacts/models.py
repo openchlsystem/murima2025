@@ -1,114 +1,11 @@
 from django.db import models
 from django.core.validators import validate_email, RegexValidator
-from django.contrib.auth import get_user_model
-from django_tenants.models import TenantMixin, DomainMixin
 from django.utils import timezone
+from django.conf import settings
 from django.core.exceptions import ValidationError
 import uuid
+from apps.shared.core.models import BaseModel
 
-User = get_user_model()
-
-class TimestampedModel(models.Model):
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Timestamp when the record was first created"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        help_text="Timestamp when the record was last updated"
-    )
-
-    class Meta:
-        abstract = True
-
-class UUIDModel(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-        help_text="Unique identifier for this record"
-    )
-
-    class Meta:
-        abstract = True
-
-class UserTrackingModel(models.Model):
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name='%(class)s_created',
-        help_text="User who created this record"
-    )
-    updated_by = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name='%(class)s_updated',
-        null=True,
-        blank=True,
-        help_text="User who last updated this record"
-    )
-
-    class Meta:
-        abstract = True
-
-class SoftDeleteModel(models.Model):
-    is_deleted = models.BooleanField(
-        default=False,
-        help_text="Whether this record has been soft deleted"
-    )
-    deleted_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Timestamp when the record was soft deleted"
-    )
-    deleted_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='%(class)s_deleted',
-        help_text="User who soft deleted this record"
-    )
-
-    def soft_delete(self, user=None):
-        self.is_deleted = True
-        self.deleted_at = timezone.now()
-        if user:
-            self.deleted_by = user
-        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by'])
-
-    class Meta:
-        abstract = True
-
-class BaseModel(TimestampedModel, UUIDModel, UserTrackingModel, SoftDeleteModel):
-    class Meta:
-        abstract = True
-
-class TenantModel(models.Model):
-    tenant = models.ForeignKey('contacts.Tenant', on_delete=models.CASCADE)
-
-    class Meta:
-        abstract = True
-
-class Tenant(TenantMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    subdomain = models.CharField(max_length=100, unique=True)
-    owner = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
-    sector = models.CharField(max_length=50, default='general')
-    is_active = models.BooleanField(default=True)
-    subscription_plan = models.CharField(max_length=50, default='basic')
-    created_at = models.DateTimeField(auto_now_add=True)
-    settings = models.JSONField(default=dict)
-
-    # Default database schema is 'public'
-    auto_create_schema = True
-
-    def __str__(self):
-        return self.name
-
-class Domain(DomainMixin):
-    pass
 
 # Communication method choices (customize as needed)
 COMMUNICATION_METHOD_CHOICES = [
@@ -119,14 +16,14 @@ COMMUNICATION_METHOD_CHOICES = [
     ('in_person', 'In Person'),
 ]
 
-class ContactType(BaseModel, TenantModel):
+class ContactType(BaseModel):
     """Model for categorizing contacts (Customer, Partner, Vendor, etc.)"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Type"
         verbose_name_plural = "Contact Types"
         
@@ -134,13 +31,13 @@ class ContactType(BaseModel, TenantModel):
         return self.name
 
 
-class ContactTag(BaseModel, TenantModel):
+class ContactTag(BaseModel):
     """Model for tagging contacts with keywords"""
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=7, default='#808080')  # Hex color
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Tag"
         verbose_name_plural = "Contact Tags"
         
@@ -148,13 +45,13 @@ class ContactTag(BaseModel, TenantModel):
         return self.name
 
 
-class ContactGroup(BaseModel, TenantModel):
+class ContactGroup(BaseModel):
     """Model for grouping contacts together"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Group"
         verbose_name_plural = "Contact Groups"
         
@@ -162,7 +59,7 @@ class ContactGroup(BaseModel, TenantModel):
         return self.name
 
 
-class Contact(BaseModel, TenantModel):
+class Contact(BaseModel):
     """Main model for storing contact information"""
     # Personal Information
     first_name = models.CharField(max_length=100)
@@ -216,7 +113,6 @@ class Contact(BaseModel, TenantModel):
     groups = models.ManyToManyField(ContactGroup, related_name='group_contacts')
 
     class Meta:
-        unique_together = ('tenant', 'email')  # Email should be unique per tenant
         ordering = ['last_name', 'first_name']
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
@@ -234,7 +130,7 @@ class ContactContactType(BaseModel):
     contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
-    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('contact', 'contact_type')
@@ -250,7 +146,7 @@ class ContactTagAssignment(BaseModel):
     contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     tag = models.ForeignKey(ContactTag, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
-    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('contact', 'tag')

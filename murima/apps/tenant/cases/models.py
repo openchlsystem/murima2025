@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericRelation
@@ -188,14 +189,14 @@ class Case(BaseModel):
         blank=True,
         help_text="User currently assigned to this case"
     )
-    assigned_team = models.ForeignKey(
-        'accounts.Team',
-        on_delete=models.PROTECT,
-        related_name='assigned_cases',
-        null=True,
-        blank=True,
-        help_text="Team currently assigned to this case"
-    )
+    # assigned_team = models.ForeignKey(
+    #     'accounts.Team',
+    #     on_delete=models.PROTECT,
+    #     related_name='assigned_cases',
+    #     null=True,
+    #     blank=True,
+    #     help_text="Team currently assigned to this case"
+    # )
     due_date = models.DateTimeField(
         null=True,
         blank=True,
@@ -260,7 +261,7 @@ class Case(BaseModel):
             models.Index(fields=['status']),
             models.Index(fields=['priority']),
             models.Index(fields=['assigned_to']),
-            models.Index(fields=['assigned_team']),
+            # models.Index(fields=['assigned_team']),
             models.Index(fields=['due_date']),
             models.Index(fields=['is_high_priority']),
             models.Index(fields=['is_confidential']),
@@ -664,13 +665,13 @@ class CaseTemplate(BaseModel):
         blank=True,
         help_text="Default assignee for cases created from this template"
     )
-    default_team = models.ForeignKey(
-        'accounts.Team',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="Default team for cases created from this template"
-    )
+    # default_team = models.ForeignKey(
+    #     'accounts.Team',
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     help_text="Default team for cases created from this template"
+    # )
     default_sla_hours = models.PositiveIntegerField(
         null=True,
         blank=True,

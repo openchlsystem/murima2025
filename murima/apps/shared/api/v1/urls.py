@@ -26,7 +26,7 @@ app_name = 'v1'
 
 urlpatterns = [
     # Authentication endpoints (shared app)
-    path('auth/', include('apps.shared.accounts.api_urls')),
+    path('auth/', include('apps.shared.accounts.urls')),
     
     # Tenant app endpoints
     # Note: These imports will be uncommented as each app is implemented

@@ -440,7 +440,7 @@ class TenantInvitation(BaseModel):
     tenant = models.ForeignKey(
         Tenant,
         on_delete=models.CASCADE,
-        related_name='invitations',
+        related_name='tenant_invitations',
         help_text="Tenant the user is being invited to join"
     )
     
@@ -457,7 +457,7 @@ class TenantInvitation(BaseModel):
     invited_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='sent_invitations',
+        related_name='tenant_invitations_sent',
         help_text="User who sent the invitation"
     )
     
@@ -496,7 +496,7 @@ class TenantInvitation(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='accepted_invitations',
+        related_name='tenant_invitations_accepted',
         help_text="User who accepted the invitation (may differ from invited email)"
     )
     

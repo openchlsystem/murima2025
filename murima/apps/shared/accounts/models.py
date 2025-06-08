@@ -106,6 +106,7 @@ class User(AbstractUser):
     last_password_change = models.DateTimeField(
         _('last password change'),
         auto_now_add=True,
+        null=True,
         help_text=_('Date and time of last password change.')
     )
     
@@ -215,7 +216,7 @@ class TenantMembership(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='sent_invitations',
+        related_name='tenant_memberships_sent',
         help_text=_('The user who invited this member to the tenant.')
     )
     
@@ -663,7 +664,7 @@ class UserInvitation(BaseModel):
     invited_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='sent_invitations',
+        related_name='user_invitations_sent',
         help_text=_('The user who sent this invitation.')
     )
     
@@ -703,7 +704,7 @@ class UserInvitation(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='accepted_invitations',
+        related_name='user_invitations_accepted',
         help_text=_('The user who accepted this invitation.')
     )
     
