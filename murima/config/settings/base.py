@@ -98,6 +98,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Custom Murima settings
+MURIMA_SETTINGS = {
+    'OTP_EXPIRY_MINUTES': 15,
+    'OTP_LENGTH': 6,
+    'MAX_LOGIN_ATTEMPTS': 5,
+    'ACCOUNT_LOCKOUT_MINUTES': 30,
+    'PASSWORD_RESET_TIMEOUT': 3600,  # 1 hour
+    'INVITATION_EXPIRY_DAYS': 7,
+    'SESSION_TIMEOUT_MINUTES': 60,
+    'ENABLE_2FA_BY_DEFAULT': False,
+    'SUPPORTED_2FA_METHODS': ['email', 'sms', 'whatsapp'],
+}
+
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -135,9 +148,15 @@ REST_FRAMEWORK = {
 }
 
 # Session configuration
-SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours default
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Security settings
+SESSION_COOKIE_SECURE = True  # HTTPS only
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # CSRF configuration
 CSRF_COOKIE_HTTPONLY = True
