@@ -1,25 +1,12 @@
-from rest_framework import generics, status, serializers
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.core.cache import cache
-from django.shortcuts import get_object_or_404
-from django.core.exceptions import ValidationError
-
+from rest_framework import serializers
 from apps.reference_data.models import (
     ReferenceDataType,
     ReferenceData,
     ReferenceDataHistory
 )
-from apps.shared.core.permissions import (
-    IsTenantAdmin,
-    HasReferenceDataPermission
-)
-from apps.shared.core.pagination import StandardResultsSetPagination
 from apps.tenants.models import Tenant
-from apps.tenants.mixins import TenantAwareMixin
-from apps.tenants.utils import get_current_tenant
+from django.core.exceptions import ValidationError
+from django.core.cache import cache
 
 class BaseModelSerializer(serializers.ModelSerializer):
     """
@@ -59,6 +46,7 @@ class ReferenceDataTypeSerializer(BaseModelSerializer):
         if not value.islower() or ' ' in value:
             raise ValidationError("Name must be lowercase and use underscores instead of spaces")
         return value
+
 
 class ReferenceDataSerializer(BaseModelSerializer):
     """
@@ -122,13 +110,14 @@ class ReferenceDataSerializer(BaseModelSerializer):
             )
             if self.instance:
                 queryset = queryset.exclude(pk=self.instance.pk)
-                
+            
             if queryset.exists():
                 raise ValidationError({
                     'code': f'A reference data entry with this code already exists for type {data_type.name}'
                 })
 
         return data
+
 
 class ReferenceDataHistorySerializer(BaseModelSerializer):
     """
@@ -153,6 +142,7 @@ class ReferenceDataHistorySerializer(BaseModelSerializer):
             'changed_by'
         ]
         read_only_fields = fields
+
 
 class ReferenceDataBulkUpdateSerializer(serializers.Serializer):
     """
