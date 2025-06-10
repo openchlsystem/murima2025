@@ -273,6 +273,12 @@ class LoginSerializer(serializers.Serializer):
         help_text=_('Keep me logged in for 30 days.')
     )
     
+    def validate_email(self, value):
+        """Basic email format validation - don't check existence here."""
+        # Just validate email format, don't check if user exists
+        # User existence will be checked in the main validate() method
+        return value.lower().strip()
+    
     def validate(self, data):
         """Authenticate user with email and password OR initiate OTP login."""
         email = data.get('email')
@@ -282,11 +288,13 @@ class LoginSerializer(serializers.Serializer):
         if not email:
             raise ValidationError(_('Email is required.'))
         
-        # Check if user exists
+        # Check if user exists - this is the main user existence check
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise ValidationError(_('Invalid email address.'))
+            # For security, don't reveal whether email exists or not
+            # Use a generic error message for both password and OTP methods
+            raise ValidationError(_('Invalid login credentials. Please check your email address.'))
         
         # Check if account is locked
         if user.is_account_locked():
@@ -331,6 +339,19 @@ class LoginSerializer(serializers.Serializer):
             data['requires_otp'] = False
             
         elif login_method == 'otp':
+            # OTP-based authentication - validate delivery method
+            delivery_method = data.get('delivery_method', 'email')
+            
+            # Validate delivery method and user's contact info
+            if delivery_method == 'email':
+                # Email is always available since we found the user by email
+                pass
+            elif delivery_method in ['sms', 'whatsapp']:
+                if not user.phone:
+                    raise ValidationError(_('Phone number not available for SMS/WhatsApp delivery. Please use email or contact support.'))
+            else:
+                raise ValidationError(_('Invalid delivery method. Please choose email, SMS, or WhatsApp.'))
+            
             # OTP-based authentication - just validate user exists and is active
             # The actual OTP will be generated and sent in the view
             data['user'] = user
@@ -340,7 +361,6 @@ class LoginSerializer(serializers.Serializer):
             raise ValidationError(_('Invalid login method. Use "password" or "otp".'))
         
         return data
-
 
 class OTPRequestSerializer(serializers.Serializer):
     """
