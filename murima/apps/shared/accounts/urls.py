@@ -33,6 +33,8 @@ router.register(r'platform-roles', PlatformRoleViewSet, basename='platform-roles
 
 app_name = 'accounts'
 
+# Main URL patterns
+
 urlpatterns = [
     # Health check endpoint
     path('health/', HealthCheckView.as_view(), name='health-check'),
