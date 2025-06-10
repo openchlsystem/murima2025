@@ -5,7 +5,7 @@ from . import views
 router = DefaultRouter()
 
 # Workflow Templates URLs
-router.register(r'workflow-templates', views.WorkflowTemplateViewSet, basename='workflowtemplate')
+# router.register(r'workflow-templates', views.WorkflowTemplateViewSet, basename='workflowtemplate')
 
 urlpatterns = [
     path('', include(router.urls)),

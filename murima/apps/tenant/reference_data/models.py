@@ -6,7 +6,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 import json
 import uuid
-import jsonschema
+from jsonschema import validate as jsonschema_validate
 from apps.shared.core.models import BaseModel
 
 
@@ -138,9 +138,9 @@ class ReferenceData(BaseModel):
         
         if self.data_type.validation_schema:
             try:
-                jsonschema.validate(self.metadata, self.data_type.validation_schema)
-            except jsonschema.ValidationError as e:
-                raise ValidationError(_(f"Metadata validation error: {e.message}"))
+                jsonschema_validate(self.metadata, self.data_type.validation_schema)
+            except Exception as e:
+                raise ValidationError(_(f"Metadata validation error: {str(e)}"))
 
         # Validate tenant-specific constraint
         if not self.data_type.is_tenant_specific and self.tenant != get_public_tenant():
@@ -157,12 +157,12 @@ class ReferenceData(BaseModel):
         super().save(*args, **kwargs)
         
         # Invalidate cache for this data type
-        cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
+        # cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
         cache.delete(cache_key)
 
     def delete(self, *args, **kwargs):
         """Override delete to handle cache invalidation"""
-        cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
+        # cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
         cache.delete(cache_key)
         super().delete(*args, **kwargs)
 
@@ -196,5 +196,4 @@ class ReferenceDataHistory(BaseModel):
 
 def get_public_tenant():
     """Helper function to get the public tenant"""
-    from django_tenants.models import Tenant
-    return Tenant.objects.filter(schema_name='public').first()
+    # return Tenant.objects.filter(schema_name='public').first()

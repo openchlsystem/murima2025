@@ -32,7 +32,7 @@ urlpatterns = [
     # Note: These imports will be uncommented as each app is implemented
     
     # Cases management
-    # path('cases/', include('apps.tenant.cases.urls')),
+    path('cases/', include('apps.tenant.cases.urls')),
     
     # Communications (omnichannel)
     # path('communications/', include('apps.tenant.communications.urls')),
@@ -41,19 +41,19 @@ urlpatterns = [
     # path('calls/', include('apps.tenant.calls.urls')),
     
     # CRM and contact management
-    # path('contacts/', include('apps.tenant.contacts.urls')),
+    path('contacts/', include('apps.tenant.contacts.urls')),
     
     # Workflow management
-    # path('workflows/', include('apps.tenant.workflows.urls')),
+    path('workflows/', include('apps.tenant.workflows.urls')),
     
     # Reference data and lookups
-    # path('reference-data/', include('apps.tenant.reference_data.urls')),
+    path('reference-data/', include('apps.tenant.reference_data.urls')),
     
     # Document management
-    # path('documents/', include('apps.tenant.documents.urls')),
+    path('documents/', include('apps.tenant.documents.urls')),
     
     # Task management
-    # path('tasks/', include('apps.tenant.tasks.urls')),
+    path('tasks/', include('apps.tenant.tasks.urls')),
     
     # Notifications
     # path('notifications/', include('apps.tenant.notifications.urls')),

@@ -1,26 +1,23 @@
 from django.urls import path
-from .views.reference_data_type import (
+from .views import (
     ReferenceDataTypeListCreateView,
     ReferenceDataTypeDetailView,
-)
-from .views.reference_data import (
     ReferenceDataListCreateView,
     ReferenceDataDetailView,
-    ReferenceDataByTypeView,
-    ReferenceDataBulkUpdateView,
-)
-from .views.reference_data_history import (
     ReferenceDataHistoryListView,
     ReferenceDataHistoryDetailView,
 )
 
 urlpatterns = [
+    # Reference Data Types
     path('types/', ReferenceDataTypeListCreateView.as_view(), name='reference-data-type-list'),
-    path('types/<str:name>/', ReferenceDataTypeDetailView.as_view(), name='reference-data-type-detail'),
-    path('data/', ReferenceDataListCreateView.as_view(), name='reference-data-list'),
-    path('data/<int:pk>/', ReferenceDataDetailView.as_view(), name='reference-data-detail'),
-    path('data/type/<str:data_type>/', ReferenceDataByTypeView.as_view(), name='reference-data-by-type'),
-    path('data/bulk/', ReferenceDataBulkUpdateView.as_view(), name='reference-data-bulk-update'),
+    path('types/<uuid:pk>/', ReferenceDataTypeDetailView.as_view(), name='reference-data-type-detail'),
+
+    # Reference Data Entries
+    path('entries/', ReferenceDataListCreateView.as_view(), name='reference-data-entry-list'),
+    path('entries/<uuid:pk>/', ReferenceDataDetailView.as_view(), name='reference-data-entry-detail'),
+
+    # Reference Data History
     path('history/', ReferenceDataHistoryListView.as_view(), name='reference-data-history-list'),
-    path('history/<int:pk>/', ReferenceDataHistoryDetailView.as_view(), name='reference-data-history-detail'),
+    path('history/<uuid:pk>/', ReferenceDataHistoryDetailView.as_view(), name='reference-data-history-detail'),
 ]
