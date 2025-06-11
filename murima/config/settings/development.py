@@ -6,8 +6,14 @@ from decouple import config
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.localhost',  # This allows any subdomain of localhost
+]
 # Database
 DATABASES = {
     'default': {

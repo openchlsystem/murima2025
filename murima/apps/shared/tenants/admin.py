@@ -144,13 +144,13 @@ class TenantAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimize queryset with related data."""
         return super().get_queryset(request).select_related('owner').annotate(
-            user_count=Count('tenantmembership', distinct=True, filter=Q(tenantmembership__is_active=True))
+            user_count=Count('memberships', distinct=True, filter=Q(memberships__is_active=True))
         )
     
     def owner_link(self, obj):
         """Display owner as a link to user admin."""
         if obj.owner:
-            url = reverse('admin:auth_user_change', args=[obj.owner.pk])
+            url = reverse('admin:accounts_user_change', args=[obj.owner.pk])
             return format_html('<a href="{}">{}</a>', url, obj.owner.get_full_name() or obj.owner.email)
         return "-"
     owner_link.short_description = "Owner"
@@ -471,7 +471,7 @@ class TenantInvitationAdmin(admin.ModelAdmin):
     def invited_by_link(self, obj):
         """Display inviter as a link."""
         if obj.invited_by:
-            url = reverse('admin:auth_user_change', args=[obj.invited_by.pk])
+            url = reverse('admin:accounts_user_change', args=[obj.invited_by.pk])
             return format_html('<a href="{}">{}</a>', url, obj.invited_by.get_full_name() or obj.invited_by.email)
         return "-"
     invited_by_link.short_description = "Invited By"

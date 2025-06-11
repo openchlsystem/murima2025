@@ -30,6 +30,7 @@ urlpatterns = [
     
     # Tenant app endpoints
     # Note: These imports will be uncommented as each app is implemented
+    path('tenant/', include('apps.shared.tenants.urls')),
     
     # Cases management
     path('cases/', include('apps.tenant.cases.urls')),
