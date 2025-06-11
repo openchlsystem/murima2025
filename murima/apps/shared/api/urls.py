@@ -34,7 +34,11 @@ urlpatterns = [
     # API documentation endpoints
     path('docs/', views.APIDocumentationView.as_view(), name='api-docs'),
     path('schema/', views.APISchemaView.as_view(), name='api-schema'),
+    
+  
 ]
+
+
 
 # ============================================================================
 # Example: How tenant apps should structure their API URLs
