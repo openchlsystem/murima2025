@@ -1,4 +1,4 @@
-<script>
+<script setup>
     import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
     import {
         testServerConnection,
@@ -174,6 +174,10 @@
                 session,
                 callerId: session.remote_identity.uri.user,
                 callerName: session.remote_identity.display_name || session.remote_identity.uri.user
+            };
+            sipStatus.value.hasIncomingCall = true;
+        });
+
             };
             sipStatus.value.hasIncomingCall = true;
         });

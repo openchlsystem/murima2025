@@ -18,7 +18,7 @@ class AsteriskExtension(models.Model):
     username = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=100)
     tenant = models.ForeignKey(
-        'users.Tenant',  # Adjust this to your actual Tenant model path
+        'tenants.Tenant',  # Adjust this to your actual Tenant model path
         on_delete=models.CASCADE,
         related_name='asterisk_extensions'
     )
