@@ -7,12 +7,12 @@
       <!-- Left Section - Welcome with Pattern -->
       <div class="welcome-section">
         <!-- Seamless Photo -->
-        <img src="/src/assets/images/welcome-helpline.png" alt="Welcome to MURIMA" class="welcome-photo">
+        <img src="/src/assets/images/welcome-helpline.png" alt="Welcome to OPENCHS" class="welcome-photo">
 
         <div class="welcome-content">
-          <h1 class="welcome-title">Welcome to <span>MURIMA</span></h1>
+          <h1 class="welcome-title">Welcome to <span>OPENCHS</span></h1>
           <p class="welcome-description">
-            Streamlining client communications and case management for efficient service delivery.
+            Streamlining child protection processes for efficient safeguarding and better service delivery.
           </p>
         </div>
         <!-- Pattern Background -->
@@ -28,15 +28,15 @@
 
         <!-- Dynamic Form Title -->
         <h2 class="form-title">
-          <span v-if="currentStep === 'email'">Log in to your account</span>
+          <span v-if="currentStep === 'username'">Log in to your account</span>
           <span v-else-if="currentStep === 'otp'">Enter verification code</span>
         </h2>
 
         <!-- Step Indicator -->
         <div class="step-indicator">
-          <div class="step" :class="{ active: currentStep === 'email', completed: currentStep === 'otp' }">
+          <div class="step" :class="{ active: currentStep === 'username', completed: currentStep === 'otp' }">
             <span class="step-number">1</span>
-            <span class="step-label">Email</span>
+            <span class="step-label">Username</span>
           </div>
           <div class="step-divider"></div>
           <div class="step" :class="{ active: currentStep === 'otp' }">
@@ -56,64 +56,27 @@
             {{ successMessage }}
           </div>
 
-          <!-- Step 1: Email and Login Method Selection -->
-          <div v-if="currentStep === 'email'" class="step-content">
+          <!-- Step 1: Username and Means Selection -->
+          <div v-if="currentStep === 'username'" class="step-content">
             <div class="input-group">
-              <label class="input-label">Email Address</label>
-              <input type="email" v-model="email" class="form-input"
-                :class="{ 'input-error': submitted && !email }" placeholder="Enter your email address" required
+              <label class="input-label">Username</label>
+              <input type="text" v-model="username" class="form-input"
+                :class="{ 'input-error': submitted && !username }" placeholder="Enter your username" required
                 :disabled="loading">
-              <div v-if="submitted && !email" class="validation-error">
-                Email is required
+              <div v-if="submitted && !username" class="validation-error">
+                Username is required
               </div>
             </div>
 
-            <!-- Login Method Selection -->
+            <!-- Choose Means Dropdown -->
             <div class="input-group">
-              <label class="input-label">How would you like to log in?</label>
-              <div class="login-method-container">
-                <div class="method-option" 
-                     :class="{ active: loginMethod === 'password' }"
-                     @click="selectLoginMethod('password')">
-                  <div class="method-icon">🔐</div>
-                  <div class="method-info">
-                    <div class="method-title">Password</div>
-                    <div class="method-desc">Use your password</div>
-                  </div>
-                </div>
-                <div class="method-option" 
-                     :class="{ active: loginMethod === 'otp' }"
-                     @click="selectLoginMethod('otp')">
-                  <div class="method-icon">📧</div>
-                  <div class="method-info">
-                    <div class="method-title">OTP</div>
-                    <div class="method-desc">Get verification code</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Password Input (if password method selected) -->
-            <div v-if="loginMethod === 'password'" class="input-group">
-              <label class="input-label">Password</label>
-              <input type="password" v-model="password" class="form-input"
-                :class="{ 'input-error': submitted && loginMethod === 'password' && !password }" 
-                placeholder="Enter your password" 
-                :disabled="loading">
-              <div v-if="submitted && loginMethod === 'password' && !password" class="validation-error">
-                Password is required
-              </div>
-            </div>
-
-            <!-- OTP Delivery Method (if OTP method selected) -->
-            <div v-if="loginMethod === 'otp'" class="input-group">
-              <label class="input-label">How to receive OTP</label>
+              <label class="input-label">Choose how to receive OTP</label>
               <div class="select-container">
-                <select v-model="deliveryMethod" class="form-select"
-                  :class="{ 'input-error': submitted && loginMethod === 'otp' && !deliveryMethod }" 
-                  :disabled="loading">
+                <select v-model="selectedMeans" class="form-select"
+                  :class="{ 'input-error': submitted && !selectedMeans }" required :disabled="loading">
+                  <option value="" disabled>Select verification method</option>
+                  <option value="phone">📱 Phone (SMS)</option>
                   <option value="email">📧 Email</option>
-                  <option value="sms">📱 SMS</option>
                   <option value="whatsapp">💬 WhatsApp</option>
                 </select>
                 <div class="select-arrow">
@@ -123,19 +86,19 @@
                   </svg>
                 </div>
               </div>
-              <div v-if="submitted && loginMethod === 'otp' && !deliveryMethod" class="validation-error">
-                Please select a delivery method
+              <div v-if="submitted && !selectedMeans" class="validation-error">
+                Please select a verification method
               </div>
 
-              <!-- Delivery Method Description -->
-              <div v-if="deliveryMethod" class="means-description">
-                <p v-if="deliveryMethod === 'email'" class="means-text">
-                  📧 OTP will be sent to your email address
-                </p>
-                <p v-else-if="deliveryMethod === 'sms'" class="means-text">
+              <!-- Means Description -->
+              <div v-if="selectedMeans" class="means-description">
+                <p v-if="selectedMeans === 'phone'" class="means-text">
                   📱 OTP will be sent via SMS to your registered phone number
                 </p>
-                <p v-else-if="deliveryMethod === 'whatsapp'" class="means-text">
+                <p v-else-if="selectedMeans === 'email'" class="means-text">
+                  📧 OTP will be sent to your registered email address
+                </p>
+                <p v-else-if="selectedMeans === 'whatsapp'" class="means-text">
                   💬 OTP will be sent via WhatsApp to your registered number
                 </p>
               </div>
@@ -156,15 +119,18 @@
             <div class="otp-info">
               <div class="selected-means-display">
                 <div class="means-icon">
-                  <span v-if="deliveryMethod === 'sms'">📱</span>
-                  <span v-else-if="deliveryMethod === 'email'">📧</span>
-                  <span v-else-if="deliveryMethod === 'whatsapp'">💬</span>
+                  <span v-if="selectedMeans === 'phone'">📱</span>
+                  <span v-else-if="selectedMeans === 'email'">📧</span>
+                  <span v-else-if="selectedMeans === 'whatsapp'">💬</span>
                 </div>
                 <p class="otp-message">
-                  We've sent a 6-digit verification code to your 
-                  <span v-if="deliveryMethod === 'email'">email address <strong>{{ maskedEmail }}</strong></span>
-                  <span v-else-if="deliveryMethod === 'sms'">phone number ending with <strong>***{{ maskedPhone }}</strong></span>
-                  <span v-else-if="deliveryMethod === 'whatsapp'">WhatsApp number ending with <strong>***{{ maskedPhone }}</strong></span>
+                  We've sent a 6-digit verification code
+                  <span v-if="selectedMeans === 'phone'">via SMS to your registered phone number ending with
+                    <strong>***{{ maskedContact.phone }}</strong></span>
+                  <span v-else-if="selectedMeans === 'email'">to your registered email <strong>{{ maskedContact.email
+                      }}</strong></span>
+                  <span v-else-if="selectedMeans === 'whatsapp'">via WhatsApp to your registered number ending with
+                    <strong>***{{ maskedContact.phone }}</strong></span>
                 </p>
               </div>
             </div>
@@ -188,38 +154,31 @@
                 Resend OTP in {{ resendTimer }}s
               </span>
               <button v-else type="button" class="resend-button" @click="resendOtp" :disabled="loading">
-                <span v-if="deliveryMethod === 'sms'">📱 Resend SMS</span>
-                <span v-else-if="deliveryMethod === 'email'">📧 Resend Email</span>
-                <span v-else-if="deliveryMethod === 'whatsapp'">💬 Resend WhatsApp</span>
+                <span v-if="selectedMeans === 'phone'">📱 Resend SMS</span>
+                <span v-else-if="selectedMeans === 'email'">📧 Resend Email</span>
+                <span v-else-if="selectedMeans === 'whatsapp'">💬 Resend WhatsApp</span>
               </button>
             </div>
 
-            <!-- Back to Email -->
-            <button type="button" class="back-button" @click="goBackToEmail" :disabled="loading">
-              ← Back to Email
+            <!-- Back to Username -->
+            <button type="button" class="back-button" @click="goBackToUsername" :disabled="loading">
+              ← Back to Username
             </button>
           </div>
 
           <!-- Submit Button -->
           <button type="submit" class="login-button" :disabled="loading || !isFormValid">
             <span v-if="!loading">
-              <span v-if="currentStep === 'email' && loginMethod === 'password'">Login</span>
-              <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Send OTP</span>
+              <span v-if="currentStep === 'username'">Request OTP</span>
               <span v-else-if="currentStep === 'otp'">Verify & Login</span>
             </span>
             <span v-else class="loading-content">
               <div class="spinner"></div>
-              <span v-if="currentStep === 'email' && loginMethod === 'password'">Logging in...</span>
-              <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Sending OTP...</span>
+              <span v-if="currentStep === 'username'">Sending OTP...</span>
               <span v-else-if="currentStep === 'otp'">Verifying...</span>
             </span>
           </button>
         </form>
-
-        <!-- Forgot Password Link -->
-        <div class="forgot-password">
-          <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot your password?</a>
-        </div>
 
         <!-- Help Text -->
         <div class="help-text">
@@ -232,45 +191,37 @@
     </div>
   </div>
 </template>
-
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import axiosInstance from '../utils/axios';
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
+  import axiosInstance from '../utils/axios';
 
-export default {
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
+  export default {
+    setup() {
+      const router = useRouter();
+      const route = useRoute();
 
-    // Form data
-    const email = ref('');
-    const password = ref('');
-    const loginMethod = ref('otp'); // 'password' or 'otp'
-    const deliveryMethod = ref('email'); // 'email', 'sms', 'whatsapp'
-    const rememberMe = ref(false);
-    const otpDigits = ref(['', '', '', '', '', '']);
-    const otpInputs = ref([]);
+      // Form data
+      const username = ref('');
+      const selectedMeans = ref('');
+      const rememberMe = ref(false);
+      const otpDigits = ref(['', '', '', '', '', '']);
+      const otpInputs = ref([]);
 
-    // Form state
-    const currentStep = ref('email');
-    const loading = ref(false);
-    const submitted = ref(false);
-    const error = ref('');
-    const successMessage = ref('');
-    const returnUrl = ref(route.query.returnUrl || '/dashboard');
-    const resendTimer = ref(0);
-    const resendInterval = ref(null);
-    const userId = ref('');
-    const maskedEmail = ref('');
-    const maskedPhone = ref('');
+      // Form state
+      const currentStep = ref('username');
+      const loading = ref(false);
+      const submitted = ref(false);
+      const error = ref('');
+      const successMessage = ref('');
+      const returnUrl = ref(route.query.returnUrl || '/dashboard');
+      const resendTimer = ref(0);
+      const resendInterval = ref(null);
+      const maskedContact = ref({
+        phone: '',
+        email: ''
+      });
 
-    // SIP Details 
-    const sipConnectionDetails = ref({
-      uri: 'sip:6001@54.238.49.155',
-      password: 'securepassword',
-      websocketURL: 'wss://54.238.49.155:8089/ws'
-    });
 
       // sipDetails 
       const sipConnectionDetails = ref({
@@ -279,311 +230,245 @@ export default {
         websocketURL: 'ws://18.177.175.202:8088/websocket'
       })
 
-    const isFormValid = computed(() => {
-      if (currentStep.value === 'email') {
-        if (loginMethod.value === 'password') {
-          return email.value.length > 0 && password.value.length > 0;
-        } else if (loginMethod.value === 'otp') {
-          return email.value.length > 0 && deliveryMethod.value !== '';
+      
+      // Computed properties
+      const isOtpComplete = computed(() => {
+        return otpDigits.value.every(digit => digit !== '');
+      });
+
+      const isFormValid = computed(() => {
+        if (currentStep.value === 'username') {
+          return username.value.length > 0 && selectedMeans.value !== '';
+        } else if (currentStep.value === 'otp') {
+          return isOtpComplete.value;
         }
-      } else if (currentStep.value === 'otp') {
-        return isOtpComplete.value;
-      }
-      return false;
-    });
+        return false;
+      });
 
-    // Methods
-    const selectLoginMethod = (method) => {
-      loginMethod.value = method;
-      error.value = '';
-    };
-
-    const handleOtpInput = (index, event) => {
-      const value = event.target.value;
-      if (value && index < 5) {
-        otpInputs.value[index + 1]?.focus();
-      }
-    };
-
-    const handleOtpKeydown = (index, event) => {
-      if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
-        otpInputs.value[index - 1]?.focus();
-      }
-    };
-
-    const startResendTimer = () => {
-      resendTimer.value = 30;
-      resendInterval.value = setInterval(() => {
-        resendTimer.value--;
-        if (resendTimer.value <= 0) {
-          clearInterval(resendInterval.value);
+      // Methods
+      const handleOtpInput = (index, event) => {
+        const value = event.target.value;
+        if (value && index < 5) {
+          otpInputs.value[index + 1]?.focus();
         }
-      }, 1000);
-    };
+      };
 
-    const maskEmail = (email) => {
-      const [username, domain] = email.split('@');
-      const maskedUsername = username.length > 2 
-        ? username.substring(0, 2) + '*'.repeat(username.length - 2)
-        : username;
-      return `${maskedUsername}@${domain}`;
-    };
-
-    const passwordLogin = async () => {
-      loading.value = true;
-      error.value = '';
-
-      try {
-        const response = await axiosInstance.post('/auth/login/', {
-          email: email.value,
-          password: password.value,
-          login_method: 'password',
-          remember_me: rememberMe.value
-        });
-
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', response.data.access_token);
-        localStorage.setItem('refresh_token', response.data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('session_id', response.data.session_id);
-
-        // Store SIP information
-        localStorage.setItem('sipConnectionDetails', JSON.stringify({
-          desc: 'SIP Connection Details',
-          uri: sipConnectionDetails.value.uri,
-          password: sipConnectionDetails.value.password,
-          websocketURL: sipConnectionDetails.value.websocketURL
-        }));
-
-        // Store remember me preference
-        if (rememberMe.value) {
-          localStorage.setItem('rememberedEmail', email.value);
-          localStorage.setItem('rememberedMethod', loginMethod.value);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-          localStorage.removeItem('rememberedMethod');
+      const handleOtpKeydown = (index, event) => {
+        if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
+          otpInputs.value[index - 1]?.focus();
         }
+      };
 
-        // Redirect to dashboard
-        router.push(returnUrl.value);
-      } catch (err) {
-        error.value = err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.response?.data?.non_field_errors?.[0] ||
-          'Login failed. Please check your credentials.';
-        console.error('Password login error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
+      const startResendTimer = () => {
+        resendTimer.value = 30;
+        resendInterval.value = setInterval(() => {
+          resendTimer.value--;
+          if (resendTimer.value <= 0) {
+            clearInterval(resendInterval.value);
+          }
+        }, 1000);
+      };
 
-    const requestOtp = async () => {
-      loading.value = true;
-      error.value = '';
+      const requestOtp = async () => {
+        loading.value = true;
+        error.value = '';
 
-      try {
-        const response = await axiosInstance.post('/auth/login/', {
-          email: email.value,
-          login_method: 'otp',
-          delivery_method: deliveryMethod.value,
-          remember_me: rememberMe.value
-        });
+        try {
+          const response = await axiosInstance.post('/api/auth/otp/request/', {
+            contact: username.value,
+            method: selectedMeans.value
+          });
 
-        if (response.data.requires_otp) {
-          userId.value = response.data.user_id;
-          maskedEmail.value = maskEmail(email.value);
-          
+          // Extract masked contact info from response
+          if (selectedMeans.value === 'email') {
+            maskedContact.value.email = username.value;
+          } else {
+            // Assuming phone number is returned in response
+            const phone = response.data.phone || '';
+            maskedContact.value.phone = phone.slice(-4);
+          }
+
           currentStep.value = 'otp';
-          successMessage.value = `OTP sent successfully via ${deliveryMethod.value}!`;
+          successMessage.value = `OTP sent successfully via ${selectedMeans.value}!`;
           startResendTimer();
 
           setTimeout(() => {
             successMessage.value = '';
           }, 3000);
-        } else {
-          // This shouldn't happen with OTP method, but handle just in case
-          error.value = 'Unexpected response from server.';
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'Failed to send OTP. Please try again.';
+          console.error('OTP request error:', err);
+        } finally {
+          loading.value = false;
         }
-      } catch (err) {
-        error.value = err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          'Failed to send OTP. Please try again.';
-        console.error('OTP request error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
+      };
 
-    const verifyOtp = async () => {
-      loading.value = true;
-      error.value = '';
+      const verifyOtp = async () => {
+        loading.value = true;
+        error.value = '';
 
-      try {
-        const otpCode = otpDigits.value.join('');
-        const response = await axiosInstance.post('/auth/verify-login-otp/', {
-          user_id: userId.value,
-          token: otpCode,
-          remember_me: rememberMe.value
-        });
+        try {
+          const otpCode = otpDigits.value.join('');
+          const response = await axiosInstance.post('/api/auth/otp/verify/', {
+            contact: username.value,
+            code: otpCode,
+            method: selectedMeans.value
+          });
 
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', response.data.access_token);
-        localStorage.setItem('refresh_token', response.data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('session_id', response.data.session_id);
+          // Store authentication tokens and user data
+          localStorage.setItem('access_token', response.data.access);
+          localStorage.setItem('refresh_token', response.data.refresh);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
 
-        // Store SIP information
-        localStorage.setItem('sipConnectionDetails', JSON.stringify({
-          desc: 'SIP Connection Details',
-          uri: sipConnectionDetails.value.uri,
-          password: sipConnectionDetails.value.password,
-          websocketURL: sipConnectionDetails.value.websocketURL
-        }));
 
-        // Store remember me preference
-        if (rememberMe.value) {
-          localStorage.setItem('rememberedEmail', email.value);
-          localStorage.setItem('rememberedMethod', loginMethod.value);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-          localStorage.removeItem('rememberedMethod');
+          // Store ip iformation
+          // localStorage.setItem('sipConnectionDetails', JSON.stringify(sipConnectionDetails.value));
+          localStorage.setItem('sipConnectionDetails', JSON.stringify({
+            desc: 'SIP Connection Details',
+            uri: sipConnectionDetails.value.uri,
+            password: sipConnectionDetails.value.password,
+            websocketURL: sipConnectionDetails.value.websocketURL
+          }));
+
+
+          // Store remember me preference if selected
+          if (rememberMe.value) {
+            localStorage.setItem('rememberedUsername', username.value);
+            localStorage.setItem('rememberedMeans', selectedMeans.value);
+          } else {
+            localStorage.removeItem('rememberedUsername');
+            localStorage.removeItem('rememberedMeans');
+          }
+
+          // Redirect to dashboard
+          router.push(returnUrl.value);
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'OTP verification failed. Please try again.';
+          console.error('OTP verification error:', err);
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const handleSubmit = async () => {
+        submitted.value = true;
+
+        if (!isFormValid.value) {
+          return;
         }
 
-        // Redirect to dashboard
-        router.push(returnUrl.value);
-      } catch (err) {
-        error.value = err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          'OTP verification failed. Please try again.';
-        console.error('OTP verification error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const handleSubmit = async () => {
-      submitted.value = true;
-
-      if (!isFormValid.value) {
-        return;
-      }
-
-      if (currentStep.value === 'email') {
-        if (loginMethod.value === 'password') {
-          await passwordLogin();
-        } else if (loginMethod.value === 'otp') {
+        if (currentStep.value === 'username') {
           await requestOtp();
+        } else if (currentStep.value === 'otp') {
+          await verifyOtp();
         }
-      } else if (currentStep.value === 'otp') {
-        await verifyOtp();
-      }
-    };
+      };
 
-    const resendOtp = async () => {
-      loading.value = true;
-      error.value = '';
+      const resendOtp = async () => {
+        loading.value = true;
+        error.value = '';
 
-      try {
-        await axiosInstance.post('/auth/request-otp/', {
-          email: email.value,
-          purpose: 'login',
-          delivery_method: deliveryMethod.value
-        });
+        try {
+          await axiosInstance.post('/api/auth/otp/request/', {
+            contact: username.value,
+            method: selectedMeans.value
+          });
 
-        successMessage.value = `OTP resent successfully via ${deliveryMethod.value}!`;
-        startResendTimer();
+          successMessage.value = `OTP resent successfully via ${selectedMeans.value}!`;
+          startResendTimer();
 
-        setTimeout(() => {
-          successMessage.value = '';
-        }, 3000);
-      } catch (err) {
-        error.value = err.response?.data?.detail ||
-          err.response?.data?.message ||
-          'Failed to resend OTP. Please try again.';
-      } finally {
-        loading.value = false;
-      }
-    };
+          setTimeout(() => {
+            successMessage.value = '';
+          }, 3000);
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'Failed to resend OTP. Please try again.';
+        } finally {
+          loading.value = false;
+        }
+      };
 
-    const goBackToEmail = () => {
-      currentStep.value = 'email';
-      otpDigits.value = ['', '', '', '', '', ''];
-      submitted.value = false;
-      error.value = '';
-      successMessage.value = '';
-      userId.value = '';
+      const goBackToUsername = () => {
+        currentStep.value = 'username';
+        otpDigits.value = ['', '', '', '', '', ''];
+        submitted.value = false;
+        error.value = '';
+        successMessage.value = '';
 
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
-        resendTimer.value = 0;
-      }
-    };
+        if (resendInterval.value) {
+          clearInterval(resendInterval.value);
+          resendTimer.value = 0;
+        }
+      };
 
-    const handleForgotPassword = () => {
-      // TODO: Implement forgot password logic
-      router.push('/forgot-password');
-    };
+      const handleHelp = () => {
+        console.log('Help clicked');
+        // TODO: Implement help logic
+      };
 
-    const handleHelp = () => {
-      console.log('Help clicked');
-      // TODO: Implement help logic
-    };
+      // Check for remembered username and means on component mount
+      const checkRememberedData = () => {
+        const rememberedUsername = localStorage.getItem('rememberedUsername');
+        const rememberedMeans = localStorage.getItem('rememberedMeans');
 
-    // Check for remembered data on component mount
-    const checkRememberedData = () => {
-      const rememberedEmail = localStorage.getItem('rememberedEmail');
-      const rememberedMethod = localStorage.getItem('rememberedMethod');
+        if (rememberedUsername) {
+          username.value = rememberedUsername;
+          rememberMe.value = true;
+        }
 
-      if (rememberedEmail) {
-        email.value = rememberedEmail;
-        rememberMe.value = true;
-      }
+        if (rememberedMeans) {
+          selectedMeans.value = rememberedMeans;
+        }
+      };
 
-      if (rememberedMethod) {
-        loginMethod.value = rememberedMethod;
-      }
-    };
+      // Lifecycle hooks
+      onMounted(() => {
+        checkRememberedData();
 
         const checkWSConnection = new WebSocket("ws://18.177.175.202:8088/ws", "sip");
 
-    onUnmounted(() => {
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
-      }
-    });
+        console.log("checking WebSocket Connection", checkWSConnection)
 
-    return {
-      email,
-      password,
-      loginMethod,
-      deliveryMethod,
-      rememberMe,
-      otpDigits,
-      otpInputs,
-      currentStep,
-      loading,
-      submitted,
-      error,
-      successMessage,
-      maskedEmail,
-      maskedPhone,
-      resendTimer,
-      isOtpComplete,
-      isFormValid,
-      selectLoginMethod,
-      handleOtpInput,
-      handleOtpKeydown,
-      handleSubmit,
-      resendOtp,
-      goBackToEmail,
-      handleForgotPassword,
-      handleHelp,
-      sipConnectionDetails,
-    };
-  }
-};
+        
+
+      });
+
+      onUnmounted(() => {
+        if (resendInterval.value) {
+          clearInterval(resendInterval.value);
+        }
+      });
+
+      return {
+        username,
+        selectedMeans,
+        rememberMe,
+        otpDigits,
+        otpInputs,
+        currentStep,
+        loading,
+        submitted,
+        error,
+        successMessage,
+        maskedContact,
+        resendTimer,
+        isOtpComplete,
+        isFormValid,
+        handleOtpInput,
+        handleOtpKeydown,
+        handleSubmit,
+        resendOtp,
+        goBackToUsername,
+        handleHelp,
+        sipConnectionDetails,
+      };
+    }
+  };
 </script>
 
 <style scoped>
@@ -600,73 +485,6 @@ export default {
   body {
     background-color: #f7fafc;
   }
-
-  .login-method-container {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 1rem;
-}
-
-.method-option {
-  flex: 1;
-  padding: 12px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: white;
-}
-
-.method-option:hover {
-  border-color: #1e7e34;
-  background-color: rgba(30, 126, 52, 0.05);
-}
-
-.method-option.active {
-  border-color: #1e7e34;
-  background-color: rgba(30, 126, 52, 0.1);
-  box-shadow: 0 0 0 3px rgba(30, 126, 52, 0.1);
-}
-
-.method-icon {
-  font-size: 1.5rem;
-}
-
-.method-info {
-  flex: 1;
-}
-
-.method-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #000000;
-  margin-bottom: 2px;
-}
-
-.method-desc {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.forgot-password {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.forgot-link {
-  color: #1e7e34;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
 
   .login-container {
     min-height: 100vh;

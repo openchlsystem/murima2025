@@ -1,4 +1,4 @@
-<script>
+<script setup>
     import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
     import {
         testServerConnection,
@@ -165,6 +165,8 @@
                 callerId: session.remote_identity.uri.user,
                 callerName: session.remote_identity.display_name || session.remote_identity.uri.user
             };
+            sipStatus.value.hasIncomingCall = true;
+        });
 
         // Call answer/start events
         on('onCallAnswered', (session) => {
@@ -213,7 +215,6 @@
         on('onQueueLeft', () => {
             console.log('Successfully left queue');
             sipStatus.value.isInQueue = false;
-        })
         });
     };
 
