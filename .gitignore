@@ -117,3 +117,4 @@ var/
 *.sql
 *.sqlite
 
+murima/staticfiles/
