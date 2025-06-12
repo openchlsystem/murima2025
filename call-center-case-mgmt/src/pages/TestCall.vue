@@ -1,4 +1,4 @@
-<script setup>
+<script>
     import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
     import {
         testServerConnection,
@@ -18,6 +18,16 @@
         getRegistrationStatus
     } from '@/utils/sipClient';
 
+    export default {
+        setup() {
+            // Component state
+            const sipStatus = ref({
+                isRegistered: false,
+                isInQueue: false,
+                hasActiveCall: false,
+                hasIncomingCall: false,
+                callDuration: '00:00:00'
+            });
     // Component state
     const serverStatus = ref({
         isTestingConnection: false,
@@ -33,12 +43,12 @@
         callDuration: '00:00:00'
     });
 
-    const callInfo = ref({
-        active: null,
-        incoming: null
-    });
+            const callInfo = ref({
+                active: null,
+                incoming: null
+            });
 
-    const isMuted = ref(false);
+            const isMuted = ref(false);
 
     // Computed properties
     const connectionStatus = computed(() => {
