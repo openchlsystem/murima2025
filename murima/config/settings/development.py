@@ -1,14 +1,19 @@
 from .base import *
 from decouple import config
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-development-key-change-me')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.localhost',  # This allows any subdomain of localhost
+]
 # Database
 DATABASES = {
     'default': {

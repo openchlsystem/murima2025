@@ -1,6 +1,6 @@
 # requirements/base.txt
 # Core Django and essential packages for all environments
-Django==5.2.1
+Django==5.2.2
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.0
 django-tenants==3.8.0
@@ -54,3 +54,5 @@ click-repl==0.3.0
 
 # Tablib (django-import-export dependency)
 tablib==3.8.0
+
+jsonschema

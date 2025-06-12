@@ -1,9 +1,11 @@
 from django.db import models
 from django.core.validators import validate_email, RegexValidator
-from django.contrib.auth import get_user_model
-from apps.shared.core.models import BaseModel, TenantModel
+from django.utils import timezone
+from django.conf import settings
+from django.core.exceptions import ValidationError
+import uuid
+from apps.shared.core.models import BaseModel
 
-User = get_user_model()
 
 # Communication method choices (customize as needed)
 COMMUNICATION_METHOD_CHOICES = [
@@ -14,14 +16,14 @@ COMMUNICATION_METHOD_CHOICES = [
     ('in_person', 'In Person'),
 ]
 
-class ContactType(BaseModel, TenantModel):
+class ContactType(BaseModel):
     """Model for categorizing contacts (Customer, Partner, Vendor, etc.)"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Type"
         verbose_name_plural = "Contact Types"
         
@@ -29,13 +31,13 @@ class ContactType(BaseModel, TenantModel):
         return self.name
 
 
-class ContactTag(BaseModel, TenantModel):
+class ContactTag(BaseModel):
     """Model for tagging contacts with keywords"""
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=7, default='#808080')  # Hex color
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Tag"
         verbose_name_plural = "Contact Tags"
         
@@ -43,13 +45,13 @@ class ContactTag(BaseModel, TenantModel):
         return self.name
 
 
-class ContactGroup(BaseModel, TenantModel):
+class ContactGroup(BaseModel):
     """Model for grouping contacts together"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('tenant', 'name')
+        
         verbose_name = "Contact Group"
         verbose_name_plural = "Contact Groups"
         
@@ -57,7 +59,7 @@ class ContactGroup(BaseModel, TenantModel):
         return self.name
 
 
-class Contact(BaseModel, TenantModel):
+class Contact(BaseModel):
     """Main model for storing contact information"""
     # Personal Information
     first_name = models.CharField(max_length=100)
@@ -76,7 +78,7 @@ class Contact(BaseModel, TenantModel):
     # Contact Information
     email = models.EmailField(validators=[validate_email], blank=True, null=True)
     phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$',
+        regex=r'^\+?1?\d{9,15}',
         message="Phone number must be entered in the format: '+999999999'."
     )
     phone = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True)
@@ -111,7 +113,6 @@ class Contact(BaseModel, TenantModel):
     groups = models.ManyToManyField(ContactGroup, related_name='group_contacts')
 
     class Meta:
-        unique_together = ('tenant', 'email')  # Email should be unique per tenant
         ordering = ['last_name', 'first_name']
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
@@ -129,7 +130,7 @@ class ContactContactType(BaseModel):
     contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
-    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('contact', 'contact_type')
@@ -145,7 +146,7 @@ class ContactTagAssignment(BaseModel):
     contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     tag = models.ForeignKey(ContactTag, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
-    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('contact', 'tag')

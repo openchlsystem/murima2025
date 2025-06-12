@@ -14,7 +14,6 @@ User = get_user_model()
 
 
 # Base Serializers - To be inherited by other apps
-
 class BaseModelSerializer(serializers.ModelSerializer):
     """
     Base serializer for models that inherit from BaseModel.
@@ -42,6 +41,11 @@ class BaseModelSerializer(serializers.ModelSerializer):
         abstract = True
         # Common field ordering for all models
         fields = [
+            'id', 'created_at', 'updated_at', 'created_by', 'updated_by',
+            'is_deleted', 'deleted_at', 'deleted_by'
+        ]
+        # Read-only fields that can be extended by child serializers
+        read_only_fields = [
             'id', 'created_at', 'updated_at', 'created_by', 'updated_by',
             'is_deleted', 'deleted_at', 'deleted_by'
         ]
@@ -80,7 +84,6 @@ class BaseModelSerializer(serializers.ModelSerializer):
         
         return representation
 
-
 class TimestampedModelSerializer(serializers.ModelSerializer):
     """
     Base serializer for models that only inherit from TimestampedModel.
@@ -93,6 +96,8 @@ class TimestampedModelSerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
         fields = ['created_at', 'updated_at']
+        # Read-only fields that can be extended by child serializers
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class ReadOnlyBaseSerializer(BaseModelSerializer):

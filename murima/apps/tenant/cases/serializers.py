@@ -1,339 +1,326 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from apps.shared.core.models import AuditLog
+from apps.shared.core.serializers import BaseModelSerializer, UserBasicSerializer
 from .models import (
-    Case, CaseType, CaseStatus, CaseStatusTransition,
-    RelatedCase, CaseNote, CaseAttachment,
-    CaseWorkflow, CaseSLA, CaseEventLog
+    CaseType, CaseStatus, Case, CaseDocument, CaseNote,
+    CaseHistory, CaseLink, CaseTemplate, SLA, WorkflowRule
 )
-from apps.tenant.contacts.serializers import ContactSerializer
-from apps.tenant.documents.serializers import DocumentSerializer
-from apps.accounts.serializers import UserSerializer, TeamSerializer
-from enum import Enum
+# from apps.shared.accounts.models import Team
+# from apps.shared.accounts.serializers import TeamSerializer
 
 User = get_user_model()
 
-class CasePrioritySerializer(serializers.Serializer):
-    """Serializer for the CasePriority enum"""
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-
-    @classmethod
-    def get_values(cls):
-        return [{'id': priority.value, 'name': priority.name} 
-               for priority in CasePriority]
-
-class CaseTypeSerializer(serializers.ModelSerializer):
+class CaseTypeSerializer(BaseModelSerializer):
     class Meta:
         model = CaseType
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-    def validate(self, data):
-        """Validate form_schema and workflow_definition"""
-        # Add JSON schema validation here if needed
-        return data
-
-class CaseStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CaseStatus
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-class CaseStatusTransitionSerializer(serializers.ModelSerializer):
-    from_status = CaseStatusSerializer(read_only=True)
-    to_status = CaseStatusSerializer(read_only=True)
-    from_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=CaseStatus.objects.all(),
-        source='from_status',
-        write_only=True
-    )
-    to_status_id = serializers.PrimaryKeyRelatedField(
-        queryset=CaseStatus.objects.all(),
-        source='to_status',
-        write_only=True
-    )
-
-    class Meta:
-        model = CaseStatusTransition
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-class RelatedCaseSerializer(serializers.ModelSerializer):
-    related_case = serializers.PrimaryKeyRelatedField(
-        queryset=Case.objects.all()
-    )
-    related_case_details = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RelatedCase
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
-
-    def get_related_case_details(self, obj):
-        """Nested serialization of related case"""
-        from .serializers import CaseListSerializer  # Avoid circular import
-        return CaseListSerializer(obj.related_case).data
-
-    def validate(self, data):
-        """Prevent circular references"""
-        if data['primary_case'] == data['related_case']:
-            raise serializers.ValidationError("A case cannot be related to itself")
-        return data
-
-class CaseNoteSerializer(serializers.ModelSerializer):
-    document = DocumentSerializer(read_only=True)
-    document_id = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.all(),
-        source='document',
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    created_by = UserSerializer(read_only=True)
-
-    class Meta:
-        model = CaseNote
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant', 'case')
-
-class CaseAttachmentSerializer(serializers.ModelSerializer):
-    document = DocumentSerializer(read_only=True)
-    document_id = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.all(),
-        source='document',
-        write_only=True
-    )
-
-    class Meta:
-        model = CaseAttachment
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant', 'case')
-
-class CaseWorkflowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CaseWorkflow
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-    def validate_condition(self, value):
-        """Validate workflow condition JSON"""
-        # Add specific validation logic for conditions
-        return value
-
-    def validate_actions(self, value):
-        """Validate workflow actions JSON"""
-        # Add specific validation logic for actions
-        return value
-
-class CaseSLASerializer(serializers.ModelSerializer):
-    case_type = CaseTypeSerializer(read_only=True)
-    case_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=CaseType.objects.all(),
-        source='case_type',
-        write_only=True
-    )
-
-    class Meta:
-        model = CaseSLA
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-class CaseEventLogSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CaseEventLog
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'tenant')
-
-class CaseListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for case listings"""
-    status = CaseStatusSerializer(read_only=True)
-    assigned_to = UserSerializer(read_only=True)
-    contact = ContactSerializer(read_only=True)
-    priority_display = serializers.SerializerMethodField()
-    days_open = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Case
-        fields = [
-            'id', 'case_number', 'title', 'status', 
-            'priority', 'priority_display', 'assigned_to',
-            'contact', 'opened_date', 'due_date', 'days_open',
-            'sla_breached', 'is_escalated'
+        fields = BaseModelSerializer.Meta.fields + [
+            'name', 'code', 'description', 'is_active', 'icon', 'color',
+            'default_priority', 'default_sla_hours', 'metadata'
         ]
 
-    def get_priority_display(self, obj):
-        return CasePriority(obj.priority).name
+    def validate_code(self, value):
+        if not value.isidentifier():
+            raise serializers.ValidationError("Code must be a valid identifier (letters, numbers, underscores)")
+        return value.lower()
 
-    def get_days_open(self, obj):
-        from django.utils.timezone import now
-        if obj.opened_date:
-            return (now() - obj.opened_date).days
-        return None
 
-class CaseDetailSerializer(serializers.ModelSerializer):
-    """Comprehensive serializer for case details"""
-    case_type = CaseTypeSerializer(read_only=True)
-    case_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=CaseType.objects.all(),
-        source='case_type',
-        write_only=True
-    )
-    status = CaseStatusSerializer(read_only=True)
-    status_id = serializers.PrimaryKeyRelatedField(
-        queryset=CaseStatus.objects.all(),
-        source='status',
-        write_only=True
-    )
-    assigned_to = UserSerializer(read_only=True)
-    assigned_to_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='assigned_to',
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    assigned_team = TeamSerializer(read_only=True)
-    assigned_team_id = serializers.PrimaryKeyRelatedField(
-        queryset=Team.objects.all(),
-        source='assigned_team',
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    contact = ContactSerializer(read_only=True)
-    contact_id = serializers.PrimaryKeyRelatedField(
-        queryset=Contact.objects.all(),
-        source='contact',
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    related_cases = RelatedCaseSerializer(
-        source='primary_relations',
+class CaseStatusSerializer(BaseModelSerializer):
+    allowed_next_statuses = serializers.PrimaryKeyRelatedField(
         many=True,
-        read_only=True
-    )
-    notes = CaseNoteSerializer(many=True, read_only=True)
-    attachments = CaseAttachmentSerializer(many=True, read_only=True)
-    event_logs = CaseEventLogSerializer(many=True, read_only=True)
-    priority_display = serializers.SerializerMethodField()
-    allowed_transitions = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Case
-        fields = '__all__'
-        read_only_fields = (
-            'created_at', 'updated_at', 'tenant', 
-            'case_number', 'opened_date', 'sla_breached',
-            'event_logs'
-        )
-
-    def get_priority_display(self, obj):
-        return CasePriority(obj.priority).name
-
-    def get_allowed_transitions(self, obj):
-        """Get allowed status transitions for the current case"""
-        transitions = obj.status.from_transitions.all()
-        return CaseStatusTransitionSerializer(transitions, many=True).data
-
-    def validate(self, data):
-        """Validate case data and transitions"""
-        # Check if status transition is allowed
-        if 'status_id' in data and self.instance:
-            new_status = data['status_id']
-            if not self.instance.status.from_transitions.filter(to_status=new_status).exists():
-                raise serializers.ValidationError(
-                    f"Invalid status transition from {self.instance.status} to {new_status}"
-                )
-        
-        # Validate SLA dates
-        if 'due_date' in data and 'sla_due_date' in data:
-            if data['due_date'] and data['sla_due_date']:
-                if data['due_date'] > data['sla_due_date']:
-                    raise serializers.ValidationError(
-                        "Due date cannot be after SLA due date"
-                    )
-        
-        return data
-
-    def create(self, validated_data):
-        """Handle case creation with automatic numbering"""
-        # Set initial status based on case type
-        case_type = validated_data.get('case_type')
-        if case_type and not validated_data.get('status_id'):
-            initial_status = CaseStatus.objects.filter(
-                tenant=self.context['request'].tenant,
-                is_initial=True
-            ).first()
-            if initial_status:
-                validated_data['status_id'] = initial_status
-        
-        case = super().create(validated_data)
-        
-        # Log creation event
-        CaseEventLog.objects.create(
-            case=case,
-            event_type='status_change',
-            new_value={'status': str(case.status)},
-            tenant=self.context['request'].tenant
-        )
-        
-        return case
-
-    def update(self, instance, validated_data):
-        """Handle case updates with audit logging"""
-        # Track changes for audit log
-        changes = {}
-        for field, value in validated_data.items():
-            if field in ['status_id', 'assigned_to_id', 'assigned_team_id']:
-                field_name = field.replace('_id', '')
-                old_value = getattr(instance, field_name)
-                if str(old_value.id) != str(value.id):
-                    changes[field_name] = {
-                        'from': str(old_value),
-                        'to': str(value)
-                    }
-        
-        case = super().update(instance, validated_data)
-        
-        # Create audit logs for changes
-        if changes:
-            for field, change in changes.items():
-                CaseEventLog.objects.create(
-                    case=case,
-                    event_type=f"{field}_change",
-                    previous_value=change['from'],
-                    new_value=change['to'],
-                    tenant=self.context['request'].tenant
-                )
-        
-        return case
-
-class CaseBulkUpdateSerializer(serializers.Serializer):
-    """Serializer for bulk case updates"""
-    case_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        min_length=1
-    )
-    status_id = serializers.PrimaryKeyRelatedField(
         queryset=CaseStatus.objects.all(),
         required=False
     )
-    assigned_to_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        required=False,
-        allow_null=True
-    )
-    priority = serializers.IntegerField(
-        required=False,
-        min_value=1,
-        max_value=4
-    )
+
+    class Meta:
+        model = CaseStatus
+        fields = BaseModelSerializer.Meta.fields + [
+            'name', 'code', 'description', 'is_active', 'is_closed',
+            'is_default', 'color', 'order', 'allowed_next_statuses'
+        ]
 
     def validate(self, data):
-        """Validate bulk update data"""
-        if not any([field in data for field in ['status_id', 'assigned_to_id', 'priority']]):
-            raise serializers.ValidationError(
-                "At least one update field (status_id, assigned_to_id, or priority) is required"
-            )
+        if data.get('is_default') and CaseStatus.objects.filter(is_default=True).exists():
+            if not self.instance or not self.instance.is_default:
+                raise serializers.ValidationError("There can only be one default status")
         return data
+
+
+class CasePriorityField(serializers.Field):
+    def to_representation(self, value):
+        return {
+            'value': value,
+            'label': Case.get_priority_display(value)
+        }
+
+    def to_internal_value(self, data):
+        try:
+            priority = int(data)
+            if priority not in dict(Case.PRIORITY_CHOICES):
+                raise ValueError
+            return priority
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("Invalid priority value")
+
+
+class CaseSerializer(BaseModelSerializer):
+    priority = CasePriorityField()
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(is_active=True),
+        allow_null=True
+    )
+    # assigned_team = serializers.PrimaryKeyRelatedField(
+    #     queryset=Team.objects.all(),
+    #     allow_null=Truex
+    # )
+    
+    resolved_by = serializers.PrimaryKeyRelatedField(
+        read_only=True,
+        allow_null=True
+    )    
+    created_by = UserBasicSerializer(read_only=True)
+    updated_by = UserBasicSerializer(read_only=True)
+    time_to_resolution = serializers.DurationField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Case
+        fields = BaseModelSerializer.Meta.fields + [
+            'case_number', 'case_type', 'title', 'description', 'status',
+            'priority', 'assigned_to', 'assigned_team', 'due_date', 'resolved_at',
+            'resolved_by', 'sla_expires_at', 'is_high_priority', 'is_confidential',
+            'source_channel', 'reference_id', 'custom_fields', 'tags',
+            'time_to_resolution', 'is_overdue', 'url'
+        ]
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'case_number', 'resolved_by', 'resolved_at', 'time_to_resolution',
+            'is_overdue', 'sla_expires_at'
+        ]
+
+    def get_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.get_absolute_url())
+        return obj.get_absolute_url()
+
+    def validate(self, data):
+        case_type = data.get('case_type', getattr(self.instance, 'case_type', None))
+        status = data.get('status', getattr(self.instance, 'status', None))
+        
+        if case_type and status:
+            pass
+
+        assigned_to = data.get('assigned_to')
+        # assigned_team = data.get('assigned_team')
+        
+        if assigned_to and assigned_team:
+            raise serializers.ValidationError("Case can be assigned to a user OR a team, not both")
+
+        return data
+
+    def update(self, instance, validated_data):
+        new_status = validated_data.get('status')
+        if new_status and new_status != instance.status:
+            instance.update_status(
+                new_status=new_status,
+                changed_by=self.context['request'].user,
+                comment="Status changed via API"
+            )
+            validated_data.pop('status')
+        
+        return super().update(instance, validated_data)
+
+
+class CaseDocumentSerializer(BaseModelSerializer):
+    file = serializers.FileField(required=True)
+    uploaded_by = UserBasicSerializer(read_only=True)
+    case = serializers.PrimaryKeyRelatedField(
+        queryset=Case.objects.all(),
+        write_only=True
+    )
+    download_url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaseDocument
+        fields = BaseModelSerializer.Meta.fields + [
+            'case', 'file', 'description', 'uploaded_by', 'file_type',
+            'file_size', 'version', 'is_current', 'metadata',
+            'download_url', 'preview_url'
+        ]
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'uploaded_by', 'file_type', 'file_size', 'version'
+        ]
+
+    def get_download_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url
+
+    def get_preview_url(self, obj):
+        return None
+
+
+class CaseNoteSerializer(BaseModelSerializer):
+    created_by = UserBasicSerializer(read_only=True)
+    case = serializers.PrimaryKeyRelatedField(
+        queryset=Case.objects.all(),
+        write_only=True
+    )
+    reply_to = serializers.PrimaryKeyRelatedField(
+        queryset=CaseNote.objects.all(),
+        allow_null=True,
+        required=False
+    )
+
+    class Meta:
+        model = CaseNote
+        fields = BaseModelSerializer.Meta.fields + [
+            'case', 'content', 'is_internal', 'pinned', 'reply_to',
+            'metadata'
+        ]
+
+
+class CaseHistorySerializer(BaseModelSerializer):
+    changed_by = UserBasicSerializer(read_only=True)
+    from_status = CaseStatusSerializer(read_only=True)
+    to_status = CaseStatusSerializer(read_only=True)
+    from_priority = CasePriorityField(read_only=True)
+    to_priority = CasePriorityField(read_only=True)
+    from_assignment = UserBasicSerializer(read_only=True)
+    to_assignment = UserBasicSerializer(read_only=True)
+    related_note = serializers.PrimaryKeyRelatedField(
+        queryset=CaseNote.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    related_document = serializers.PrimaryKeyRelatedField(
+        queryset=CaseDocument.objects.all(),
+        allow_null=True,
+        required=False
+    )
+
+    class Meta:
+        model = CaseHistory
+        fields = BaseModelSerializer.Meta.fields + [
+            'case', 'action', 'changed_by', 'from_status', 'to_status',
+            'from_priority', 'to_priority', 'from_assignment', 'to_assignment',
+            'related_note', 'related_document', 'comment', 'changes'
+        ]
+
+
+class CaseLinkSerializer(BaseModelSerializer):
+    source_case = serializers.PrimaryKeyRelatedField(queryset=Case.objects.all())
+    target_case = serializers.PrimaryKeyRelatedField(queryset=Case.objects.all())
+
+    class Meta:
+        model = CaseLink
+        fields = BaseModelSerializer.Meta.fields + [
+            'source_case', 'target_case', 'relationship_type',
+            'description'
+        ]
+
+    def validate(self, data):
+        source_case = data.get('source_case')
+        target_case = data.get('target_case')
+        
+        if source_case and target_case and source_case == target_case:
+            raise serializers.ValidationError("A case cannot be linked to itself")
+        
+        return data
+
+
+class CaseTemplateSerializer(BaseModelSerializer):
+    case_type = serializers.PrimaryKeyRelatedField(queryset=CaseType.objects.all())
+    default_status = serializers.PrimaryKeyRelatedField(
+        queryset=CaseStatus.objects.all())
+    default_assignee = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        allow_null=True
+    )
+    # default_team = serializers.PrimaryKeyRelatedField(
+    #     queryset=Team.objects.all(),
+    #     allow_null=True
+    # )
+    default_priority = CasePriorityField()
+
+    class Meta:
+        model = CaseTemplate
+        fields = BaseModelSerializer.Meta.fields + [
+            'name', 'case_type', 'description', 'default_priority',
+            'default_status', 'default_assignee', 'default_team',
+            'default_sla_hours', 'content', 'custom_fields', 'is_active'
+        ]
+
+
+class SLASerializer(BaseModelSerializer):
+    case_type = serializers.PrimaryKeyRelatedField(
+        queryset=CaseType.objects.filter(is_active=True),
+        allow_null=True
+    )
+    priority = CasePriorityField(allow_null=True)
+
+    class Meta:
+        model = SLA
+        fields = BaseModelSerializer.Meta.fields + [
+            'name', 'case_type', 'priority', 'response_time_hours',
+            'resolution_time_hours', 'business_hours_only', 'is_active',
+            'description', 'escalation_path'
+        ]
+
+
+class WorkflowRuleSerializer(BaseModelSerializer):
+    case_type = serializers.PrimaryKeyRelatedField(
+        queryset=CaseType.objects.filter(is_active=True),
+        allow_null=True
+    )
+    priority = CasePriorityField(allow_null=True)
+
+    class Meta:
+        model = WorkflowRule
+        fields = BaseModelSerializer.Meta.fields + [
+            'name', 'description', 'case_type', 'priority',
+            'trigger_condition', 'condition_expression', 'action_type',
+            'action_parameters', 'is_active', 'order'
+        ]
+
+    def validate_condition_expression(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Condition expression must be a JSON object")
+        return value
+
+    def validate_action_parameters(self, value):
+        action_type = self.initial_data.get('action_type')
+        
+        if action_type == 'CHANGE_STATUS' and 'status_id' not in value:
+            raise serializers.ValidationError("Status change requires status_id parameter")
+            
+        return value
+
+
+class CaseWithRelatedSerializer(CaseSerializer):
+    case_type = CaseTypeSerializer(read_only=True)
+    status = CaseStatusSerializer(read_only=True)
+    assigned_to = UserBasicSerializer(read_only=True)
+    # assigned_team = TeamSerializer(read_only=True)
+    documents = CaseDocumentSerializer(many=True, read_only=True)
+    notes = CaseNoteSerializer(many=True, read_only=True)
+    history = CaseHistorySerializer(many=True, read_only=True)
+    linked_cases = serializers.SerializerMethodField()
+
+    class Meta(CaseSerializer.Meta):
+        fields = CaseSerializer.Meta.fields + [
+            'documents', 'notes', 'history', 'linked_cases'
+        ]
+
+    def get_linked_cases(self, obj):
+        links = CaseLink.objects.filter(source_case=obj)
+        return CaseLinkSerializer(links, many=True, context=self.context).data
+    
+    
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditLog  # Make sure this model is defined/imported too
+        fields = '__all__'

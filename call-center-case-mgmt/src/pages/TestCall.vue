@@ -44,7 +44,7 @@
             // Initialize SIP client
             const initializeSip = async () => {
                 try {
-                    const sipDetails = JSON.parse(localStorage.getItem('sipConnectionDetails'));
+                    const sipDetails = JSON.parse(localStorage.getItem(''));
 
                     if (!sipDetails?.uri || !sipDetails?.password || !sipDetails?.websocketURL) {
                         throw new Error('Missing SIP connection details');
