@@ -146,7 +146,6 @@
     <div class="header">
       <div class="page-title">QA Management System</div>
       <div class="header-actions">
-        <!-- Removed "Evaluate Calls" button as requested -->
         <button class="theme-toggle" @click="toggleTheme">
           <svg v-if="currentTheme === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
@@ -207,7 +206,7 @@
           v-for="evaluation in agentEvaluations" 
           :key="evaluation.id"
           class="qa-card"
-          @click="selectCard(evaluation.id)"
+          @click="openAgentDetailModal(evaluation)"
         >
           <!-- Card Header with Avatar and Score -->
           <div class="qa-card-header">
@@ -329,6 +328,7 @@
                     v-if="!call.isEvaluated" 
                     class="action-btn evaluate" 
                     @click.stop="startEvaluation(call)"
+                    title="Evaluate Call"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"/>
@@ -340,6 +340,7 @@
                     v-else 
                     class="action-btn edit" 
                     @click.stop="editEvaluation(call)"
+                    title="Edit Evaluation"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"/>
@@ -347,7 +348,11 @@
                     </svg>
                     <span>Edit</span>
                   </button>
-                  <button class="action-btn delete" @click.stop="deleteCall(call)">
+                  <button 
+                    class="action-btn delete" 
+                    @click.stop="confirmDeleteCall(call)"
+                    title="Delete Call"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       <path d="M19,6V20C19,21 18,22 17,22H7C6,22 5,21 5,20V6M8,6V4C8,3 9,2 10,2H14C15,2 16,3 16,4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -405,6 +410,134 @@
     </div>
   </div>
 
+  <!-- Agent Detail Modal (Portrait Layout) -->
+  <div v-if="showAgentDetailModal" class="modal-overlay" @click="closeAgentDetailModal">
+    <div class="modal-content agent-detail-modal" @click.stop>
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          {{ selectedAgentDetail?.agent.name }} - Performance Overview
+        </div>
+        <button class="modal-close" @click="closeAgentDetailModal">&times;</button>
+      </div>
+      
+      <div class="modal-body agent-detail-body" v-if="selectedAgentDetail">
+        <!-- Agent Summary Card -->
+        <div class="agent-summary-card">
+          <div class="agent-avatar-large">
+            <img :src="selectedAgentDetail.agent.avatar" :alt="selectedAgentDetail.agent.name" />
+          </div>
+          <div class="agent-summary-info">
+            <h3>{{ selectedAgentDetail.agent.name }}</h3>
+            <div class="agent-stats-grid">
+              <div class="stat-item">
+                <div class="stat-value">{{ selectedAgentDetail.callsEvaluated }}</div>
+                <div class="stat-label">Calls Evaluated</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ selectedAgentDetail.averageScore }}%</div>
+                <div class="stat-label">Average Score</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ selectedAgentDetail.averageTalkTime }}</div>
+                <div class="stat-label">Avg Talk Time</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Breakdown -->
+        <div class="performance-breakdown">
+          <h4>Performance Breakdown</h4>
+          <div class="category-scores">
+            <div v-for="(score, category) in getAgentCategoryScores(selectedAgentDetail)" :key="category" class="category-score-item">
+              <div class="category-info">
+                <span class="category-name">{{ formatCategory(category) }}</span>
+                <span class="category-score">{{ score }}%</span>
+              </div>
+              <div class="category-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: score + '%' }" :class="getScoreClass(score)"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Evaluations -->
+        <div class="recent-evaluations">
+          <h4>Recent Evaluations</h4>
+          <div class="evaluations-list">
+            <div v-for="call in getAgentRecentCalls(selectedAgentDetail.agent.name)" :key="call.id" class="evaluation-item">
+              <div class="evaluation-header">
+                <span class="call-id">Call #{{ call.id }}</span>
+                <span class="evaluation-date">{{ formatDate(call.evaluation.evaluationDate) }}</span>
+                <span :class="['evaluation-score', getScoreClass(call.evaluation.overallScore)]">
+                  {{ call.evaluation.overallScore }}%
+                </span>
+              </div>
+              <div class="evaluation-details">
+                <div class="call-info">
+                  <span class="caller-name">{{ call.caller.name }}</span>
+                  <span class="issue-type">{{ call.issueType }}</span>
+                  <span class="duration">{{ call.duration }}</span>
+                </div>
+                <div class="evaluation-actions">
+                  <button class="action-btn-small view" @click="viewEvaluationDetail(call)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    View
+                  </button>
+                  <button class="action-btn-small edit" @click="editEvaluation(call)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Edit
+                  </button>
+                </div>
+              </div>
+              <div v-if="call.evaluation.notes" class="evaluation-notes">
+                <p>{{ call.evaluation.notes }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Improvement Recommendations -->
+        <div class="improvement-recommendations">
+          <h4>Improvement Recommendations</h4>
+          <div class="recommendations-list">
+            <div class="recommendation-item">
+              <div class="recommendation-icon">💡</div>
+              <div class="recommendation-content">
+                <h5>Focus on {{ selectedAgentDetail.improvementArea }}</h5>
+                <p>This area shows the most potential for improvement based on recent evaluations.</p>
+              </div>
+            </div>
+            <div class="recommendation-item">
+              <div class="recommendation-icon">⭐</div>
+              <div class="recommendation-content">
+                <h5>Leverage {{ selectedAgentDetail.bestCategory }} Skills</h5>
+                <p>Continue to excel in this area and consider mentoring other agents.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" @click="closeAgentDetailModal">Close</button>
+        <button class="modal-btn modal-btn-submit" @click="generateAgentReport">Generate Report</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Evaluation Modal -->
   <div v-if="showEvaluationModal" class="modal-overlay" @click="closeEvaluationModal">
     <div class="modal-content evaluation-modal" @click.stop>
@@ -414,7 +547,7 @@
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
           </svg>
-          Evaluate Call #{{ selectedCall?.id }}
+          {{ isEditMode ? 'Edit' : 'Evaluate' }} Call #{{ selectedCall?.id }}
         </div>
         <button class="modal-close" @click="closeEvaluationModal">&times;</button>
       </div>
@@ -479,6 +612,7 @@
                     min="0" 
                     max="100" 
                     class="score-input"
+                    @input="updateOverallScore"
                   />
                   <span>%</span>
                 </div>
@@ -491,6 +625,7 @@
                   min="0" 
                   max="100" 
                   class="slider"
+                  @input="updateOverallScore"
                 />
                 <div class="slider-labels">
                   <span>Poor</span>
@@ -531,7 +666,9 @@
       
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" @click="closeEvaluationModal">Cancel</button>
-        <button class="modal-btn modal-btn-submit" @click="submitEvaluation">Submit Evaluation</button>
+        <button class="modal-btn modal-btn-submit" @click="submitEvaluation" :disabled="!canSubmitEvaluation">
+          {{ isEditMode ? 'Update Evaluation' : 'Submit Evaluation' }}
+        </button>
       </div>
     </div>
   </div>
@@ -790,6 +927,59 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
+    <div class="modal-content delete-modal" @click.stop>
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
+            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Confirm Delete
+        </div>
+        <button class="modal-close" @click="closeDeleteModal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Are you sure you want to delete call #{{ callToDelete?.id }}? This action cannot be undone.</p>
+        <div class="delete-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
+            <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span>This will permanently remove all call data and evaluation records.</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" @click="closeDeleteModal">Cancel</button>
+        <button class="modal-btn modal-btn-danger" @click="confirmDelete">Delete Call</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Toast -->
+  <div v-if="showSuccessToast" class="toast success-toast">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2"/>
+      <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- Error Toast -->
+  <div v-if="showErrorToast" class="toast error-toast">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+      <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
+      <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <span>{{ errorMessage }}</span>
+  </div>
 </div>
 </template>
 
@@ -798,14 +988,20 @@ import { ref, computed, onMounted } from 'vue'
 
 // Reactive state
 const currentTheme = ref('dark')
-const activeView = ref('cards') // Changed default to 'cards'
+const activeView = ref('cards')
 const selectedCard = ref(null)
 const showEvaluationModal = ref(false)
 const showViewModal = ref(false)
 const showCallDetailsModal = ref(false)
+const showAgentDetailModal = ref(false)
+const showDeleteModal = ref(false)
+const showSuccessToast = ref(false)
+const showErrorToast = ref(false)
 const selectedCall = ref(null)
 const selectedEvaluationCall = ref(null)
 const selectedCallDetails = ref(null)
+const selectedAgentDetail = ref(null)
+const callToDelete = ref(null)
 const callSearchQuery = ref('')
 const selectedEvaluationStatus = ref('all')
 const selectedAgent = ref('all')
@@ -815,6 +1011,9 @@ const isPlaying = ref(false)
 const playbackProgress = ref(0)
 const currentTime = ref('0:00')
 const totalTime = ref('5:32')
+const isEditMode = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
 
 // Sidebar state
 const isSidebarCollapsed = ref(false)
@@ -824,7 +1023,7 @@ const isInQueue = ref(false)
 const isProcessingQueue = ref(false)
 const currentCall = ref(null)
 
-// View tabs configuration - reordered with cards first
+// View tabs configuration
 const viewTabs = ref([
   { id: 'cards', name: 'View as Cards' },
   { id: 'calls', name: 'Evaluate Calls' },
@@ -874,7 +1073,7 @@ const performanceCategories = ref([
   { name: 'Closing', score: 77 }
 ])
 
-// Sample calls database - Added more sample data
+// Sample calls database
 const callsDatabase = ref([
   {
     id: '12345',
@@ -982,7 +1181,6 @@ const callsDatabase = ref([
     isEvaluated: false,
     recordingUrl: '/sample-recording.mp3'
   },
-  // Added more sample data
   {
     id: '12350',
     agent: {
@@ -1039,170 +1237,6 @@ const callsDatabase = ref([
       notes: 'Good basic skills but needs improvement in proactive questioning and resource knowledge.',
       evaluatedBy: 'David Chen',
       evaluationDate: new Date('2024-12-08T11:15:00')
-    }
-  },
-  {
-    id: '12352',
-    agent: {
-      name: 'Charles Wilson',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Jennifer Lee',
-      phone: '+1-555-0130'
-    },
-    dateTime: new Date('2024-12-08T13:45:00'),
-    duration: '11:18',
-    issueType: 'Crisis Intervention',
-    isEvaluated: true,
-    recordingUrl: '/sample-recording.mp3',
-    evaluation: {
-      overallScore: 78,
-      scores: {
-        opening: 80,
-        listening: 82,
-        proactive: 75,
-        resolution: 76,
-        closing: 77
-      },
-      notes: 'Solid performance with good crisis management skills. Could improve on follow-up procedures.',
-      evaluatedBy: 'Lisa Rodriguez',
-      evaluationDate: new Date('2024-12-08T14:30:00')
-    }
-  },
-  {
-    id: '12353',
-    agent: {
-      name: 'Berna Johnson',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Kevin Martinez',
-      phone: '+1-555-0131'
-    },
-    dateTime: new Date('2024-12-08T15:20:00'),
-    duration: '6:42',
-    issueType: 'Information Request',
-    isEvaluated: false,
-    recordingUrl: '/sample-recording.mp3'
-  },
-  {
-    id: '12354',
-    agent: {
-      name: 'Viola Davis',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Amanda Thompson',
-      phone: '+1-555-0132'
-    },
-    dateTime: new Date('2024-12-08T16:30:00'),
-    duration: '18:45',
-    issueType: 'Domestic Violence',
-    isEvaluated: true,
-    recordingUrl: '/sample-recording.mp3',
-    evaluation: {
-      overallScore: 94,
-      scores: {
-        opening: 96,
-        listening: 95,
-        proactive: 92,
-        resolution: 95,
-        closing: 92
-      },
-      notes: 'Exceptional handling of sensitive situation. Perfect protocol adherence and excellent resource coordination.',
-      evaluatedBy: 'Michael Johnson',
-      evaluationDate: new Date('2024-12-08T17:15:00')
-    }
-  },
-  {
-    id: '12355',
-    agent: {
-      name: 'Patience Williams',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Daniel Rodriguez',
-      phone: '+1-555-0133'
-    },
-    dateTime: new Date('2024-12-09T09:15:00'),
-    duration: '10:22',
-    issueType: 'Legal Assistance',
-    isEvaluated: false,
-    recordingUrl: '/sample-recording.mp3'
-  },
-  {
-    id: '12356',
-    agent: {
-      name: 'Julie Smith',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Rebecca White',
-      phone: '+1-555-0134'
-    },
-    dateTime: new Date('2024-12-09T11:45:00'),
-    duration: '15:30',
-    issueType: 'Crisis Support',
-    isEvaluated: true,
-    recordingUrl: '/sample-recording.mp3',
-    evaluation: {
-      overallScore: 76,
-      scores: {
-        opening: 78,
-        listening: 80,
-        proactive: 72,
-        resolution: 75,
-        closing: 75
-      },
-      notes: 'Good crisis management with room for improvement in proactive questioning techniques.',
-      evaluatedBy: 'Jennifer Adams',
-      evaluationDate: new Date('2024-12-09T12:30:00')
-    }
-  },
-  {
-    id: '12357',
-    agent: {
-      name: 'Charles Wilson',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Steven Clark',
-      phone: '+1-555-0135'
-    },
-    dateTime: new Date('2024-12-09T14:20:00'),
-    duration: '8:15',
-    issueType: 'Information Request',
-    isEvaluated: false,
-    recordingUrl: '/sample-recording.mp3'
-  },
-  {
-    id: '12358',
-    agent: {
-      name: 'Berna Johnson',
-      avatar: '/placeholder.svg?height=40&width=40'
-    },
-    caller: {
-      name: 'Michelle Taylor',
-      phone: '+1-555-0136'
-    },
-    dateTime: new Date('2024-12-09T16:00:00'),
-    duration: '12:55',
-    issueType: 'Mental Health Support',
-    isEvaluated: true,
-    recordingUrl: '/sample-recording.mp3',
-    evaluation: {
-      overallScore: 81,
-      scores: {
-        opening: 83,
-        listening: 85,
-        proactive: 78,
-        resolution: 82,
-        closing: 77
-      },
-      notes: 'Strong empathy and listening skills. Good resource knowledge with minor areas for improvement in closing procedures.',
-      evaluatedBy: 'Robert Kim',
-      evaluationDate: new Date('2024-12-09T16:45:00')
     }
   }
 ])
@@ -1273,7 +1307,7 @@ const agentEvaluations = computed(() => {
     agentData.callsEvaluated = agentData.evaluations.length
     agentData.totalScore = agentData.evaluations.reduce((sum, evaluation) => sum + evaluation.overallScore, 0)
     agentData.averageScore = Math.round(agentData.totalScore / agentData.evaluations.length)
-    agentData.averageTalkTime = '11:26' // Mock data
+    agentData.averageTalkTime = '11:26'
     agentData.lastEvaluationDate = call.evaluation.evaluationDate
 
     // Calculate best and worst categories
@@ -1328,6 +1362,10 @@ const activeCounselors = computed(() => {
   return uniqueAgents.size
 })
 
+const canSubmitEvaluation = computed(() => {
+  return evaluationCriteria.value.every(criterion => criterion.score > 0)
+})
+
 // Sidebar computed properties
 const queueStatus = computed(() => {
   if (currentCall.value) {
@@ -1351,29 +1389,28 @@ const setActiveView = (viewId) => {
   activeView.value = viewId
 }
 
-const selectCard = (cardId) => {
-  selectedCard.value = cardId
-  // Find the evaluation call for this agent
-  const agentEval = agentEvaluations.value.find(evaluation => evaluation.id === cardId)
-  if (agentEval) {
-    // Find the most recent evaluated call for this agent
-    const recentCall = callsDatabase.value
-      .filter(call => call.agent.name === agentEval.agent.name && call.isEvaluated)
-      .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))[0]
-    
-    if (recentCall) {
-      selectedEvaluationCall.value = recentCall
-      showViewModal.value = true
-    }
-  }
+const openAgentDetailModal = (agentEvaluation) => {
+  console.log('Opening agent detail modal for:', agentEvaluation.agent.name)
+  selectedAgentDetail.value = agentEvaluation
+  showAgentDetailModal.value = true
+}
+
+const closeAgentDetailModal = () => {
+  console.log('Closing agent detail modal')
+  showAgentDetailModal.value = false
+  selectedAgentDetail.value = null
 }
 
 const startEvaluation = (call) => {
+  console.log('Starting evaluation for call:', call.id)
   selectedCall.value = call
-  // Reset evaluation criteria
+  isEditMode.value = false
+  
+  // Reset all criteria scores to 0
   evaluationCriteria.value.forEach(criterion => {
     criterion.score = 0
   })
+  
   evaluationNotes.value = ''
   showEvaluationModal.value = true
 }
@@ -1383,18 +1420,38 @@ const viewEvaluation = (call) => {
   showViewModal.value = true
 }
 
-const deleteCall = (call) => {
-  if (confirm(`Are you sure you want to delete call #${call.id}?`)) {
-    const index = callsDatabase.value.findIndex(c => c.id === call.id)
+const viewEvaluationDetail = (call) => {
+  selectedEvaluationCall.value = call
+  closeAgentDetailModal()
+  showViewModal.value = true
+}
+
+const confirmDeleteCall = (call) => {
+  callToDelete.value = call
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  callToDelete.value = null
+}
+
+const confirmDelete = () => {
+  if (callToDelete.value) {
+    const index = callsDatabase.value.findIndex(c => c.id === callToDelete.value.id)
     if (index !== -1) {
       callsDatabase.value.splice(index, 1)
+      showSuccessMessage(`Call #${callToDelete.value.id} has been deleted successfully.`)
     }
   }
+  closeDeleteModal()
 }
 
 const closeEvaluationModal = () => {
+  console.log('Closing evaluation modal')
   showEvaluationModal.value = false
   selectedCall.value = null
+  isEditMode.value = false
 }
 
 const closeViewModal = () => {
@@ -1415,6 +1472,7 @@ const closeCallDetailsModal = () => {
 const startEvaluationFromDetails = () => {
   if (selectedCallDetails.value) {
     selectedCall.value = selectedCallDetails.value
+    isEditMode.value = false
     evaluationCriteria.value.forEach(criterion => {
       criterion.score = 0
     })
@@ -1431,14 +1489,43 @@ const editEvaluationFromDetails = () => {
   }
 }
 
+const updateOverallScore = () => {
+  // This will trigger the computed property to recalculate
+}
+
+const editEvaluation = (call) => {
+  console.log('Editing evaluation for call:', call.id)
+  selectedCall.value = call
+  isEditMode.value = true
+
+  if (call.evaluation && call.evaluation.scores) {
+    // Map the scores back to the criteria
+    evaluationCriteria.value[0].score = call.evaluation.scores.opening || 0
+    evaluationCriteria.value[1].score = call.evaluation.scores.listening || 0  
+    evaluationCriteria.value[2].score = call.evaluation.scores.proactive || 0
+    evaluationCriteria.value[3].score = call.evaluation.scores.resolution || 0
+    evaluationCriteria.value[4].score = call.evaluation.scores.closing || 0
+    
+    evaluationNotes.value = call.evaluation.notes || ''
+  }
+
+  // Close other modals first
+  showViewModal.value = false
+  showAgentDetailModal.value = false
+  showCallDetailsModal.value = false
+  
+  // Open evaluation modal
+  showEvaluationModal.value = true
+}
+
 const submitEvaluation = () => {
-  if (selectedCall.value) {
+  if (selectedCall.value && canSubmitEvaluation.value) {
     // Create evaluation object
     const evaluation = {
       overallScore: overallScore.value,
       scores: {},
       notes: evaluationNotes.value,
-      evaluatedBy: 'Current User', // This would come from auth
+      evaluatedBy: 'Current User',
       evaluationDate: new Date()
     }
     
@@ -1462,40 +1549,33 @@ const submitEvaluation = () => {
     
     closeEvaluationModal()
     
-    // Show success message (you could add a toast notification here)
-    console.log('Evaluation submitted successfully!')
+    const action = isEditMode.value ? 'updated' : 'submitted'
+    showSuccessMessage(`Evaluation ${action} successfully for Call #${selectedCall.value.id}`)
   }
-}
-
-const playRecording = (call) => {
-  console.log('Playing recording for call:', call.id)
-  // Implement audio playback logic
 }
 
 const togglePlayback = () => {
   isPlaying.value = !isPlaying.value
-  // Implement actual audio control
-}
-
-const editEvaluation = (call) => {
-  // Pre-populate the evaluation form with existing data
-  selectedCall.value = call
-  
-  if (call.evaluation) {
-    evaluationCriteria.value.forEach(criterion => {
-      let key = criterion.name.toLowerCase().replace(/\s+/g, '').replace('active', '').replace('problem', '')
-      if (key === 'listening') key = 'listening'
-      if (key === 'questioning') key = 'proactive'
-      if (key === 'resolution') key = 'resolution'
-      if (key === 'closing') key = 'closing'
-      if (key === 'opening') key = 'opening'
-      criterion.score = call.evaluation.scores[key] || 0
-    })
-    evaluationNotes.value = call.evaluation.notes || ''
+  // Simulate audio playback progress
+  if (isPlaying.value) {
+    const interval = setInterval(() => {
+      if (playbackProgress.value < 100 && isPlaying.value) {
+        playbackProgress.value += 1
+        const totalSeconds = 332 // 5:32 in seconds
+        const currentSeconds = Math.floor((playbackProgress.value / 100) * totalSeconds)
+        const minutes = Math.floor(currentSeconds / 60)
+        const seconds = currentSeconds % 60
+        currentTime.value = `${minutes}:${seconds.toString().padStart(2, '0')}`
+      } else {
+        clearInterval(interval)
+        if (playbackProgress.value >= 100) {
+          isPlaying.value = false
+          playbackProgress.value = 0
+          currentTime.value = '0:00'
+        }
+      }
+    }, 100)
   }
-  
-  closeViewModal()
-  showEvaluationModal.value = true
 }
 
 const getScoreClass = (score) => {
@@ -1525,6 +1605,60 @@ const formatDateTime = (date) => {
   })
 }
 
+const getAgentCategoryScores = (agentDetail) => {
+  const categoryScores = {
+    opening: 0,
+    listening: 0,
+    proactive: 0,
+    resolution: 0,
+    closing: 0
+  }
+
+  if (agentDetail.evaluations.length > 0) {
+    agentDetail.evaluations.forEach(evaluation => {
+      Object.keys(categoryScores).forEach(category => {
+        categoryScores[category] += evaluation.scores[category] || 0
+      })
+    })
+    
+    Object.keys(categoryScores).forEach(category => {
+      categoryScores[category] = Math.round(categoryScores[category] / agentDetail.evaluations.length)
+    })
+  }
+
+  return categoryScores
+}
+
+const getAgentRecentCalls = (agentName) => {
+  return callsDatabase.value
+    .filter(call => call.agent.name === agentName && call.isEvaluated)
+    .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))
+    .slice(0, 5)
+}
+
+const generateAgentReport = () => {
+  if (selectedAgentDetail.value) {
+    showSuccessMessage(`Performance report generated for ${selectedAgentDetail.value.agent.name}`)
+    closeAgentDetailModal()
+  }
+}
+
+const showSuccessMessage = (message) => {
+  successMessage.value = message
+  showSuccessToast.value = true
+  setTimeout(() => {
+    showSuccessToast.value = false
+  }, 3000)
+}
+
+const showErrorMessage = (message) => {
+  errorMessage.value = message
+  showErrorToast.value = true
+  setTimeout(() => {
+    showErrorToast.value = false
+  }, 3000)
+}
+
 // Sidebar methods
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
@@ -1540,16 +1674,15 @@ const toggleMobileMenu = () => {
 
 const handleQueueToggle = () => {
   isInQueue.value = !isInQueue.value
-  console.log('Queue toggle:', isInQueue.value)
 }
 
 const handleLogout = () => {
-  console.log('Logout clicked')
+  showSuccessMessage('Logged out successfully')
 }
 
 // Lifecycle
 onMounted(() => {
-  // Apply initial theme
+  // Initialize component
 })
 </script>
 
@@ -2230,6 +2363,7 @@ onMounted(() => {
   white-space: nowrap;
   flex-shrink: 0;
   min-width: fit-content;
+  transition: all 0.2s ease;
 }
 
 .action-btn span {
@@ -2245,14 +2379,26 @@ onMounted(() => {
   color: white;
 }
 
+.action-btn.evaluate:hover {
+  background-color: var(--accent-hover);
+}
+
 .action-btn.edit {
   background-color: var(--success-color);
   color: white;
 }
 
+.action-btn.edit:hover {
+  background-color: #45a049;
+}
+
 .action-btn.delete {
   background-color: var(--danger-color);
   color: white;
+}
+
+.action-btn.delete:hover {
+  background-color: #e60000;
 }
 
 /* Summary Stats */
@@ -2401,6 +2547,268 @@ onMounted(() => {
   color: var(--text-color);
 }
 
+/* Agent Detail Modal */
+.agent-detail-modal {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.agent-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.agent-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background-color: var(--border-color);
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.agent-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.agent-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.agent-summary-info {
+  flex: 1;
+}
+
+.agent-summary-info h3 {
+  margin: 0 0 15px 0;
+  font-size: 24px;
+  color: var(--text-color);
+}
+
+.agent-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item .stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-color);
+  margin-bottom: 5px;
+}
+
+.stat-item .stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.performance-breakdown h4,
+.recent-evaluations h4,
+.improvement-recommendations h4 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  color: var(--accent-color);
+}
+
+.category-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-score-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.category-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.category-progress {
+  width: 100%;
+}
+
+.progress-bar {
+  height: 6px;
+  background-color: var(--background-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progress-fill.score-high {
+  background-color: #4CAF50;
+}
+
+.progress-fill.score-medium {
+  background-color: #FFA500;
+}
+
+.progress-fill.score-low {
+  background-color: #ff3b30;
+}
+
+.evaluations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.evaluation-item {
+  background-color: var(--background-color);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.evaluation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.call-id {
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.evaluation-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.evaluation-score {
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.evaluation-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.call-info {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.caller-name {
+  font-weight: 500;
+}
+
+.evaluation-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn-small {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.action-btn-small.view {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.action-btn-small.edit {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.evaluation-notes {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.recommendation-item {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  background-color: var(--background-color);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.recommendation-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.recommendation-content h5 {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.recommendation-content p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
 /* Analytics */
 .analytics-container {
   display: grid;
@@ -2507,7 +2915,7 @@ onMounted(() => {
 .performer-score {
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent-color);
+  color: var(--text-color);
 }
 
 .performance-bar {
@@ -2963,6 +3371,11 @@ onMounted(() => {
   background-color: var(--accent-hover);
 }
 
+.modal-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .modal-btn-edit {
   background-color: var(--accent-color);
   color: white;
@@ -2970,6 +3383,15 @@ onMounted(() => {
 
 .modal-btn-edit:hover {
   background-color: var(--accent-hover);
+}
+
+.modal-btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.modal-btn-danger:hover {
+  background-color: #e60000;
 }
 
 /* Call Details Modal Styles */
@@ -3059,6 +3481,60 @@ onMounted(() => {
   flex: 1;
 }
 
+/* Delete Modal */
+.delete-modal {
+  max-width: 500px;
+}
+
+.delete-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(255, 59, 48, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  color: var(--danger-color);
+  font-size: 14px;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 2000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.success-toast {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.error-toast {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .mobile-menu-btn {
@@ -3097,6 +3573,21 @@ onMounted(() => {
   .filter-container {
     grid-template-columns: 1fr;
     gap: 15px;
+  }
+
+  .agent-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .agent-summary-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .evaluation-summary {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 }
 
@@ -3147,12 +3638,6 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .evaluation-summary {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
   .action-buttons {
     flex-direction: column;
     gap: 4px;
@@ -3161,6 +3646,20 @@ onMounted(() => {
   .action-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .agent-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-scores {
+    gap: 8px;
+  }
+
+  .toast {
+    right: 10px;
+    left: 10px;
+    width: auto;
   }
 }
 
@@ -3190,6 +3689,34 @@ onMounted(() => {
   .action-btn {
     padding: 8px;
     min-width: 36px;
+    justify-content: center;
+  }
+
+  .modal-content {
+    padding: 20px;
+    margin: 10px;
+  }
+
+  .agent-detail-modal {
+    max-width: 95%;
+  }
+
+  .evaluation-item {
+    padding: 10px;
+  }
+
+  .call-info {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .evaluation-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-btn-small {
+    width: 100%;
     justify-content: center;
   }
 }

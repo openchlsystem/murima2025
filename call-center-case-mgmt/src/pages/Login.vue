@@ -30,18 +30,41 @@
         <h2 class="form-title">
           <span v-if="currentStep === 'username'">Log in to your account</span>
           <span v-else-if="currentStep === 'otp'">Enter verification code</span>
+          <span v-else-if="currentStep === 'password'">Enter your password</span>
         </h2>
+
+        <!-- Authentication Method Selector -->
+        <div v-if="currentStep === 'username'" class="auth-method-selector">
+          <button 
+            type="button" 
+            class="auth-method-button" 
+            :class="{ active: authMethod === 'password' }"
+            @click="authMethod = 'password'"
+          >
+            <span class="auth-method-icon">🔑</span>
+            <span class="auth-method-label">Password</span>
+          </button>
+          <button 
+            type="button" 
+            class="auth-method-button" 
+            :class="{ active: authMethod === 'otp' }"
+            @click="authMethod = 'otp'"
+          >
+            <span class="auth-method-icon">📱</span>
+            <span class="auth-method-label">OTP</span>
+          </button>
+        </div>
 
         <!-- Step Indicator -->
         <div class="step-indicator">
-          <div class="step" :class="{ active: currentStep === 'username', completed: currentStep === 'otp' }">
+          <div class="step" :class="{ active: currentStep === 'username', completed: currentStep === 'otp' || currentStep === 'password' }">
             <span class="step-number">1</span>
             <span class="step-label">Username</span>
           </div>
           <div class="step-divider"></div>
-          <div class="step" :class="{ active: currentStep === 'otp' }">
+          <div class="step" :class="{ active: currentStep === 'otp' || currentStep === 'password' }">
             <span class="step-number">2</span>
-            <span class="step-label">Verify</span>
+            <span class="step-label">{{ authMethod === 'otp' ? 'Verify' : 'Password' }}</span>
           </div>
         </div>
 
@@ -56,7 +79,7 @@
             {{ successMessage }}
           </div>
 
-          <!-- Step 1: Username and Means Selection -->
+          <!-- Step 1: Username and Authentication Method Selection -->
           <div v-if="currentStep === 'username'" class="step-content">
             <div class="input-group">
               <label class="input-label">Username</label>
@@ -68,8 +91,8 @@
               </div>
             </div>
 
-            <!-- Choose Means Dropdown -->
-            <div class="input-group">
+            <!-- OTP Method Selection (Only shown when OTP auth method is selected) -->
+            <div v-if="authMethod === 'otp'" class="input-group">
               <label class="input-label">Choose how to receive OTP</label>
               <div class="select-container">
                 <select v-model="selectedMeans" class="form-select"
@@ -86,7 +109,7 @@
                   </svg>
                 </div>
               </div>
-              <div v-if="submitted && !selectedMeans" class="validation-error">
+              <div v-if="submitted && !selectedMeans && authMethod === 'otp'" class="validation-error">
                 Please select a verification method
               </div>
 
@@ -114,7 +137,48 @@
             </div>
           </div>
 
-          <!-- Step 2: OTP Input -->
+          <!-- Step 2: Password Input (Only shown when password auth method is selected) -->
+          <div v-if="currentStep === 'password'" class="step-content">
+            <div class="input-group">
+              <label class="input-label">Password</label>
+              <div class="password-input-container">
+                <input 
+                  :type="showPassword ? 'text' : 'password'" 
+                  v-model="password" 
+                  class="form-input"
+                  :class="{ 'input-error': submitted && !password }" 
+                  placeholder="Enter your password" 
+                  required
+                  :disabled="loading"
+                >
+                <button 
+                  type="button" 
+                  class="password-toggle-button" 
+                  @click="showPassword = !showPassword"
+                  :disabled="loading"
+                >
+                  <span v-if="showPassword">👁️</span>
+                  <span v-else>👁️‍🗨️</span>
+                </button>
+              </div>
+              <div v-if="submitted && !password" class="validation-error">
+                Password is required
+              </div>
+            </div>
+
+            <div class="forgot-password">
+              <button type="button" class="forgot-password-link" @click="switchToOtp">
+                Forgot password? Use OTP instead
+              </button>
+            </div>
+
+            <!-- Back to Username -->
+            <button type="button" class="back-button" @click="goBackToUsername" :disabled="loading">
+              ← Back to Username
+            </button>
+          </div>
+
+          <!-- Step 2: OTP Input (Only shown when OTP auth method is selected) -->
           <div v-if="currentStep === 'otp'" class="step-content">
             <div class="otp-info">
               <div class="selected-means-display">
@@ -160,6 +224,13 @@
               </button>
             </div>
 
+            <!-- Switch to Password -->
+            <div class="switch-auth-method">
+              <button type="button" class="switch-auth-link" @click="switchToPassword">
+                Use password instead
+              </button>
+            </div>
+
             <!-- Back to Username -->
             <button type="button" class="back-button" @click="goBackToUsername" :disabled="loading">
               ← Back to Username
@@ -169,13 +240,19 @@
           <!-- Submit Button -->
           <button type="submit" class="login-button" :disabled="loading || !isFormValid">
             <span v-if="!loading">
-              <span v-if="currentStep === 'username'">Request OTP</span>
+              <span v-if="currentStep === 'username'">
+                {{ authMethod === 'password' ? 'Continue' : 'Request OTP' }}
+              </span>
               <span v-else-if="currentStep === 'otp'">Verify & Login</span>
+              <span v-else-if="currentStep === 'password'">Login</span>
             </span>
             <span v-else class="loading-content">
               <div class="spinner"></div>
-              <span v-if="currentStep === 'username'">Sending OTP...</span>
+              <span v-if="currentStep === 'username'">
+                {{ authMethod === 'password' ? 'Processing...' : 'Sending OTP...' }}
+              </span>
               <span v-else-if="currentStep === 'otp'">Verifying...</span>
+              <span v-else-if="currentStep === 'password'">Logging in...</span>
             </span>
           </button>
         </form>
@@ -203,6 +280,9 @@
 
       // Form data
       const username = ref('');
+      const password = ref('');
+      const showPassword = ref(false);
+      const authMethod = ref('password'); // Default to password auth
       const selectedMeans = ref('');
       const rememberMe = ref(false);
       const otpDigits = ref(['', '', '', '', '', '']);
@@ -238,9 +318,15 @@
 
       const isFormValid = computed(() => {
         if (currentStep.value === 'username') {
-          return username.value.length > 0 && selectedMeans.value !== '';
+          if (authMethod.value === 'password') {
+            return username.value.length > 0;
+          } else {
+            return username.value.length > 0 && selectedMeans.value !== '';
+          }
         } else if (currentStep.value === 'otp') {
           return isOtpComplete.value;
+        } else if (currentStep.value === 'password') {
+          return password.value.length > 0;
         }
         return false;
       });
@@ -322,9 +408,7 @@
           localStorage.setItem('refresh_token', response.data.refresh);
           localStorage.setItem('user', JSON.stringify(response.data.user));
 
-
-          // Store ip iformation
-          // localStorage.setItem('sipConnectionDetails', JSON.stringify(sipConnectionDetails.value));
+          // Store SIP information
           localStorage.setItem('sipConnectionDetails', JSON.stringify({
             desc: 'SIP Connection Details',
             uri: sipConnectionDetails.value.uri,
@@ -332,14 +416,15 @@
             websocketURL: sipConnectionDetails.value.websocketURL
           }));
 
-
           // Store remember me preference if selected
           if (rememberMe.value) {
             localStorage.setItem('rememberedUsername', username.value);
             localStorage.setItem('rememberedMeans', selectedMeans.value);
+            localStorage.setItem('rememberedAuthMethod', authMethod.value);
           } else {
             localStorage.removeItem('rememberedUsername');
             localStorage.removeItem('rememberedMeans');
+            localStorage.removeItem('rememberedAuthMethod');
           }
 
           // Redirect to dashboard
@@ -354,6 +439,50 @@
         }
       };
 
+      const verifyPassword = async () => {
+        loading.value = true;
+        error.value = '';
+
+        try {
+          const response = await axiosInstance.post('/api/auth/login/', {
+            username: username.value,
+            password: password.value
+          });
+
+          // Store authentication tokens and user data
+          localStorage.setItem('access_token', response.data.access);
+          localStorage.setItem('refresh_token', response.data.refresh);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+
+          // Store SIP information
+          localStorage.setItem('sipConnectionDetails', JSON.stringify({
+            desc: 'SIP Connection Details',
+            uri: sipConnectionDetails.value.uri,
+            password: sipConnectionDetails.value.password,
+            websocketURL: sipConnectionDetails.value.websocketURL
+          }));
+
+          // Store remember me preference if selected
+          if (rememberMe.value) {
+            localStorage.setItem('rememberedUsername', username.value);
+            localStorage.setItem('rememberedAuthMethod', authMethod.value);
+          } else {
+            localStorage.removeItem('rememberedUsername');
+            localStorage.removeItem('rememberedAuthMethod');
+          }
+
+          // Redirect to dashboard
+          router.push(returnUrl.value);
+        } catch (err) {
+          error.value = err.response?.data?.detail ||
+            err.response?.data?.message ||
+            'Invalid username or password. Please try again.';
+          console.error('Login error:', err);
+        } finally {
+          loading.value = false;
+        }
+      };
+
       const handleSubmit = async () => {
         submitted.value = true;
 
@@ -362,9 +491,15 @@
         }
 
         if (currentStep.value === 'username') {
-          await requestOtp();
+          if (authMethod.value === 'password') {
+            currentStep.value = 'password';
+          } else {
+            await requestOtp();
+          }
         } else if (currentStep.value === 'otp') {
           await verifyOtp();
+        } else if (currentStep.value === 'password') {
+          await verifyPassword();
         }
       };
 
@@ -396,9 +531,31 @@
       const goBackToUsername = () => {
         currentStep.value = 'username';
         otpDigits.value = ['', '', '', '', '', ''];
+        password.value = '';
         submitted.value = false;
         error.value = '';
         successMessage.value = '';
+
+        if (resendInterval.value) {
+          clearInterval(resendInterval.value);
+          resendTimer.value = 0;
+        }
+      };
+
+      const switchToOtp = () => {
+        authMethod.value = 'otp';
+        currentStep.value = 'username';
+        password.value = '';
+        submitted.value = false;
+        error.value = '';
+      };
+
+      const switchToPassword = () => {
+        authMethod.value = 'password';
+        currentStep.value = 'password';
+        otpDigits.value = ['', '', '', '', '', ''];
+        submitted.value = false;
+        error.value = '';
 
         if (resendInterval.value) {
           clearInterval(resendInterval.value);
@@ -415,6 +572,7 @@
       const checkRememberedData = () => {
         const rememberedUsername = localStorage.getItem('rememberedUsername');
         const rememberedMeans = localStorage.getItem('rememberedMeans');
+        const rememberedAuthMethod = localStorage.getItem('rememberedAuthMethod');
 
         if (rememberedUsername) {
           username.value = rememberedUsername;
@@ -424,6 +582,10 @@
         if (rememberedMeans) {
           selectedMeans.value = rememberedMeans;
         }
+
+        if (rememberedAuthMethod) {
+          authMethod.value = rememberedAuthMethod;
+        }
       };
 
       // Lifecycle hooks
@@ -431,11 +593,7 @@
         checkRememberedData();
 
         const checkWSConnection = new WebSocket("ws://18.179.24.235:8089/ws", "sip");
-
-        console.log("checking WebSocket Connection", checkWSConnection)
-
-        
-
+        console.log("checking WebSocket Connection", checkWSConnection);
       });
 
       onUnmounted(() => {
@@ -446,6 +604,9 @@
 
       return {
         username,
+        password,
+        showPassword,
+        authMethod,
         selectedMeans,
         rememberMe,
         otpDigits,
@@ -464,6 +625,8 @@
         handleSubmit,
         resendOtp,
         goBackToUsername,
+        switchToOtp,
+        switchToPassword,
         handleHelp,
         sipConnectionDetails,
       };
@@ -638,6 +801,46 @@
     font-weight: 800;
   }
 
+  /* Authentication Method Selector */
+  .auth-method-selector {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .auth-method-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .auth-method-button.active {
+    border-color: #1e7e34;
+    background-color: rgba(30, 126, 52, 0.05);
+  }
+
+  .auth-method-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .auth-method-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  .auth-method-button.active .auth-method-label {
+    color: #1e7e34;
+  }
+
   /* Step Indicator */
   .step-indicator {
     display: flex;
@@ -780,6 +983,70 @@
   .form-input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  /* Password Input Container */
+  .password-input-container {
+    position: relative;
+  }
+
+  .password-toggle-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .password-toggle-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Forgot Password */
+  .forgot-password {
+    text-align: right;
+    margin-bottom: 1rem;
+  }
+
+  .forgot-password-link {
+    background: none;
+    border: none;
+    color: #1e7e34;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  .forgot-password-link:hover {
+    color: #167029;
+  }
+
+  /* Switch Auth Method */
+  .switch-auth-method {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .switch-auth-link {
+    background: none;
+    border: none;
+    color: #1e7e34;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  .switch-auth-link:hover {
+    color: #167029;
   }
 
   /* Select Dropdown Styles */
@@ -1151,6 +1418,15 @@
 
     .means-icon {
       font-size: 1.5rem;
+    }
+
+    .auth-method-selector {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .auth-method-button {
+      width: 100%;
     }
   }
 
