@@ -16,7 +16,7 @@
       <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span>{{ currentTheme === 'dark' ? 'Toggle Light Mode' : 'Toggle Dark Mode' }}</span>
+      <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
     </button>
 
     <div class="case-container">
@@ -38,7 +38,7 @@
               AI Enabled
             </span>
             <label class="toggle-switch">
-              <input v-model="isAIEnabled" type="checkbox" @change="handleAIToggle" />
+              <input v-model="isAIEnabled" type="checkbox" />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -60,191 +60,128 @@
           </div>
         </div>
 
-        <!-- Step 1: Basic Information -->
+        <!-- Step 1: Reporter Selection -->
         <div v-show="currentStep === 1" class="step-content">
           <form class="case-form" @submit.prevent="validateAndProceed(1)">
             <div class="form-section">
-              <div class="section-title">Basic Information</div>
-              <div class="form-group">
-                <label for="case-name">Case Name*</label>
-                <input 
-                  v-model="formData.step1.caseName"
-                  class="form-control" 
-                  id="case-name" 
-                  placeholder="Enter case name" 
-                  required 
-                  type="text"
-                  :class="{ 'error': validationErrors.caseName }"
-                />
-                <div v-if="validationErrors.caseName" class="error-message">{{ validationErrors.caseName }}</div>
-              </div>
-              <div class="form-group">
-                <label for="case-description">Description*</label>
-                <textarea 
-                  v-model="formData.step1.description"
-                  class="form-control" 
-                  id="case-description" 
-                  placeholder="Enter case description" 
-                  required
-                  :class="{ 'error': validationErrors.description }"
-                ></textarea>
-                <div v-if="validationErrors.description" class="error-message">{{ validationErrors.description }}</div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="case-priority">Priority*</label>
-                  <select 
-                    v-model="formData.step1.priority"
-                    class="form-control" 
-                    id="case-priority" 
-                    required
-                    :class="{ 'error': validationErrors.priority }"
-                  >
-                    <option value="">Select priority</option>
-                    <option v-for="priority in priorities" :key="priority" :value="priority">
-                      {{ priority }}
-                    </option>
-                  </select>
-                  <div v-if="validationErrors.priority" class="error-message">{{ validationErrors.priority }}</div>
-                </div>
-                <div class="form-group">
-                  <label for="case-status">Status*</label>
-                  <select 
-                    v-model="formData.step1.status"
-                    class="form-control" 
-                    id="case-status" 
-                    required
-                    :class="{ 'error': validationErrors.status }"
-                  >
-                    <option value="">Select status</option>
-                    <option v-for="status in statuses" :key="status" :value="status">
-                      {{ status }}
-                    </option>
-                  </select>
-                  <div v-if="validationErrors.status" class="error-message">{{ validationErrors.status }}</div>
+              <div class="section-title">Select Reporter</div>
+              <p class="section-description">Choose an existing contact or create a new reporter for this case.</p>
+              
+              <div class="search-section">
+                <div class="search-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  <input 
+                    v-model="searchQuery" 
+                    type="text" 
+                    placeholder="Search existing contacts..." 
+                    class="search-input"
+                  />
                 </div>
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="case-type">Type*</label>
-                  <select 
-                    v-model="formData.step1.type"
-                    class="form-control" 
-                    id="case-type" 
-                    required
-                    :class="{ 'error': validationErrors.type }"
-                  >
-                    <option value="">Select type</option>
-                    <option v-for="type in caseTypes" :key="type" :value="type">
-                      {{ type }}
-                    </option>
-                  </select>
-                  <div v-if="validationErrors.type" class="error-message">{{ validationErrors.type }}</div>
+
+              <div class="contacts-grid">
+                <div 
+                  v-for="contact in filteredContacts" 
+                  :key="contact.id"
+                  class="contact-card"
+                  :class="{ selected: selectedReporter?.id === contact.id }"
+                  @click="selectExistingReporter(contact)"
+                >
+                  <div class="contact-avatar">
+                    <span>{{ getInitials(contact.name) }}</span>
+                  </div>
+                  <div class="contact-info">
+                    <div class="contact-name">{{ contact.name }}</div>
+                    <div class="contact-details">
+                      <span class="contact-tag">{{ contact.age }}y</span>
+                      <span class="contact-tag">{{ contact.gender }}</span>
+                    </div>
+                    <div class="contact-meta">
+                      <div class="contact-location">📍 {{ contact.location }}</div>
+                      <div class="contact-phone">📞 {{ contact.phone }}</div>
+                    </div>
+                    <div class="contact-timestamp">{{ contact.lastContact }}</div>
+                  </div>
+                  <div class="contact-select-indicator">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label for="case-source">Source*</label>
-                  <select 
-                    v-model="formData.step1.source"
-                    class="form-control" 
-                    id="case-source" 
-                    required
-                    :class="{ 'error': validationErrors.source }"
-                  >
-                    <option value="">Select source</option>
-                    <option v-for="source in sources" :key="source" :value="source">
-                      {{ source }}
-                    </option>
-                  </select>
-                  <div v-if="validationErrors.source" class="error-message">{{ validationErrors.source }}</div>
-                </div>
+              </div>
+
+              <div class="action-buttons">
+                <button 
+                  v-if="selectedReporter" 
+                  type="submit"
+                  class="btn btn-primary btn-large" 
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Continue with {{ selectedReporter.name }}
+                </button>
+                <button type="button" class="btn btn-secondary btn-large" @click="createNewReporter">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  Create New Reporter
+                </button>
               </div>
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-cancel" @click="cancelForm">Cancel</button>
               <div>
                 <button type="button" class="btn btn-skip" @click="skipStep(1)">Skip</button>
-                <button type="submit" class="btn btn-next">Next</button>
+                <button type="submit" class="btn btn-next" :disabled="!selectedReporter">Next</button>
               </div>
             </div>
           </form>
         </div>
 
-        <!-- Step 2: Client Information -->
+        <!-- Step 2: Reporter Details -->
         <div v-show="currentStep === 2" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(2)">
             <div class="form-section">
-              <div class="section-title">Client Information</div>
+              <div class="section-title">
+                {{ selectedReporter ? 'Reporter Details' : 'New Reporter Information' }}
+              </div>
+              <p class="section-description">Enter the reporter's contact information and details.</p>
+              
               <div class="form-row">
                 <div class="form-group">
-                  <label for="client-name">Client Name</label>
+                  <label for="reporter-name">Full Name*</label>
                   <input 
-                    v-model="formData.step2.clientName"
+                    v-model="formData.step2.name"
                     type="text" 
-                    id="client-name" 
+                    id="reporter-name" 
                     class="form-control" 
-                    placeholder="Enter client name"
+                    placeholder="Enter full name"
+                    required
+                    :readonly="!!selectedReporter"
                   />
                 </div>
                 <div class="form-group">
-                  <label for="client-id">Client ID (if existing)</label>
+                  <label for="reporter-age">Age</label>
                   <input 
-                    v-model="formData.step2.clientId"
-                    type="text" 
-                    id="client-id" 
+                    v-model="formData.step2.age"
+                    type="number" 
+                    id="reporter-age" 
                     class="form-control" 
-                    placeholder="Enter client ID"
+                    placeholder="Enter age"
+                    min="1"
+                    max="120"
                   />
                 </div>
               </div>
+              
               <div class="form-row">
                 <div class="form-group">
-                  <label for="client-phone">Phone Number</label>
-                  <input 
-                    v-model="formData.step2.phone"
-                    type="tel" 
-                    id="client-phone" 
-                    class="form-control" 
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="client-email">Email</label>
-                  <input 
-                    v-model="formData.step2.email"
-                    type="email" 
-                    id="client-email" 
-                    class="form-control" 
-                    placeholder="Enter email"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="client-address">Address</label>
-                <input 
-                  v-model="formData.step2.address"
-                  type="text" 
-                  id="client-address" 
-                  class="form-control" 
-                  placeholder="Enter address"
-                />
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="client-dob">Date of Birth</label>
-                  <input 
-                    v-model="formData.step2.dob"
-                    type="date" 
-                    id="client-dob" 
-                    class="form-control"
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="client-gender">Gender</label>
-                  <select 
-                    v-model="formData.step2.gender"
-                    id="client-gender" 
-                    class="form-control"
-                  >
+                  <label for="reporter-gender">Gender</label>
+                  <select v-model="formData.step2.gender" id="reporter-gender" class="form-control">
                     <option value="">Select gender</option>
                     <option value="female">Female</option>
                     <option value="male">Male</option>
@@ -254,15 +191,98 @@
                     <option value="prefer-not-to-say">Prefer not to say</option>
                   </select>
                 </div>
+                <div class="form-group">
+                  <label for="reporter-location">Location</label>
+                  <input 
+                    v-model="formData.step2.location"
+                    type="text" 
+                    id="reporter-location" 
+                    class="form-control" 
+                    placeholder="Enter location"
+                  />
+                </div>
               </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="reporter-phone">Phone Number*</label>
+                  <input 
+                    v-model="formData.step2.phone"
+                    type="tel" 
+                    id="reporter-phone" 
+                    class="form-control" 
+                    placeholder="Enter phone number"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="reporter-alt-phone">Alternative Phone</label>
+                  <input 
+                    v-model="formData.step2.altPhone"
+                    type="tel" 
+                    id="reporter-alt-phone" 
+                    class="form-control" 
+                    placeholder="Enter alternative phone"
+                  />
+                </div>
+              </div>
+              
               <div class="form-group">
-                <label for="client-notes">Additional Notes</label>
-                <textarea 
-                  v-model="formData.step2.notes"
-                  id="client-notes" 
+                <label for="reporter-email">Email Address</label>
+                <input 
+                  v-model="formData.step2.email"
+                  type="email" 
+                  id="reporter-email" 
                   class="form-control" 
-                  placeholder="Enter any additional notes about the client"
-                ></textarea>
+                  placeholder="Enter email address"
+                />
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="reporter-id-type">ID Type</label>
+                  <select v-model="formData.step2.idType" id="reporter-id-type" class="form-control">
+                    <option value="">Select ID type</option>
+                    <option value="national-id">National ID</option>
+                    <option value="passport">Passport</option>
+                    <option value="drivers-license">Driver's License</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="reporter-id-number">ID Number</label>
+                  <input 
+                    v-model="formData.step2.idNumber"
+                    type="text" 
+                    id="reporter-id-number" 
+                    class="form-control" 
+                    placeholder="Enter ID number"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Is Reporter also a Client?</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input 
+                      v-model="formData.step2.isClient" 
+                      type="radio" 
+                      :value="true"
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">Yes</span>
+                  </label>
+                  <label class="radio-option">
+                    <input 
+                      v-model="formData.step2.isClient" 
+                      type="radio" 
+                      :value="false"
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">No</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="form-actions">
@@ -275,11 +295,25 @@
           </form>
         </div>
 
-        <!-- Step 3: Incident Details -->
+        <!-- Step 3: Case Details -->
         <div v-show="currentStep === 3" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(3)">
             <div class="form-section">
-              <div class="section-title">Incident Details</div>
+              <div class="section-title">Case Information</div>
+              <p class="section-description">Provide detailed information about the case and incident.</p>
+              
+              <div class="form-group">
+                <label for="case-narrative">Case Narrative*</label>
+                <textarea 
+                  v-model="formData.step3.narrative"
+                  id="case-narrative" 
+                  class="form-control" 
+                  placeholder="Describe the case details, incident, and circumstances in detail..."
+                  required
+                  rows="6"
+                ></textarea>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label for="incident-date">Date of Incident</label>
@@ -300,74 +334,52 @@
                   />
                 </div>
               </div>
+
               <div class="form-group">
-                <label for="incident-location">Location</label>
+                <label for="incident-location">Location of Incident</label>
                 <input 
                   v-model="formData.step3.location"
                   type="text" 
                   id="incident-location" 
                   class="form-control" 
-                  placeholder="Enter incident location"
+                  placeholder="Enter location where incident occurred"
                 />
               </div>
+
               <div class="form-group">
-                <label for="incident-description">Description of Incident</label>
-                <textarea 
-                  v-model="formData.step3.description"
-                  id="incident-description" 
-                  class="form-control" 
-                  placeholder="Describe what happened"
-                ></textarea>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="incident-type">Type of Incident</label>
-                  <select 
-                    v-model="formData.step3.incidentType"
-                    id="incident-type" 
-                    class="form-control"
-                  >
-                    <option value="">Select incident type</option>
-                    <option value="physical-abuse">Physical Abuse</option>
-                    <option value="emotional-abuse">Emotional/Psychological Abuse</option>
-                    <option value="sexual-assault">Sexual Assault</option>
-                    <option value="stalking">Stalking</option>
-                    <option value="financial-abuse">Financial Abuse</option>
-                    <option value="human-trafficking">Human Trafficking</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="incident-severity">Severity</label>
-                  <select 
-                    v-model="formData.step3.severity"
-                    id="incident-severity" 
-                    class="form-control"
-                  >
-                    <option value="">Select severity</option>
-                    <option value="critical">Critical</option>
-                    <option value="severe">Severe</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="mild">Mild</option>
-                  </select>
+                <label>Is this Case GBV Related?*</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input 
+                      v-model="formData.step3.isGBVRelated" 
+                      type="radio" 
+                      :value="true"
+                      required
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">Yes</span>
+                  </label>
+                  <label class="radio-option">
+                    <input 
+                      v-model="formData.step3.isGBVRelated" 
+                      type="radio" 
+                      :value="false"
+                      required
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">No</span>
+                  </label>
                 </div>
               </div>
+
               <div class="form-group">
-                <label for="perpetrator-info">Perpetrator Information</label>
+                <label for="case-plan">Case Plan</label>
                 <textarea 
-                  v-model="formData.step3.perpetratorInfo"
-                  id="perpetrator-info" 
+                  v-model="formData.step3.casePlan"
+                  id="case-plan" 
                   class="form-control" 
-                  placeholder="Enter information about the perpetrator (if known)"
-                ></textarea>
-              </div>
-              <div class="form-group">
-                <label for="safety-concerns">Safety Concerns</label>
-                <textarea 
-                  v-model="formData.step3.safetyConcerns"
-                  id="safety-concerns" 
-                  class="form-control" 
-                  placeholder="Describe any immediate safety concerns"
+                  placeholder="Outline the planned interventions and support services..."
+                  rows="4"
                 ></textarea>
               </div>
             </div>
@@ -381,110 +393,166 @@
           </form>
         </div>
 
-        <!-- Step 4: Case Assignment -->
+        <!-- Step 4: Case Classification -->
         <div v-show="currentStep === 4" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(4)">
             <div class="form-section">
-              <div class="section-title">Case Assignment</div>
-              <div class="form-group">
-                <label for="assignment-type">Assignment Type</label>
-                <select 
-                  v-model="formData.step4.assignmentType"
-                  id="assignment-type" 
-                  class="form-control"
-                  @change="handleAssignmentTypeChange"
-                >
-                  <option value="">Select assignment type</option>
-                  <option value="individual">Individual Staff Member</option>
-                  <option value="team">Team</option>
-                  <option value="auto">Auto-assign</option>
-                  <option value="unassigned">Leave Unassigned</option>
-                </select>
-              </div>
+              <div class="section-title">Case Classification & Assignment</div>
+              <p class="section-description">Classify the case and set priority levels for proper handling.</p>
               
-              <div v-if="formData.step4.assignmentType === 'individual'" class="form-group">
-                <label>Select Staff Member</label>
-                <div class="staff-list">
-                  <div 
-                    v-for="staff in staffMembers" 
-                    :key="staff.id"
-                    class="staff-card" 
-                    :class="{ selected: formData.step4.selectedStaffId === staff.id }"
-                    @click="selectStaff(staff.id)"
-                  >
-                    <div class="staff-header">
-                      <div class="staff-avatar">
-                        <img :src="staff.avatar" :alt="staff.name">
-                      </div>
-                      <div class="staff-info">
-                        <div class="staff-name">{{ staff.name }}</div>
-                        <div class="staff-role">{{ staff.role }}</div>
-                      </div>
-                    </div>
-                    <div class="staff-meta">
-                      <div class="staff-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
-                          <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>{{ staff.status }}</span>
-                      </div>
-                      <div class="staff-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
-                          <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M12 13a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M6.168 18.849A4 4 0 0110 16h4a4 4 0 013.834 2.855" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>{{ staff.activeCases }} active cases</span>
-                      </div>
-                    </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Department*</label>
+                  <div class="radio-group">
+                    <label class="radio-option">
+                      <input 
+                        v-model="formData.step4.department" 
+                        type="radio" 
+                        value="116"
+                        required
+                      />
+                      <span class="radio-indicator"></span>
+                      <span class="radio-label">116 (Emergency Helpline)</span>
+                    </label>
+                    <label class="radio-option">
+                      <input 
+                        v-model="formData.step4.department" 
+                        type="radio" 
+                        value="labor"
+                        required
+                      />
+                      <span class="radio-indicator"></span>
+                      <span class="radio-label">Labor Department</span>
+                    </label>
                   </div>
                 </div>
-              </div>
-              
-              <div v-if="formData.step4.assignmentType === 'team'" class="form-group">
-                <label for="team-select">Select Team</label>
-                <select 
-                  v-model="formData.step4.team"
-                  id="team-select" 
-                  class="form-control"
-                >
-                  <option value="">Select team</option>
-                  <option value="crisis-response">Crisis Response Team</option>
-                  <option value="counseling">Counseling Team</option>
-                  <option value="legal">Legal Support Team</option>
-                  <option value="housing">Housing & Resources Team</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label for="assignment-notes">Assignment Notes</label>
-                <textarea 
-                  v-model="formData.step4.notes"
-                  id="assignment-notes" 
-                  class="form-control" 
-                  placeholder="Enter any notes about this assignment"
-                ></textarea>
+                <div class="form-group">
+                  <label for="case-category">Case Category*</label>
+                  <select 
+                    v-model="formData.step4.category"
+                    id="case-category" 
+                    class="form-control"
+                    required
+                  >
+                    <option value="">Select category</option>
+                    <option value="domestic-violence">Domestic Violence</option>
+                    <option value="sexual-assault">Sexual Assault</option>
+                    <option value="child-abuse">Child Abuse</option>
+                    <option value="human-trafficking">Human Trafficking</option>
+                    <option value="labor-exploitation">Labor Exploitation</option>
+                    <option value="elder-abuse">Elder Abuse</option>
+                    <option value="stalking">Stalking</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
               
               <div class="form-row">
                 <div class="form-group">
-                  <label for="due-date">Due Date</label>
-                  <input 
-                    v-model="formData.step4.dueDate"
-                    type="date" 
-                    id="due-date" 
+                  <label for="priority">Priority*</label>
+                  <select 
+                    v-model="formData.step4.priority"
+                    id="priority" 
                     class="form-control"
-                  />
+                    required
+                  >
+                    <option value="">Select priority</option>
+                    <option value="critical">🔴 Critical</option>
+                    <option value="high">🟠 High</option>
+                    <option value="medium">🟡 Medium</option>
+                    <option value="low">🟢 Low</option>
+                  </select>
                 </div>
                 <div class="form-group">
-                  <label for="follow-up-date">Follow-up Date</label>
-                  <input 
-                    v-model="formData.step4.followUpDate"
-                    type="date" 
-                    id="follow-up-date" 
+                  <label for="status">Status*</label>
+                  <select 
+                    v-model="formData.step4.status"
+                    id="status" 
                     class="form-control"
-                  />
+                    required
+                  >
+                    <option value="">Select status</option>
+                    <option value="new">New</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="pending">Pending</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="escalated-to">Escalated To</label>
+                <select 
+                  v-model="formData.step4.escalatedTo"
+                  id="escalated-to" 
+                  class="form-control"
+                >
+                  <option value="">Select escalation level</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="manager">Manager</option>
+                  <option value="director">Director</option>
+                  <option value="external-agency">External Agency</option>
+                  <option value="law-enforcement">Law Enforcement</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Services Offered</label>
+                <div class="checkbox-grid">
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="counseling"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Counseling</span>
+                  </label>
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="legal-aid"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Legal Aid</span>
+                  </label>
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="shelter"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Shelter</span>
+                  </label>
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="medical-assistance"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Medical Assistance</span>
+                  </label>
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="financial-support"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Financial Support</span>
+                  </label>
+                  <label class="checkbox-option">
+                    <input 
+                      v-model="formData.step4.servicesOffered" 
+                      type="checkbox" 
+                      value="referral"
+                    />
+                    <span class="checkbox-indicator"></span>
+                    <span class="checkbox-label">Referral Services</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -498,51 +566,12 @@
           </form>
         </div>
 
-        <!-- Step 5: Review and Submit -->
+        <!-- Step 5: Review -->
         <div v-show="currentStep === 5" class="step-content">
           <div class="review-sections">
             <div class="review-section">
               <div class="section-header">
-                <div class="section-title">Basic Information</div>
-                <button class="edit-btn" @click="goToStep(1)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Edit
-                </button>
-              </div>
-              <div class="review-content">
-                <div class="review-item">
-                  <div class="review-label">Case Name</div>
-                  <div class="review-value">{{ formData.step1.caseName || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Description</div>
-                  <div class="review-value">{{ formData.step1.description || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Priority</div>
-                  <div class="review-value">{{ formData.step1.priority || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Status</div>
-                  <div class="review-value">{{ formData.step1.status || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Type</div>
-                  <div class="review-value">{{ formData.step1.type || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Source</div>
-                  <div class="review-value">{{ formData.step1.source || 'N/A' }}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="review-section">
-              <div class="section-header">
-                <div class="section-title">Client Information</div>
+                <div class="section-title">Reporter Information</div>
                 <button class="edit-btn" @click="goToStep(2)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -553,43 +582,31 @@
               </div>
               <div class="review-content">
                 <div class="review-item">
-                  <div class="review-label">Client Name</div>
-                  <div class="review-value">{{ formData.step2.clientName || 'N/A' }}</div>
+                  <div class="review-label">Name</div>
+                  <div class="review-value">{{ formData.step2.name || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Client ID</div>
-                  <div class="review-value">{{ formData.step2.clientId || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Phone Number</div>
+                  <div class="review-label">Phone</div>
                   <div class="review-value">{{ formData.step2.phone || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Email</div>
-                  <div class="review-value">{{ formData.step2.email || 'N/A' }}</div>
+                  <div class="review-label">Location</div>
+                  <div class="review-value">{{ formData.step2.location || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Address</div>
-                  <div class="review-value">{{ formData.step2.address || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Date of Birth</div>
-                  <div class="review-value">{{ formData.step2.dob || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Gender</div>
-                  <div class="review-value">{{ formatGender(formData.step2.gender) || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Additional Notes</div>
-                  <div class="review-value">{{ formData.step2.notes || 'N/A' }}</div>
+                  <div class="review-label">Is Client</div>
+                  <div class="review-value">
+                    <span class="status-badge" :class="formData.step2.isClient ? 'status-yes' : 'status-no'">
+                      {{ formData.step2.isClient ? 'Yes' : 'No' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
             
             <div class="review-section">
               <div class="section-header">
-                <div class="section-title">Incident Details</div>
+                <div class="section-title">Case Details</div>
                 <button class="edit-btn" @click="goToStep(3)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -599,44 +616,32 @@
                 </button>
               </div>
               <div class="review-content">
-                <div class="review-item">
-                  <div class="review-label">Date of Incident</div>
-                  <div class="review-value">{{ formData.step3.incidentDate || 'N/A' }}</div>
+                <div class="review-item review-item-full">
+                  <div class="review-label">Case Narrative</div>
+                  <div class="review-value">{{ formData.step3.narrative || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Time of Incident</div>
-                  <div class="review-value">{{ formData.step3.incidentTime || 'N/A' }}</div>
+                  <div class="review-label">GBV Related</div>
+                  <div class="review-value">
+                    <span class="status-badge" :class="formData.step3.isGBVRelated ? 'status-warning' : 'status-info'">
+                      {{ formData.step3.isGBVRelated ? 'Yes' : 'No' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="review-item">
+                  <div class="review-label">Incident Date</div>
+                  <div class="review-value">{{ formData.step3.incidentDate || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
                   <div class="review-label">Location</div>
                   <div class="review-value">{{ formData.step3.location || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Description of Incident</div>
-                  <div class="review-value">{{ formData.step3.description || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Type of Incident</div>
-                  <div class="review-value">{{ formatIncidentType(formData.step3.incidentType) || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Severity</div>
-                  <div class="review-value">{{ formatSeverity(formData.step3.severity) || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Perpetrator Information</div>
-                  <div class="review-value">{{ formData.step3.perpetratorInfo || 'N/A' }}</div>
-                </div>
-                <div class="review-item">
-                  <div class="review-label">Safety Concerns</div>
-                  <div class="review-value">{{ formData.step3.safetyConcerns || 'N/A' }}</div>
                 </div>
               </div>
             </div>
             
             <div class="review-section">
               <div class="section-header">
-                <div class="section-title">Case Assignment</div>
+                <div class="section-title">Classification</div>
                 <button class="edit-btn" @click="goToStep(4)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -647,28 +652,45 @@
               </div>
               <div class="review-content">
                 <div class="review-item">
-                  <div class="review-label">Assignment Type</div>
-                  <div class="review-value">{{ formatAssignmentType(formData.step4.assignmentType) || 'N/A' }}</div>
-                </div>
-                <div v-if="formData.step4.assignmentType === 'individual'" class="review-item">
-                  <div class="review-label">Assigned Staff</div>
-                  <div class="review-value">{{ getSelectedStaffName() || 'N/A' }}</div>
-                </div>
-                <div v-if="formData.step4.assignmentType === 'team'" class="review-item">
-                  <div class="review-label">Team</div>
-                  <div class="review-value">{{ formatTeam(formData.step4.team) || 'N/A' }}</div>
+                  <div class="review-label">Department</div>
+                  <div class="review-value">{{ formatDepartment(formData.step4.department) || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Assignment Notes</div>
-                  <div class="review-value">{{ formData.step4.notes || 'N/A' }}</div>
+                  <div class="review-label">Category</div>
+                  <div class="review-value">{{ formatCategory(formData.step4.category) || 'N/A' }}</div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Due Date</div>
-                  <div class="review-value">{{ formData.step4.dueDate || 'N/A' }}</div>
+                  <div class="review-label">Priority</div>
+                  <div class="review-value">
+                    <span v-if="formData.step4.priority" class="priority-badge" :class="`priority-${formData.step4.priority}`">
+                      {{ formatPriority(formData.step4.priority) }}
+                    </span>
+                    <span v-else>N/A</span>
+                  </div>
                 </div>
                 <div class="review-item">
-                  <div class="review-label">Follow-up Date</div>
-                  <div class="review-value">{{ formData.step4.followUpDate || 'N/A' }}</div>
+                  <div class="review-label">Status</div>
+                  <div class="review-value">
+                    <span v-if="formData.step4.status" class="status-badge status-info">
+                      {{ formatStatus(formData.step4.status) }}
+                    </span>
+                    <span v-else>N/A</span>
+                  </div>
+                </div>
+                <div class="review-item review-item-full">
+                  <div class="review-label">Services Offered</div>
+                  <div class="review-value">
+                    <div v-if="formData.step4.servicesOffered.length > 0" class="services-tags">
+                      <span 
+                        v-for="service in formData.step4.servicesOffered" 
+                        :key="service" 
+                        class="service-tag"
+                      >
+                        {{ formatService(service) }}
+                      </span>
+                    </div>
+                    <span v-else>None selected</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -681,7 +703,7 @@
         </div>
       </div>
       
-      <!-- AI Preview Panel -->
+      <!-- AI Insights Panel -->
       <div v-if="isAIEnabled" class="ai-preview-container">
         <div class="ai-preview">
           <div class="ai-preview-header">
@@ -690,172 +712,103 @@
               <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <div class="ai-preview-title">AI Preview <span class="ai-badge">Generated</span></div>
+            <div class="ai-preview-title">AI Insights <span class="ai-badge">LIVE</span></div>
           </div>
           
           <div class="ai-preview-content">
-            <!-- Basic Information Preview -->
+            <!-- AI Auto-Fill Section -->
             <div class="ai-preview-section">
-              <div class="ai-preview-section-title">Basic Information</div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Case Name</div>
-                <div class="ai-preview-value">{{ aiData.step1.caseName }}</div>
+              <div class="ai-preview-section-title">AI Auto-Fill</div>
+              <div class="ai-autofill-section">
+                <p class="ai-autofill-description">
+                  Let AI automatically populate form fields with sample data based on common case patterns.
+                </p>
+                <button 
+                  class="btn btn-primary btn-small ai-autofill-btn" 
+                  @click="showAutoFillModal = true"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Auto-Fill Current Step
+                </button>
               </div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Description</div>
-                <div class="ai-preview-value">{{ aiData.step1.description }}</div>
-              </div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Priority</div>
-                <div class="ai-preview-value">{{ aiData.step1.priority }}</div>
-              </div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Status</div>
-                <div class="ai-preview-value">{{ aiData.step1.status }}</div>
-              </div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Type</div>
-                <div class="ai-preview-value">{{ aiData.step1.type }}</div>
-              </div>
-              <div v-if="currentStep >= 1" class="ai-preview-item">
-                <div class="ai-preview-label">Source</div>
-                <div class="ai-preview-value">{{ aiData.step1.source }}</div>
-              </div>
-              <div v-if="currentStep < 1" class="ai-preview-item">
-                <div class="ai-preview-label">Status</div>
-                <div class="ai-preview-value na">N/A - Complete Step 1 to view</div>
+            </div>
+
+            <!-- Smart Suggestions -->
+            <div class="ai-preview-section">
+              <div class="ai-preview-section-title">Smart Suggestions</div>
+              <div class="ai-suggestions">
+                <div 
+                  v-for="suggestion in getActiveSuggestions()" 
+                  :key="suggestion.id"
+                  class="ai-suggestion"
+                  :class="`suggestion-${suggestion.type}`"
+                >
+                  <div class="suggestion-icon">{{ suggestion.icon }}</div>
+                  <div class="suggestion-content">
+                    <div class="suggestion-text">{{ suggestion.text }}</div>
+                    <div v-if="suggestion.action" class="suggestion-action">
+                      <button class="btn btn-tiny btn-outline" @click="applySuggestion(suggestion)">
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <!-- Client Information Preview -->
+            <!-- Case Summary -->
             <div class="ai-preview-section">
-              <div class="ai-preview-section-title">Client Information</div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Client Name</div>
-                <div class="ai-preview-value">{{ aiData.step2.clientName }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Phone Number</div>
-                <div class="ai-preview-value">{{ aiData.step2.phone }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Email</div>
-                <div class="ai-preview-value">{{ aiData.step2.email }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Address</div>
-                <div class="ai-preview-value">{{ aiData.step2.address }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Date of Birth</div>
-                <div class="ai-preview-value">{{ aiData.step2.dob }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Gender</div>
-                <div class="ai-preview-value">{{ aiData.step2.gender }}</div>
-              </div>
-              <div v-if="currentStep >= 2" class="ai-preview-item">
-                <div class="ai-preview-label">Additional Notes</div>
-                <div class="ai-preview-value">{{ aiData.step2.notes }}</div>
-              </div>
-              <div v-if="currentStep < 2" class="ai-preview-item">
-                <div class="ai-preview-label">Status</div>
-                <div class="ai-preview-value na">N/A - Complete Step 2 to view</div>
-              </div>
-            </div>
-            
-            <!-- Incident Details Preview -->
-            <div class="ai-preview-section">
-              <div class="ai-preview-section-title">Incident Details</div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Date of Incident</div>
-                <div class="ai-preview-value">{{ aiData.step3.incidentDate }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Time of Incident</div>
-                <div class="ai-preview-value">{{ aiData.step3.incidentTime }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Location</div>
-                <div class="ai-preview-value">{{ aiData.step3.location }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Description of Incident</div>
-                <div class="ai-preview-value">{{ aiData.step3.description }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Type of Incident</div>
-                <div class="ai-preview-value">{{ aiData.step3.incidentType }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Severity</div>
-                <div class="ai-preview-value">{{ aiData.step3.severity }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Perpetrator Information</div>
-                <div class="ai-preview-value">{{ aiData.step3.perpetratorInfo }}</div>
-              </div>
-              <div v-if="currentStep >= 3" class="ai-preview-item">
-                <div class="ai-preview-label">Safety Concerns</div>
-                <div class="ai-preview-value">{{ aiData.step3.safetyConcerns }}</div>
-              </div>
-              <div v-if="currentStep < 3" class="ai-preview-item">
-                <div class="ai-preview-label">Status</div>
-                <div class="ai-preview-value na">N/A - Complete Step 3 to view</div>
-              </div>
-            </div>
-            
-            <!-- Case Assignment Preview -->
-            <div class="ai-preview-section">
-              <div class="ai-preview-section-title">Case Assignment</div>
-              <div v-if="currentStep >= 4" class="ai-preview-item">
-                <div class="ai-preview-label">Assignment Type</div>
-                <div class="ai-preview-value">{{ aiData.step4.assignmentType }}</div>
-              </div>
-              <div v-if="currentStep >= 4 && aiData.step4.assignmentType === 'Individual Staff Member'" class="ai-preview-item">
-                <div class="ai-preview-label">Assigned Staff</div>
-                <div class="ai-preview-value">{{ aiData.step4.assignedStaff }}</div>
-              </div>
-              <div v-if="currentStep >= 4" class="ai-preview-item">
-                <div class="ai-preview-label">Assignment Notes</div>
-                <div class="ai-preview-value">{{ aiData.step4.notes }}</div>
-              </div>
-              <div v-if="currentStep >= 4" class="ai-preview-item">
-                <div class="ai-preview-label">Due Date</div>
-                <div class="ai-preview-value">{{ aiData.step4.dueDate }}</div>
-              </div>
-              <div v-if="currentStep >= 4" class="ai-preview-item">
-                <div class="ai-preview-label">Follow-up Date</div>
-                <div class="ai-preview-value">{{ aiData.step4.followUpDate }}</div>
-              </div>
-              <div v-if="currentStep < 4" class="ai-preview-item">
-                <div class="ai-preview-label">Status</div>
-                <div class="ai-preview-value na">N/A - Complete Step 4 to view</div>
-              </div>
-            </div>
-            
-            <!-- Case Summary Preview (only shown in step 5) -->
-            <div v-if="currentStep === 5" class="ai-preview-section">
               <div class="ai-preview-section-title">Case Summary</div>
-              <div class="ai-preview-item">
-                <div class="ai-preview-label">Case Type</div>
-                <div class="ai-preview-value">{{ aiData.step1.type }}</div>
+              <div class="ai-summary">
+                <div class="summary-item">
+                  <div class="summary-label">Reporter</div>
+                  <div class="summary-value">{{ formData.step2.name || 'Not selected' }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Case Type</div>
+                  <div class="summary-value">{{ formatCategory(formData.step4.category) || 'Not classified' }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Priority</div>
+                  <div class="summary-value">
+                    <span v-if="formData.step4.priority" class="priority-badge" :class="`priority-${formData.step4.priority}`">
+                      {{ formatPriority(formData.step4.priority) }}
+                    </span>
+                    <span v-else class="text-muted">Not set</span>
+                  </div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">GBV Related</div>
+                  <div class="summary-value">
+                    <span v-if="formData.step3.isGBVRelated !== null" class="status-badge" :class="formData.step3.isGBVRelated ? 'status-warning' : 'status-info'">
+                      {{ formData.step3.isGBVRelated ? 'Yes' : 'No' }}
+                    </span>
+                    <span v-else class="text-muted">Not specified</span>
+                  </div>
+                </div>
               </div>
-              <div class="ai-preview-item">
-                <div class="ai-preview-label">Priority</div>
-                <div class="ai-preview-value">{{ aiData.step1.priority }}</div>
-              </div>
-              <div class="ai-preview-item">
-                <div class="ai-preview-label">Client</div>
-                <div class="ai-preview-value">{{ aiData.step2.clientName }}</div>
-              </div>
-              <div class="ai-preview-item">
-                <div class="ai-preview-label">Assigned To</div>
-                <div class="ai-preview-value">{{ aiData.step4.assignedStaff }}</div>
-              </div>
-              <div class="ai-preview-item">
-                <div class="ai-preview-label">Due Date</div>
-                <div class="ai-preview-value">{{ aiData.step4.dueDate }}</div>
+            </div>
+
+            <!-- Progress Insights -->
+            <div v-if="getCompletedSteps().length > 0" class="ai-preview-section">
+              <div class="ai-preview-section-title">Progress Insights</div>
+              <div class="progress-insights">
+                <div class="insight-item">
+                  <div class="insight-icon">📊</div>
+                  <div class="insight-text">
+                    {{ getCompletedSteps().length }} of {{ totalSteps }} steps completed
+                  </div>
+                </div>
+                <div v-if="getEstimatedTime()" class="insight-item">
+                  <div class="insight-icon">⏱️</div>
+                  <div class="insight-text">
+                    Estimated time remaining: {{ getEstimatedTime() }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -863,434 +816,495 @@
       </div>
     </div>
     
-    <!-- Warning Modal -->
-    <div class="modal-overlay" :class="{ active: showWarningModal }">
+    <!-- AI Auto-Fill Warning Modal -->
+    <div class="modal-overlay" :class="{ active: showAutoFillModal }">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Warning
+            AI Auto-Fill Warning
           </div>
         </div>
         <div class="modal-body">
-          <p>This will update the information on the form permanently, erasing your current entries. Are you sure you want to continue?</p>
+          <p><strong>⚠️ This action will replace all existing data in the current step.</strong></p>
+          <p>AI will automatically populate the form fields with sample data. Any information you've already entered will be overwritten.</p>
+          <p>Are you sure you want to continue?</p>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-cancel" @click="cancelAIFill">Cancel</button>
-          <button class="modal-btn modal-btn-confirm" @click="confirmAIFill">Continue</button>
+          <button class="modal-btn modal-btn-cancel" @click="cancelAutoFill">Cancel</button>
+          <button class="modal-btn modal-btn-confirm" @click="confirmAutoFill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Yes, Auto-Fill Data
+          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+<script>
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
+export default {
+  setup() {
+    const router = useRouter()
 
-// State
-const currentStep = ref(1)
-const totalSteps = 5
-const currentTheme = ref(localStorage.getItem('theme') || 'dark')
-const isAIEnabled = ref(false)
-const showWarningModal = ref(false)
-const validationErrors = reactive({})
-const selectedStepForAI = ref(1)
+    // State
+    const currentStep = ref(1)
+    const totalSteps = 5
+    const currentTheme = ref(localStorage.getItem('theme') || 'dark')
+    const isAIEnabled = ref(false)
+    const showAutoFillModal = ref(false)
+    const searchQuery = ref('')
+    const selectedReporter = ref(null)
 
-// Staff members data
-const staffMembers = [
-  {
-    id: 1,
-    name: 'Sarah Mitchell',
-    role: 'Crisis Advocate',
-    avatar: '/placeholder.svg?height=40&width=40',
-    status: 'Available',
-    activeCases: 3
-  },
-  {
-    id: 2,
-    name: 'Robert Jackson',
-    role: 'Case Manager',
-    avatar: '/placeholder.svg?height=40&width=40',
-    status: 'Available',
-    activeCases: 5
-  },
-  {
-    id: 3,
-    name: 'Emily Chan',
-    role: 'Trauma Counselor',
-    avatar: '/placeholder.svg?height=40&width=40',
-    status: 'Available',
-    activeCases: 2
-  },
-  {
-    id: 4,
-    name: 'Michael Lee',
-    role: 'Legal Advocate',
-    avatar: '/placeholder.svg?height=40&width=40',
-    status: 'Available',
-    activeCases: 4
-  }
-]
+    // Mock contacts data
+    const contacts = [
+      {
+        id: 1,
+        name: 'Isaac Mwarunje',
+        age: 31,
+        gender: 'Male',
+        location: 'CENTRAL',
+        phone: '254700112233',
+        lastContact: '23 May 2025 3:30 PM'
+      },
+      {
+        id: 2,
+        name: 'Jane Doe',
+        age: 28,
+        gender: 'Female',
+        location: 'BUKWE',
+        phone: '254700445566',
+        lastContact: '20 May 2025 1:42 PM'
+      },
+      {
+        id: 3,
+        name: 'Nelvin Unknown',
+        age: 24,
+        gender: 'Male',
+        location: 'Unknown',
+        phone: '254700778899',
+        lastContact: '1 Jun 2025 9:34 AM'
+      }
+    ]
 
-// Form data
-const formData = reactive({
-  step1: {
-    caseName: '',
-    description: '',
-    priority: '',
-    status: '',
-    type: '',
-    source: ''
-  },
-  step2: {
-    clientName: '',
-    clientId: '',
-    phone: '',
-    email: '',
-    address: '',
-    dob: '',
-    gender: '',
-    notes: ''
-  },
-  step3: {
-    incidentDate: '',
-    incidentTime: '',
-    location: '',
-    description: '',
-    incidentType: '',
-    severity: '',
-    perpetratorInfo: '',
-    safetyConcerns: ''
-  },
-  step4: {
-    assignmentType: '',
-    selectedStaffId: null,
-    team: '',
-    notes: '',
-    dueDate: '',
-    followUpDate: ''
-  }
-})
+    // AI Suggestions data
+    const aiSuggestions = reactive({
+      1: [
+        {
+          id: 'duplicate-check',
+          type: 'info',
+          icon: '💡',
+          text: 'Consider checking for duplicate contacts before creating new reporters',
+          action: null
+        }
+      ],
+      2: [
+        {
+          id: 'contact-validation',
+          type: 'warning',
+          icon: '⚠️',
+          text: 'Ensure phone number is valid and reachable for follow-ups',
+          action: null
+        }
+      ],
+      3: [
+        {
+          id: 'narrative-analysis',
+          type: 'success',
+          icon: '🎯',
+          text: 'Case narrative indicates potential high priority - consider urgent classification',
+          action: { type: 'set-priority', value: 'high' }
+        },
+        {
+          id: 'gbv-detection',
+          type: 'warning',
+          icon: '🚨',
+          text: 'Keywords suggest this may be GBV-related. Ensure proper protocols are followed',
+          action: null
+        }
+      ],
+      4: [
+        {
+          id: 'priority-recommendation',
+          type: 'success',
+          icon: '🎯',
+          text: 'Based on case details, recommended priority: Medium',
+          action: { type: 'set-priority', value: 'medium' }
+        },
+        {
+          id: 'service-suggestion',
+          type: 'info',
+          icon: '💼',
+          text: 'Consider adding counseling and legal aid services for this case type',
+          action: { type: 'add-services', value: ['counseling', 'legal-aid'] }
+        }
+      ],
+      5: [
+        {
+          id: 'completeness-check',
+          type: 'success',
+          icon: '✅',
+          text: 'All required fields completed. Case is ready for submission',
+          action: null
+        }
+      ]
+    })
 
-// AI data
-const aiData = reactive({
-  step1: {
-    caseName: 'Domestic Violence Support - Jane Doe',
-    description: 'Client seeking support after experiencing domestic violence from spouse. Needs immediate safety planning and potential shelter placement.',
-    priority: 'High',
-    status: 'New',
-    type: 'Domestic Violence',
-    source: 'Hotline Call'
-  },
-  step2: {
-    clientName: 'Jane Doe',
-    clientId: '',
-    phone: '555-123-4567',
-    email: 'anonymous@example.com',
-    address: '123 Main St, Anytown, USA',
-    dob: '1985-06-15',
-    gender: 'Female',
-    notes: 'Client prefers to be contacted via email. Has two children (ages 8 and 10) who may also need support services.'
-  },
-  step3: {
-    incidentDate: '2025-05-15',
-    incidentTime: '22:30',
-    location: 'Client\'s residence',
-    description: 'Client reported that her spouse became verbally abusive after drinking, escalating to pushing her against the wall. Children were present in the home. Client was able to take children to a neighbor\'s house for the night.',
-    incidentType: 'Physical Abuse',
-    severity: 'Moderate',
-    perpetratorInfo: 'Spouse, John Doe, 38 years old. History of alcohol abuse. No prior police reports filed.',
-    safetyConcerns: 'Client is concerned about returning home. Spouse has access to firearms. Client believes spouse may try to prevent her from leaving with the children.'
-  },
-  step4: {
-    assignmentType: 'Individual Staff Member',
-    assignedStaff: 'Sarah Mitchell (Crisis Advocate)',
-    team: '',
-    notes: 'Client needs immediate safety planning and potential shelter placement. Assign to someone with domestic violence experience.',
-    dueDate: '2025-05-20',
-    followUpDate: '2025-05-22'
-  }
-})
+    // Form data
+    const formData = reactive({
+      step2: {
+        name: '',
+        age: '',
+        gender: '',
+        location: '',
+        phone: '',
+        altPhone: '',
+        email: '',
+        idType: '',
+        idNumber: '',
+        isClient: null
+      },
+      step3: {
+        narrative: '',
+        incidentDate: '',
+        incidentTime: '',
+        location: '',
+        isGBVRelated: null,
+        casePlan: ''
+      },
+      step4: {
+        department: '',
+        category: '',
+        priority: '',
+        status: '',
+        escalatedTo: '',
+        servicesOffered: []
+      }
+    })
 
-// Options
-const priorities = ['High', 'Medium', 'Low']
-const statuses = ['New', 'In Progress', 'Pending', 'Resolved', 'Closed']
-const caseTypes = [
-  'Domestic Violence',
-  'Sexual Assault',
-  'Human Trafficking',
-  'Child Abuse',
-  'Elder Abuse',
-  'Stalking'
-]
-const sources = [
-  'Phone Call',
-  'Email',
-  'Walk-in',
-  'Referral',
-  'Online Form',
-  'Social Media'
-]
+    // Step information
+    const stepLabels = [
+      'Select Reporter',
+      'Reporter Details',
+      'Case Information',
+      'Classification',
+      'Review'
+    ]
 
-// Step information
-const stepLabels = [
-  'Basic Info',
-  'Client Info',
-  'Incident Details',
-  'Case Assignment',
-  'Review'
-]
+    const stepDescriptions = [
+      'Step 1: Select an existing contact or create a new reporter',
+      'Step 2: Enter reporter details and contact information',
+      'Step 3: Provide case narrative and incident details',
+      'Step 4: Classify case and assign priority',
+      'Step 5: Review all information before creating the case'
+    ]
 
-const stepDescriptions = [
-  'Step 1: Basic Information',
-  'Step 2: Client Information',
-  'Step 3: Incident Details',
-  'Step 4: Case Assignment',
-  'Step 5: Review and Submit'
-]
+    // Computed
+    const filteredContacts = computed(() => {
+      if (!searchQuery.value) return contacts
+      return contacts.filter(contact =>
+        contact.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        contact.phone.includes(searchQuery.value)
+      )
+    })
 
-// Methods
-const toggleTheme = () => {
-  currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', currentTheme.value)
-  applyTheme()
-}
-
-const applyTheme = () => {
-  const root = document.documentElement
-  
-  if (currentTheme.value === 'light') {
-    root.style.setProperty('--background-color', '#f5f5f5')
-    root.style.setProperty('--sidebar-bg', '#ffffff')
-    root.style.setProperty('--content-bg', '#ffffff')
-    root.style.setProperty('--text-color', '#333')
-    root.style.setProperty('--text-secondary', '#666')
-    root.style.setProperty('--border-color', '#ddd')
-    root.style.setProperty('--card-bg', '#ffffff')
-    root.style.setProperty('--header-bg', '#f0f0f0')
-    root.style.setProperty('--input-bg', '#f0f0f0')
-    root.setAttribute('data-theme', 'light')
-  } else {
-    root.style.setProperty('--background-color', '#0a0a0a')
-    root.style.setProperty('--sidebar-bg', '#111')
-    root.style.setProperty('--content-bg', '#222')
-    root.style.setProperty('--text-color', '#fff')
-    root.style.setProperty('--text-secondary', '#aaa')
-    root.style.setProperty('--border-color', '#333')
-    root.style.setProperty('--card-bg', '#222')
-    root.style.setProperty('--header-bg', '#333')
-    root.style.setProperty('--input-bg', '#1a1a1a')
-    root.setAttribute('data-theme', 'dark')
-  }
-
-  // Set common variables
-  root.style.setProperty('--accent-color', '#964B00')
-  root.style.setProperty('--accent-hover', '#b25900')
-  root.style.setProperty('--danger-color', '#ff3b30')
-  root.style.setProperty('--success-color', '#4CAF50')
-  root.style.setProperty('--pending-color', '#FFA500')
-  root.style.setProperty('--unassigned-color', '#808080')
-  root.style.setProperty('--highlight-color', '#ff3b30')
-  root.style.setProperty('--high-priority', '#ff3b30')
-  root.style.setProperty('--medium-priority', '#FFA500')
-  root.style.setProperty('--low-priority', '#4CAF50')
-}
-
-const handleAIToggle = () => {
-  if (isAIEnabled.value) {
-    selectedStepForAI.value = currentStep.value
-    showWarningModal.value = true
-  }
-}
-
-const cancelAIFill = () => {
-  showWarningModal.value = false
-  isAIEnabled.value = false
-}
-
-const confirmAIFill = () => {
-  showWarningModal.value = false
-  fillFormWithAIData(selectedStepForAI.value)
-}
-
-const fillFormWithAIData = (step) => {
-  if (step === 1) {
-    formData.step1.caseName = aiData.step1.caseName
-    formData.step1.description = aiData.step1.description
-    formData.step1.priority = aiData.step1.priority
-    formData.step1.status = aiData.step1.status
-    formData.step1.type = aiData.step1.type
-    formData.step1.source = aiData.step1.source
-  } else if (step === 2) {
-    formData.step2.clientName = aiData.step2.clientName
-    formData.step2.clientId = aiData.step2.clientId
-    formData.step2.phone = aiData.step2.phone
-    formData.step2.email = aiData.step2.email
-    formData.step2.address = aiData.step2.address
-    formData.step2.dob = aiData.step2.dob
-    formData.step2.gender = aiData.step2.gender
-    formData.step2.notes = aiData.step2.notes
-  } else if (step === 3) {
-    formData.step3.incidentDate = aiData.step3.incidentDate
-    formData.step3.incidentTime = aiData.step3.incidentTime
-    formData.step3.location = aiData.step3.location
-    formData.step3.description = aiData.step3.description
-    formData.step3.incidentType = aiData.step3.incidentType
-    formData.step3.severity = aiData.step3.severity
-    formData.step3.perpetratorInfo = aiData.step3.perpetratorInfo
-    formData.step3.safetyConcerns = aiData.step3.safetyConcerns
-  } else if (step === 4) {
-    formData.step4.assignmentType = 'individual'
-    formData.step4.selectedStaffId = 1 // Sarah Mitchell
-    formData.step4.notes = aiData.step4.notes
-    formData.step4.dueDate = aiData.step4.dueDate
-    formData.step4.followUpDate = aiData.step4.followUpDate
-  }
-}
-
-const goToStep = (step) => {
-  currentStep.value = step
-}
-
-const validateAndProceed = (step) => {
-  // Clear previous validation errors
-  Object.keys(validationErrors).forEach(key => delete validationErrors[key])
-  
-  let isValid = true
-  
-  // Validate step 1
-  if (step === 1) {
-    if (!formData.step1.caseName) {
-      validationErrors.caseName = 'Case name is required'
-      isValid = false
+    // Methods
+    const toggleTheme = () => {
+      currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
+      localStorage.setItem('theme', currentTheme.value)
+      applyTheme()
     }
-    if (!formData.step1.description) {
-      validationErrors.description = 'Description is required'
-      isValid = false
+
+    const applyTheme = () => {
+      const root = document.documentElement
+      
+      if (currentTheme.value === 'light') {
+        root.style.setProperty('--background-color', '#f5f5f5')
+        root.style.setProperty('--sidebar-bg', '#ffffff')
+        root.style.setProperty('--content-bg', '#ffffff')
+        root.style.setProperty('--text-color', '#333')
+        root.style.setProperty('--text-secondary', '#666')
+        root.style.setProperty('--border-color', '#ddd')
+        root.style.setProperty('--card-bg', '#ffffff')
+        root.style.setProperty('--header-bg', '#f0f0f0')
+        root.style.setProperty('--input-bg', '#f0f0f0')
+        root.setAttribute('data-theme', 'light')
+      } else {
+        root.style.setProperty('--background-color', '#0a0a0a')
+        root.style.setProperty('--sidebar-bg', '#111')
+        root.style.setProperty('--content-bg', '#222')
+        root.style.setProperty('--text-color', '#fff')
+        root.style.setProperty('--text-secondary', '#aaa')
+        root.style.setProperty('--border-color', '#333')
+        root.style.setProperty('--card-bg', '#222')
+        root.style.setProperty('--header-bg', '#333')
+        root.style.setProperty('--input-bg', '#1a1a1a')
+        root.setAttribute('data-theme', 'dark')
+      }
+
+      // Set common variables
+      root.style.setProperty('--accent-color', '#964B00')
+      root.style.setProperty('--accent-hover', '#b25900')
+      root.style.setProperty('--danger-color', '#ff3b30')
+      root.style.setProperty('--success-color', '#4CAF50')
+      root.style.setProperty('--pending-color', '#FFA500')
+      root.style.setProperty('--unassigned-color', '#808080')
+      root.style.setProperty('--highlight-color', '#ff3b30')
+      root.style.setProperty('--high-priority', '#ff3b30')
+      root.style.setProperty('--medium-priority', '#FFA500')
+      root.style.setProperty('--low-priority', '#4CAF50')
     }
-    if (!formData.step1.priority) {
-      validationErrors.priority = 'Priority is required'
-      isValid = false
+
+    const getInitials = (name) => {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase()
     }
-    if (!formData.step1.status) {
-      validationErrors.status = 'Status is required'
-      isValid = false
+
+    const selectExistingReporter = (contact) => {
+      selectedReporter.value = contact
     }
-    if (!formData.step1.type) {
-      validationErrors.type = 'Type is required'
-      isValid = false
+
+    const createNewReporter = () => {
+      selectedReporter.value = null
+      // Clear reporter data
+      Object.keys(formData.step2).forEach(key => {
+        formData.step2[key] = key === 'isClient' ? null : ''
+      })
+      currentStep.value = 2
     }
-    if (!formData.step1.source) {
-      validationErrors.source = 'Source is required'
-      isValid = false
+
+    const goToStep = (step) => {
+      currentStep.value = step
+    }
+
+    const validateAndProceed = (step) => {
+      if (step === 1 && selectedReporter.value) {
+        // Pre-fill reporter data with selected contact
+        formData.step2.name = selectedReporter.value.name
+        formData.step2.age = selectedReporter.value.age
+        formData.step2.gender = selectedReporter.value.gender.toLowerCase()
+        formData.step2.location = selectedReporter.value.location
+        formData.step2.phone = selectedReporter.value.phone
+        currentStep.value = 2
+      }
+    }
+
+    const skipStep = (step) => {
+      currentStep.value = step + 1
+    }
+
+    const saveAndProceed = (step) => {
+      currentStep.value = step + 1
+    }
+
+    // AI methods
+    const cancelAutoFill = () => {
+      showAutoFillModal.value = false
+    }
+
+    const confirmAutoFill = () => {
+      showAutoFillModal.value = false
+      applyAISuggestions()
+    }
+
+    const applyAISuggestions = () => {
+      // Auto-fill based on current step
+      switch (currentStep.value) {
+        case 2:
+          if (!selectedReporter.value) {
+            formData.step2.name = 'John Doe'
+            formData.step2.age = '35'
+            formData.step2.gender = 'male'
+            formData.step2.location = 'Downtown'
+            formData.step2.phone = '+1234567890'
+            formData.step2.email = 'john.doe@example.com'
+            formData.step2.idType = 'national-id'
+            formData.step2.idNumber = 'ID123456789'
+            formData.step2.isClient = false
+          }
+          break
+          
+        case 3:
+          formData.step3.narrative = 'Incident reported involving domestic dispute. Caller requested immediate assistance and support services. Situation appears to require urgent intervention and follow-up care.'
+          formData.step3.incidentDate = new Date().toISOString().split('T')[0]
+          formData.step3.incidentTime = '14:30'
+          formData.step3.location = 'Residential area, Main Street'
+          formData.step3.isGBVRelated = true
+          formData.step3.casePlan = 'Provide immediate safety assessment, connect with counseling services, and follow up within 24 hours. Coordinate with local support agencies for ongoing assistance.'
+          break
+          
+        case 4:
+          formData.step4.department = '116'
+          formData.step4.category = 'domestic-violence'
+          formData.step4.priority = 'high'
+          formData.step4.status = 'new'
+          formData.step4.escalatedTo = 'supervisor'
+          formData.step4.servicesOffered = ['counseling', 'legal-aid', 'shelter']
+          break
+      }
+    }
+
+    const getActiveSuggestions = () => {
+      const currentSuggestions = aiSuggestions[currentStep.value] || []
+      const previousSteps = Array.from({length: currentStep.value - 1}, (_, i) => i + 1)
+
+      let allSuggestions = [...currentSuggestions]
+
+      // Add suggestions from completed steps
+      previousSteps.forEach(step => {
+        const stepSuggestions = aiSuggestions[step] || []
+        allSuggestions = [...allSuggestions, ...stepSuggestions]
+      })
+
+      return allSuggestions
+    }
+
+    const applySuggestion = (suggestion) => {
+      if (!suggestion.action) return
+
+      switch (suggestion.action.type) {
+        case 'set-priority':
+          formData.step4.priority = suggestion.action.value
+          break
+        case 'add-services':
+          formData.step4.servicesOffered = [...new Set([...formData.step4.servicesOffered, ...suggestion.action.value])]
+          break
+      }
+    }
+
+    const getCompletedSteps = () => {
+      return Array.from({length: currentStep.value - 1}, (_, i) => i + 1)
+    }
+
+    const getEstimatedTime = () => {
+      const remaining = totalSteps - currentStep.value
+      if (remaining <= 0) return null
+      return `${remaining * 2} minutes`
+    }
+
+    // Formatting methods
+    const formatDepartment = (dept) => {
+      const deptMap = {
+        '116': '116 (Emergency Helpline)',
+        'labor': 'Labor Department'
+      }
+      return deptMap[dept] || dept
+    }
+
+    const formatCategory = (category) => {
+      const categoryMap = {
+        'domestic-violence': 'Domestic Violence',
+        'sexual-assault': 'Sexual Assault',
+        'child-abuse': 'Child Abuse',
+        'human-trafficking': 'Human Trafficking',
+        'labor-exploitation': 'Labor Exploitation',
+        'elder-abuse': 'Elder Abuse',
+        'stalking': 'Stalking',
+        'other': 'Other'
+      }
+      return categoryMap[category] || category
+    }
+
+    const formatPriority = (priority) => {
+      const priorityMap = {
+        'critical': 'Critical',
+        'high': 'High',
+        'medium': 'Medium',
+        'low': 'Low'
+      }
+      return priorityMap[priority] || priority
+    }
+
+    const formatStatus = (status) => {
+      const statusMap = {
+        'new': 'New',
+        'in-progress': 'In Progress',
+        'pending': 'Pending',
+        'resolved': 'Resolved'
+      }
+      return statusMap[status] || status
+    }
+
+    const formatService = (service) => {
+      const serviceMap = {
+        'counseling': 'Counseling',
+        'legal-aid': 'Legal Aid',
+        'shelter': 'Shelter',
+        'medical-assistance': 'Medical Assistance',
+        'financial-support': 'Financial Support',
+        'referral': 'Referral Services'
+      }
+      return serviceMap[service] || service
+    }
+
+    const cancelForm = () => {
+      router.push('/cases')
+    }
+
+    const submitCase = () => {
+      const casePayload = {
+        reporter: formData.step2,
+        caseDetails: formData.step3,
+        classification: formData.step4,
+        createdAt: new Date().toISOString()
+      }
+
+      console.log('Creating case:', casePayload)
+      alert('Case created successfully!')
+      router.push('/cases')
+    }
+
+    // Lifecycle hooks
+    onMounted(() => {
+      applyTheme()
+    })
+
+    return {
+      currentStep,
+      totalSteps,
+      currentTheme,
+      isAIEnabled,
+      showAutoFillModal,
+      searchQuery,
+      selectedReporter,
+      contacts,
+      aiSuggestions,
+      formData,
+      stepLabels,
+      stepDescriptions,
+      filteredContacts,
+      toggleTheme,
+      getInitials,
+      selectExistingReporter,
+      createNewReporter,
+      goToStep,
+      validateAndProceed,
+      skipStep,
+      saveAndProceed,
+      cancelAutoFill,
+      confirmAutoFill,
+      getActiveSuggestions,
+      applySuggestion,
+      getCompletedSteps,
+      getEstimatedTime,
+      formatDepartment,
+      formatCategory,
+      formatPriority,
+      formatStatus,
+      formatService,
+      cancelForm,
+      submitCase,
     }
   }
-  
-  if (isValid) {
-    currentStep.value = step + 1
-  }
 }
-
-const skipStep = (step) => {
-  currentStep.value = step + 1
-}
-
-const saveAndProceed = (step) => {
-  currentStep.value = step + 1
-}
-
-const handleAssignmentTypeChange = () => {
-  if (formData.step4.assignmentType !== 'individual') {
-    formData.step4.selectedStaffId = null
-  }
-}
-
-const selectStaff = (staffId) => {
-  formData.step4.selectedStaffId = staffId
-}
-
-const getSelectedStaffName = () => {
-  if (!formData.step4.selectedStaffId) return null
-  
-  const staff = staffMembers.find(s => s.id === formData.step4.selectedStaffId)
-  return staff ? `${staff.name} (${staff.role})` : null
-}
-
-const formatGender = (gender) => {
-  const genderMap = {
-    'female': 'Female',
-    'male': 'Male',
-    'non-binary': 'Non-binary',
-    'transgender': 'Transgender',
-    'other': 'Other',
-    'prefer-not-to-say': 'Prefer not to say'
-  }
-  return genderMap[gender] || gender
-}
-
-const formatIncidentType = (type) => {
-  const typeMap = {
-    'physical-abuse': 'Physical Abuse',
-    'emotional-abuse': 'Emotional/Psychological Abuse',
-    'sexual-assault': 'Sexual Assault',
-    'stalking': 'Stalking',
-    'financial-abuse': 'Financial Abuse',
-    'human-trafficking': 'Human Trafficking',
-    'other': 'Other'
-  }
-  return typeMap[type] || type
-}
-
-const formatSeverity = (severity) => {
-  const severityMap = {
-    'critical': 'Critical',
-    'severe': 'Severe',
-    'moderate': 'Moderate',
-    'mild': 'Mild'
-  }
-  return severityMap[severity] || severity
-}
-
-const formatAssignmentType = (type) => {
-  const typeMap = {
-    'individual': 'Individual Staff Member',
-    'team': 'Team',
-    'auto': 'Auto-assign',
-    'unassigned': 'Leave Unassigned'
-  }
-  return typeMap[type] || type
-}
-
-const formatTeam = (team) => {
-  const teamMap = {
-    'crisis-response': 'Crisis Response Team',
-    'counseling': 'Counseling Team',
-    'legal': 'Legal Support Team',
-    'housing': 'Housing & Resources Team'
-  }
-  return teamMap[team] || team
-}
-
-const cancelForm = () => {
-  router.push('/cases')
-}
-
-const submitCase = () => {
-  // Here you would typically submit the form data
-  console.log('Submitting case:', formData)
-  alert('Case submitted successfully!')
-  router.push('/cases')
-}
-
-// Lifecycle hooks
-onMounted(() => {
-  applyTheme()
-})
 </script>
 
 <style>
@@ -1578,6 +1592,12 @@ input:checked + .toggle-slider:before {
   margin-bottom: 10px;
 }
 
+.section-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -1612,12 +1632,13 @@ input:checked + .toggle-slider:before {
   box-shadow: 0 0 0 3px rgba(150, 75, 0, 0.1);
 }
 
-.form-control.error {
-  border-color: var(--danger-color);
-}
-
 .form-control::placeholder {
   color: var(--text-secondary);
+}
+
+.form-control:read-only {
+  background-color: var(--border-color);
+  cursor: not-allowed;
 }
 
 textarea.form-control {
@@ -1625,91 +1646,269 @@ textarea.form-control {
   resize: vertical;
 }
 
-.error-message {
-  color: var(--danger-color);
-  font-size: 12px;
-  font-weight: 500;
+.search-section {
+  margin-bottom: 20px;
 }
 
-.staff-list {
+.search-box {
+  position: relative;
+  max-width: 400px;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  stroke: var(--text-secondary);
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.contacts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 15px;
-  margin-top: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.staff-card {
+.contact-card {
   background-color: var(--input-bg);
   border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  gap: 12px;
+  position: relative;
 }
 
-.staff-card:hover {
+.contact-card:hover {
   border-color: var(--accent-color);
   transform: translateY(-2px);
 }
 
-.staff-card.selected {
+.contact-card.selected {
   border-color: var(--accent-color);
   background-color: rgba(150, 75, 0, 0.1);
 }
 
-.staff-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.staff-avatar {
+.contact-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  overflow: hidden;
+  background-color: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
-.staff-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.staff-info {
+.contact-info {
   flex: 1;
 }
 
-.staff-name {
+.contact-name {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
-.staff-role {
-  font-size: 14px;
+.contact-details {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.contact-tag {
+  font-size: 12px;
+  background-color: var(--border-color);
   color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
-.staff-meta {
+.contact-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.staff-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.staff-meta-item svg {
-  stroke: var(--text-secondary);
+.contact-timestamp {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.contact-select-indicator {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  color: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.contact-card.selected .contact-select-indicator {
+  opacity: 1;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  padding-left: 28px;
+}
+
+.radio-option input[type="radio"] {
+  opacity: 0;
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.radio-indicator {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  height: 20px;
+  width: 20px;
+  background-color: var(--input-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.radio-option:hover .radio-indicator {
+  border-color: var(--accent-color);
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-indicator {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.radio-indicator::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-indicator::after {
+  display: block;
+}
+
+.radio-label {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  padding-left: 28px;
+}
+
+.checkbox-option input[type="checkbox"] {
+  opacity: 0;
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-indicator {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  height: 20px;
+  width: 20px;
+  background-color: var(--input-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.checkbox-option:hover .checkbox-indicator {
+  border-color: var(--accent-color);
+}
+
+.checkbox-option input[type="checkbox"]:checked ~ .checkbox-indicator {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.checkbox-indicator::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+}
+
+.checkbox-option input[type="checkbox"]:checked ~ .checkbox-indicator::after {
+  display: block;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  color: var(--text-color);
 }
 
 .form-actions {
@@ -1738,6 +1937,11 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-cancel {
@@ -1777,8 +1981,27 @@ textarea.form-control {
   color: white;
 }
 
-.btn-next:hover {
+.btn-next:hover:not(:disabled) {
   background-color: var(--accent-hover);
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color);
 }
 
 .btn-submit {
@@ -1788,6 +2011,21 @@ textarea.form-control {
 
 .btn-submit:hover {
   background-color: #45a049;
+}
+
+.btn-large {
+  padding: 16px 24px;
+  font-size: 16px;
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.btn-tiny {
+  padding: 6px 10px;
+  font-size: 11px;
 }
 
 .review-sections {
@@ -1844,6 +2082,10 @@ textarea.form-control {
   gap: 4px;
 }
 
+.review-item-full {
+  grid-column: 1 / -1;
+}
+
 .review-label {
   font-size: 12px;
   font-weight: 500;
@@ -1856,6 +2098,71 @@ textarea.form-control {
   font-size: 14px;
   color: var(--text-color);
   word-wrap: break-word;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.status-yes {
+  background-color: var(--success-color);
+}
+
+.status-no {
+  background-color: var(--danger-color);
+}
+
+.status-info {
+  background-color: #3b82f6;
+}
+
+.status-warning {
+  background-color: var(--pending-color);
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.priority-critical {
+  background-color: var(--danger-color);
+}
+
+.priority-high {
+  background-color: var(--pending-color);
+}
+
+.priority-medium {
+  background-color: #ffc857;
+  color: #333;
+}
+
+.priority-low {
+  background-color: var(--success-color);
+}
+
+.services-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service-tag {
+  font-size: 12px;
+  background-color: var(--border-color);
+  color: var(--text-color);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .ai-preview-container {
@@ -1929,33 +2236,129 @@ textarea.form-control {
   border-bottom: 1px solid var(--border-color);
 }
 
-.ai-preview-item {
+.ai-autofill-section {
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.ai-autofill-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
   margin-bottom: 12px;
 }
 
-.ai-preview-item:last-child {
-  margin-bottom: 0;
+.ai-autofill-btn {
+  width: 100%;
+  justify-content: center;
 }
 
-.ai-preview-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+.ai-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ai-preview-value {
+.ai-suggestion {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border-left: 3px solid var(--border-color);
+}
+
+.suggestion-info {
+  border-left-color: #3b82f6;
+}
+
+.suggestion-warning {
+  border-left-color: var(--pending-color);
+}
+
+.suggestion-success {
+  border-left-color: var(--success-color);
+}
+
+.suggestion-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.suggestion-content {
+  flex: 1;
+}
+
+.suggestion-text {
   font-size: 13px;
   color: var(--text-color);
   line-height: 1.4;
-  word-wrap: break-word;
+  margin-bottom: 8px;
 }
 
-.ai-preview-value.na {
+.suggestion-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+}
+
+.btn-outline:hover {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.ai-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.summary-label {
+  font-weight: 500;
   color: var(--text-secondary);
-  font-style: italic;
+}
+
+.summary-value {
+  text-align: right;
+  color: var(--text-color);
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+.progress-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.insight-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .modal-overlay {
@@ -2015,7 +2418,7 @@ textarea.form-control {
 }
 
 .modal-title svg {
-  stroke: var(--danger-color);
+  stroke: var(--accent-color);
 }
 
 .modal-body {
@@ -2025,7 +2428,11 @@ textarea.form-control {
 .modal-body p {
   color: var(--text-color);
   line-height: 1.5;
-  margin: 0;
+  margin: 0 0 12px 0;
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
 }
 
 .modal-footer {
@@ -2044,6 +2451,9 @@ textarea.form-control {
   cursor: pointer;
   transition: all 0.3s;
   border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modal-btn-cancel {
@@ -2058,12 +2468,12 @@ textarea.form-control {
 }
 
 .modal-btn-confirm {
-  background-color: var(--danger-color);
+  background-color: var(--accent-color);
   color: white;
 }
 
 .modal-btn-confirm:hover {
-  background-color: #e6342a;
+  background-color: var(--accent-hover);
 }
 
 /* Responsive styles */
@@ -2108,7 +2518,7 @@ textarea.form-control {
     grid-template-columns: 1fr;
   }
   
-  .staff-list {
+  .contacts-grid {
     grid-template-columns: 1fr;
   }
   
@@ -2140,6 +2550,10 @@ textarea.form-control {
   .step-label {
     font-size: 11px;
   }
+  
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2150,6 +2564,8 @@ textarea.form-control {
     left: 0;
     right: 0;
     margin-bottom: 10px;
+    width: 100%;
+    justify-content: center;
   }
   
   .case-container {
@@ -2167,6 +2583,41 @@ textarea.form-control {
   .btn {
     padding: 10px 16px;
     font-size: 13px;
+  }
+  
+  .contacts-grid {
+    padding: 0;
+  }
+  
+  .contact-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .contact-select-indicator {
+    position: static;
+    transform: none;
+    align-self: center;
+    margin-top: 10px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 15px;
+  }
+  
+  .ai-preview {
+    height: 300px;
+  }
+  
+  .ai-preview-content {
+    padding: 15px;
   }
 }
 </style>
