@@ -1,0 +1,10 @@
+{
+  "case_details": "Détails du cas",
+  "paste_case_here": "Collez votre rapport de cas ici...",
+  "generate_insights": "Générer des analyses",
+  "generating_insights": "Analyse en cours",
+  "ai_insights": "Analyses par IA",
+  "case_summary": "Résumé du cas",
+  "results_appear_here": "Les résultats apparaîtront ici",
+  "enter_case_prompt": "Saisissez les détails du cas et cliquez sur \"Générer des analyses\""
+}

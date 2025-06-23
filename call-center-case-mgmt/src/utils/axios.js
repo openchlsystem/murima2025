@@ -7,7 +7,7 @@ const isLocalhost = window.location.hostname === 'localhost' ||
   window.location.hostname === '0.0.0.0';
 
 const baseURL = import.meta.env.VITE_API_URL ||
-  (isLocalhost ? 'http://Localhost:8520/api/v1' : window.location.origin);
+  (isLocalhost ? 'http://mynewcompany.localhost:8520/api/v1/' : window.location.origin);
 
 const axiosInstance = axios.create({
   baseURL,

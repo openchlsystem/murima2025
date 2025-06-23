@@ -1,7 +1,9 @@
 <template>
+
+h
   <div class="login-container">
     <div class="login-card">
-      <!-- Left Flag Strip -->
+      <!-- Left Flag Strip -->  
       <div class="flag-strip left-flag"></div>
 
       <!-- Left Section - Welcome with Pattern -->

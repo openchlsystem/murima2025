@@ -26,7 +26,7 @@ urlpatterns = [
     # path('v2/', include('apps.shared.api.v2.urls')),
     
     # Platform administration endpoints (platform-level API keys only)
-    path('platform/', include('apps.shared.api.platform.urls')),
+    path('/platform/', include('apps.shared.api.platform.urls')),
     
     # API management endpoints (tenant-scoped)
     path('management/', include(api_management_router.urls)),
@@ -35,6 +35,8 @@ urlpatterns = [
     path('docs/', views.APIDocumentationView.as_view(), name='api-docs'),
     path('schema/', views.APISchemaView.as_view(), name='api-schema'),
     
+    # Tenant management endpoints
+    path('tenants/', include('apps.shared.tenants.urls')),   
   
 ]
 
