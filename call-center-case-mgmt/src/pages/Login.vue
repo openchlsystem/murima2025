@@ -227,7 +227,7 @@
       const sipConnectionDetails = ref({
         uri: 'sip:1001@18.177.175.202',
         password: '1001pass',
-        websocketURL: 'ws://18.177.175.202:8088/websocket'
+        websocketURL: 'ws://18.177.175.202:8088/ws'
       })
 
       
