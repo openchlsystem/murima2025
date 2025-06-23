@@ -247,7 +247,7 @@
 
       // Methods
       const handleOtpInput = (index, event) => {
-        const value = event.target.value;
+        const value = event.target.value; 
         if (value && index < 5) {
           otpInputs.value[index + 1]?.focus();
         }

@@ -24,7 +24,7 @@ export const testServerConnection = async (websocketURL) => {
             }, 5000); // 5 second timeout
             
             testSocket.onopen = () => {
-                clearTimeout(timeout);
+                clearTimeout(timeout); 
                 testSocket.close();
                 resolve(true); // Server is accessible
             };
