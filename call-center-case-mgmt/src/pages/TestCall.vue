@@ -1,4 +1,4 @@
-<script setup>
+<script>
     import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
     import {
         testServerConnection,
@@ -33,12 +33,12 @@
         callDuration: '00:00:00'
     });
 
-    const callInfo = ref({
-        active: null,
-        incoming: null
-    });
+            const callInfo = ref({
+                active: null,
+                incoming: null
+            });
 
-    const isMuted = ref(false);
+            const isMuted = ref(false);
 
     // Computed properties
     const connectionStatus = computed(() => {
