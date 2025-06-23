@@ -442,6 +442,7 @@
                     <option value="labor-exploitation">Labor Exploitation</option>
                     <option value="elder-abuse">Elder Abuse</option>
                     <option value="stalking">Stalking</option>
+                    <option value="substance-abuse">Substance Abuse</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -703,7 +704,7 @@
         </div>
       </div>
       
-      <!-- AI Insights Panel -->
+      <!-- Enhanced AI Insights Panel -->
       <div v-if="isAIEnabled" class="ai-preview-container">
         <div class="ai-preview">
           <div class="ai-preview-header">
@@ -716,7 +717,172 @@
           </div>
           
           <div class="ai-preview-content">
-            <!-- AI Auto-Fill Section -->
+            <!-- Audio Transcription Results -->
+            <div v-if="transcriptionData" class="ai-preview-section">
+              <div class="ai-preview-section-title">Audio Analysis Results</div>
+              
+              <!-- Transcription -->
+              <div v-if="transcriptionData.transcript" class="transcription-section">
+                <h4 class="subsection-title">Transcription</h4>
+                <div class="transcription-text">{{ transcriptionData.transcript }}</div>
+                <button class="btn btn-tiny btn-outline" @click="useTranscription">
+                  Use in Case Narrative
+                </button>
+              </div>
+
+              <!-- Summary -->
+              <div v-if="transcriptionData.summary" class="summary-section">
+                <h4 class="subsection-title">Summary</h4>
+                <div class="summary-text">{{ transcriptionData.summary }}</div>
+              </div>
+
+              <!-- Named Entities -->
+              <div v-if="transcriptionData.summary_entities && transcriptionData.summary_entities.length" class="entities-section">
+                <h4 class="subsection-title">Detected Entities</h4>
+                <div class="entity-suggestions">
+                  <div v-for="entity in transcriptionData.summary_entities" :key="entity.text" class="entity-suggestion">
+                    <span class="entity-text">{{ entity.text }}</span>
+                    <span class="entity-label">{{ entity.label }}</span>
+                    <button class="btn btn-tiny btn-outline" @click="useEntity(entity)">
+                      Use
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Classification Suggestions -->
+              <div v-if="transcriptionData.summary_classification" class="classification-section">
+                <h4 class="subsection-title">AI Classification Suggestions</h4>
+                <div class="classification-suggestions">
+                  <div class="suggestion-item">
+                    <span class="suggestion-label">Category:</span>
+                    <span class="suggestion-value">{{ transcriptionData.summary_classification.sub_category }}</span>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('category', transcriptionData.summary_classification.sub_category)">
+                      Use This Category
+                    </button>
+                  </div>
+                  <div class="suggestion-item">
+                    <span class="suggestion-label">Priority:</span>
+                    <span class="suggestion-value">{{ getPriorityText(transcriptionData.summary_classification.priority) }}</span>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('priority', getPriorityValue(transcriptionData.summary_classification.priority))">
+                      Use This Priority
+                    </button>
+                  </div>
+                  <div class="suggestion-item">
+                    <span class="suggestion-label">Intervention:</span>
+                    <span class="suggestion-value">{{ transcriptionData.summary_classification.intervention }}</span>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('intervention', transcriptionData.summary_classification.intervention)">
+                      Add to Services
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Insights from Audio -->
+            <div v-if="aiInsights" class="ai-preview-section">
+              <div class="ai-preview-section-title">Detailed AI Insights</div>
+              
+              <!-- Case Summary -->
+              <div v-if="aiInsights.case_summary" class="insight-section">
+                <h4 class="subsection-title">Case Summary</h4>
+                <p class="insight-text">{{ aiInsights.case_summary }}</p>
+                <button class="btn btn-tiny btn-outline" @click="useCaseSummary">
+                  Use in Case Plan
+                </button>
+              </div>
+
+              <!-- Named Entities -->
+              <div v-if="aiInsights.named_entities" class="insight-section">
+                <h4 class="subsection-title">Key Information</h4>
+                
+                <div v-if="aiInsights.named_entities.persons && aiInsights.named_entities.persons.length" class="entity-group">
+                  <h5 class="entity-type">Persons Involved</h5>
+                  <div class="entity-tags">
+                    <span v-for="person in aiInsights.named_entities.persons" :key="person" class="entity-tag">
+                      {{ person }}
+                      <button class="entity-use-btn" @click="usePerson(person)">+</button>
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="aiInsights.named_entities.locations && aiInsights.named_entities.locations.length" class="entity-group">
+                  <h5 class="entity-type">Locations</h5>
+                  <div class="entity-tags">
+                    <span v-for="location in aiInsights.named_entities.locations" :key="location" class="entity-tag">
+                      {{ location }}
+                      <button class="entity-use-btn" @click="useLocation(location)">+</button>
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="aiInsights.named_entities.organizations && aiInsights.named_entities.organizations.length" class="entity-group">
+                  <h5 class="entity-type">Organizations</h5>
+                  <div class="entity-tags">
+                    <span v-for="org in aiInsights.named_entities.organizations" :key="org" class="entity-tag">
+                      {{ org }}
+                      <button class="entity-use-btn" @click="useOrganization(org)">+</button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Assessment -->
+              <div v-if="aiInsights.risk_assessment" class="insight-section">
+                <h4 class="subsection-title">Risk Assessment</h4>
+                
+                <div v-if="aiInsights.risk_assessment.red_flags && aiInsights.risk_assessment.red_flags.length" class="risk-group">
+                  <h5 class="risk-type">🚩 Red Flags</h5>
+                  <ul class="risk-list">
+                    <li v-for="flag in aiInsights.risk_assessment.red_flags" :key="flag">{{ flag }}</li>
+                  </ul>
+                </div>
+
+                <div v-if="aiInsights.risk_assessment.protective_factors && aiInsights.risk_assessment.protective_factors.length" class="risk-group">
+                  <h5 class="risk-type">🛡️ Protective Factors</h5>
+                  <ul class="risk-list">
+                    <li v-for="factor in aiInsights.risk_assessment.protective_factors" :key="factor">{{ factor }}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Recommended Services -->
+              <div v-if="aiInsights.case_management && aiInsights.case_management.psychosocial_support" class="insight-section">
+                <h4 class="subsection-title">Recommended Services</h4>
+                
+                <div v-if="aiInsights.case_management.psychosocial_support.short_term && aiInsights.case_management.psychosocial_support.short_term.length" class="service-group">
+                  <h5 class="service-type">Immediate Support</h5>
+                  <div class="service-suggestions">
+                    <button 
+                      v-for="service in aiInsights.case_management.psychosocial_support.short_term" 
+                      :key="service"
+                      class="service-suggestion-btn"
+                      @click="addRecommendedService(service)"
+                    >
+                      {{ service }}
+                      <span class="add-icon">+</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="aiInsights.case_management.psychosocial_support.long_term && aiInsights.case_management.psychosocial_support.long_term.length" class="service-group">
+                  <h5 class="service-type">Long-term Support</h5>
+                  <div class="service-suggestions">
+                    <button 
+                      v-for="service in aiInsights.case_management.psychosocial_support.long_term" 
+                      :key="service"
+                      class="service-suggestion-btn"
+                      @click="addRecommendedService(service)"
+                    >
+                      {{ service }}
+                      <span class="add-icon">+</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Original AI Auto-Fill Section -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">AI Auto-Fill</div>
               <div class="ai-autofill-section">
@@ -860,37 +1026,41 @@ export default {
     const currentStep = ref(1)
     const totalSteps = 5
     const currentTheme = ref(localStorage.getItem('theme') || 'dark')
-    const isAIEnabled = ref(false)
+    const isAIEnabled = ref(true) // Changed to true to show AI panel by default
     const showAutoFillModal = ref(false)
     const searchQuery = ref('')
     const selectedReporter = ref(null)
+    
+    // AI Data from audio transcription
+    const transcriptionData = ref(null)
+    const aiInsights = ref(null)
 
-    // Mock contacts data
+    // Mock contacts data - updated with sample data
     const contacts = [
       {
         id: 1,
-        name: 'Isaac Mwarunje',
-        age: 31,
+        name: 'Ivan Somondi',
+        age: 16,
         gender: 'Male',
-        location: 'CENTRAL',
+        location: 'Narok County',
         phone: '254700112233',
         lastContact: '23 May 2025 3:30 PM'
       },
       {
         id: 2,
-        name: 'Jane Doe',
-        age: 28,
+        name: 'Susan Kirigwa',
+        age: 45,
         gender: 'Female',
-        location: 'BUKWE',
+        location: 'Narok',
         phone: '254700445566',
         lastContact: '20 May 2025 1:42 PM'
       },
       {
         id: 3,
-        name: 'Nelvin Unknown',
-        age: 24,
-        gender: 'Male',
-        location: 'Unknown',
+        name: 'Amira',
+        age: 28,
+        gender: 'Female',
+        location: 'Nairobi',
         phone: '254700778899',
         lastContact: '1 Jun 2025 9:34 AM'
       }
@@ -1190,6 +1360,150 @@ export default {
       return `${remaining * 2} minutes`
     }
 
+    // Load sample transcription data
+    const loadSampleTranscriptionData = () => {
+      // Sample data based on the provided transcription
+      transcriptionData.value = {
+        transcript: "Hello. Hello. Good evening. Good evening. You are speaking to Amira from Child Health Line. How may I assist? I was asking, like this Child Health Line, like in Asahidia, what to do? Thank you so much for the question. Who am I speaking to? You are speaking to Eva and Sumu. Are you speaking to Ivan Somondi? You're calling us from which county, Ivan Somondi? Um, in, um, Narok. Which ward in Narok County? I don't know exactly, but I'm in Narok County...",
+        summary: "Child Health Counseling Line deals with all child protection cases. Case involves a 16-year-old named Ivan Somondi from Narok County seeking help for substance abuse (alcohol and cannabis). The caller admits to daily substance use and wants to quit.",
+        summary_entities: [
+          { text: "Ivan Somondi", label: "PERSON" },
+          { text: "Narok County", label: "LOCATION" },
+          { text: "Child Health Line", label: "ORG" },
+          { text: "Susan Kirigwa", label: "PERSON" },
+          { text: "Nyarach Secondary School", label: "ORG" }
+        ],
+        summary_classification: {
+          main_category: "Child Protection",
+          sub_category: "Substance Abuse",
+          intervention: "Professional counseling",
+          priority: 2
+        }
+      }
+
+      aiInsights.value = {
+        case_summary: "Case involving a 16-year-old minor from Narok County seeking help for substance abuse. The child reports daily use of alcohol and cannabis, started with peer influence, and expresses desire to change. Parents are unaware of the substance use.",
+        named_entities: {
+          persons: ["Ivan Somondi", "Susan Kirigwa", "Amira"],
+          organizations: ["Child Health Line", "Nyarach Secondary School"],
+          locations: ["Narok County", "Nairobi"],
+          contact_information: ["Child Health Line"]
+        },
+        classification: {
+          category: ["Child Protection", "Substance Abuse"],
+          interventions_needed: ["Professional counseling", "Rehabilitation services"],
+          priority_level: "High"
+        },
+        case_management: {
+          psychosocial_support: {
+            short_term: ["Professional counseling", "Peer support groups", "Family counseling"],
+            long_term: ["Rehabilitation program", "Educational support", "Life skills training"]
+          },
+          safety_planning: {
+            immediate_actions: ["Assess immediate safety", "Contact parents/guardians"],
+            long_term_measures: ["Regular follow-up", "School coordination"]
+          }
+        },
+        risk_assessment: {
+          red_flags: ["Daily substance use", "Hiding behavior from parents", "Peer influence"],
+          protective_factors: ["Expressed desire to change", "Access to education", "Family support available"],
+          potential_barriers: ["Peer pressure", "Lack of parental awareness", "Geographic distance from services"]
+        }
+      }
+    }
+
+    // AI Suggestion Usage Methods
+    const useTranscription = () => {
+      if (transcriptionData.value?.transcript) {
+        formData.step3.narrative = transcriptionData.value.transcript
+        goToStep(3)
+      }
+    }
+
+    const useEntity = (entity) => {
+      if (entity.label === 'PERSON') {
+        formData.step2.name = entity.text
+        goToStep(2)
+      } else if (entity.label === 'LOCATION') {
+        formData.step3.location = entity.text
+        goToStep(3)
+      }
+    }
+
+    const useClassification = (type, value) => {
+      if (type === 'category') {
+        const categoryMap = {
+          'Child Abuse': 'child-abuse',
+          'Substance Abuse': 'substance-abuse',
+          'Domestic Violence': 'domestic-violence'
+        }
+        formData.step4.category = categoryMap[value] || value.toLowerCase().replace(' ', '-')
+      } else if (type === 'priority') {
+        formData.step4.priority = value
+      } else if (type === 'intervention') {
+        const serviceMap = {
+          'Professional counseling': 'counseling',
+          'Legal assistance': 'legal-aid',
+          'Medical assistance': 'medical-assistance'
+        }
+        const service = serviceMap[value] || value.toLowerCase().replace(' ', '-')
+        if (!formData.step4.servicesOffered.includes(service)) {
+          formData.step4.servicesOffered.push(service)
+        }
+      }
+      goToStep(4)
+    }
+
+    const useCaseSummary = () => {
+      if (aiInsights.value?.case_summary) {
+        formData.step3.casePlan = aiInsights.value.case_summary
+        goToStep(3)
+      }
+    }
+
+    const usePerson = (person) => {
+      formData.step2.name = person
+      goToStep(2)
+    }
+
+    const useLocation = (location) => {
+      formData.step3.location = location
+      goToStep(3)
+    }
+
+    const useOrganization = (org) => {
+      // Could be used in case narrative or other relevant fields
+      const currentNarrative = formData.step3.narrative || ''
+      formData.step3.narrative = currentNarrative + (currentNarrative ? '\n\n' : '') + `Organization involved: ${org}`
+      goToStep(3)
+    }
+
+    const addRecommendedService = (service) => {
+      const serviceMap = {
+        'Professional counseling': 'counseling',
+        'Peer support groups': 'counseling',
+        'Family counseling': 'counseling',
+        'Rehabilitation program': 'medical-assistance',
+        'Educational support': 'referral',
+        'Life skills training': 'counseling'
+      }
+      const mappedService = serviceMap[service] || 'counseling'
+      if (!formData.step4.servicesOffered.includes(mappedService)) {
+        formData.step4.servicesOffered.push(mappedService)
+      }
+      goToStep(4)
+    }
+
+    const getPriorityText = (priority) => {
+      const priorityMap = { 1: 'Critical', 2: 'High', 3: 'Medium', 4: 'Low' }
+      return priorityMap[priority] || 'Medium'
+    }
+
+    const getPriorityValue = (priority) => {
+      const priorityMap = { 1: 'critical', 2: 'high', 3: 'medium', 4: 'low' }
+      return priorityMap[priority] || 'medium'
+    }
+
     // Formatting methods
     const formatDepartment = (dept) => {
       const deptMap = {
@@ -1208,6 +1522,7 @@ export default {
         'labor-exploitation': 'Labor Exploitation',
         'elder-abuse': 'Elder Abuse',
         'stalking': 'Stalking',
+        'substance-abuse': 'Substance Abuse',
         'other': 'Other'
       }
       return categoryMap[category] || category
@@ -1254,6 +1569,8 @@ export default {
         reporter: formData.step2,
         caseDetails: formData.step3,
         classification: formData.step4,
+        aiInsights: aiInsights.value,
+        transcriptionData: transcriptionData.value,
         createdAt: new Date().toISOString()
       }
 
@@ -1265,6 +1582,10 @@ export default {
     // Lifecycle hooks
     onMounted(() => {
       applyTheme()
+      // Load sample data for demonstration
+      setTimeout(() => {
+        loadSampleTranscriptionData()
+      }, 2000)
     })
 
     return {
@@ -1280,6 +1601,8 @@ export default {
       formData,
       stepLabels,
       stepDescriptions,
+      transcriptionData,
+      aiInsights,
       filteredContacts,
       toggleTheme,
       getInitials,
@@ -1295,6 +1618,16 @@ export default {
       applySuggestion,
       getCompletedSteps,
       getEstimatedTime,
+      useTranscription,
+      useEntity,
+      useClassification,
+      useCaseSummary,
+      usePerson,
+      useLocation,
+      useOrganization,
+      addRecommendedService,
+      getPriorityText,
+      getPriorityValue,
       formatDepartment,
       formatCategory,
       formatPriority,
@@ -1308,6 +1641,8 @@ export default {
 </script>
 
 <style>
+/* All original styles remain exactly the same, adding new AI insights styles */
+
 /* Global styles - not scoped */
 * {
   margin: 0;
@@ -2476,6 +2811,217 @@ textarea.form-control {
   background-color: var(--accent-hover);
 }
 
+/* New AI Insights Specific Styles */
+.transcription-section,
+.summary-section,
+.entities-section,
+.classification-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.transcription-text,
+.summary-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: var(--content-bg);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.entity-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.entity-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background-color: var(--content-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.entity-text {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.entity-label {
+  font-size: 0.75rem;
+  background-color: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.classification-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: var(--content-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suggestion-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.suggestion-value {
+  font-size: 0.875rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.insight-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.insight-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+}
+
+.entity-group,
+.risk-group,
+.service-group {
+  margin-bottom: 1rem;
+}
+
+.entity-type,
+.risk-type,
+.service-type {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.entity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.entity-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.entity-use-btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.entity-use-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.risk-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.service-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.service-suggestion-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--content-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.service-suggestion-btn:hover {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.add-icon {
+  background-color: var(--accent-color);
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-suggestion-btn:hover .add-icon {
+  background-color: white;
+  color: var(--accent-color);
+}
+
+.subsection-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 /* Responsive styles */
 @media (max-width: 1200px) {
   .case-container {
@@ -2488,6 +3034,24 @@ textarea.form-control {
   
   .ai-preview {
     height: 400px;
+  }
+  
+  .entity-tags {
+    flex-direction: column;
+  }
+  
+  .service-suggestions {
+    flex-direction: column;
+  }
+  
+  .classification-suggestions {
+    gap: 0.5rem;
+  }
+  
+  .suggestion-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 
@@ -2553,6 +3117,17 @@ textarea.form-control {
   
   .checkbox-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .transcription-text,
+  .summary-text {
+    max-height: 100px;
+  }
+  
+  .entity-suggestion {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 
