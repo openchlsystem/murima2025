@@ -263,68 +263,117 @@ export function getRegistrationStatus() {
 
 // Answer incoming call
 export function answerCall() {
-    if (!incomingSession) throw new Error('No incoming call to answer');
+    if (!incomingSession) {
+        throw new Error('No incoming call to answer');
+    }
 
-    const options = {
-        mediaConstraints: { audio: true, video: false },
-        pcConfig: { iceServers, iceTransportPolicy: 'all' },
-        rtcConstraints: { optional: [{ googDscp: true }] },
-        rtcOfferConstraints: { offerToReceiveAudio: true, offerToReceiveVideo: false }
-    };
+    try {
+        const options = {
+            mediaConstraints: { audio: true, video: false },
+            pcConfig: {
+                iceServers: iceServers,
+                iceTransportPolicy: 'all'
+            },
+            rtcConstraints: {
+                optional: [{ googDscp: true }]
+            },
+            rtcOfferConstraints: {
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: false
+            }
+        };
 
-    incomingSession.answer(options);
-    activeSession = incomingSession;
-    incomingSession = null;
-    console.log('Call answered successfully');
-    eventListeners['onCallAnswered']?.(activeSession);
+        incomingSession.answer(options);
+        activeSession = incomingSession;
+        incomingSession = null;
+        console.log('Call answered successfully');
+        eventListeners['onCallAnswered']?.(activeSession);
+    } catch (error) {
+        console.error('Failed to answer call:', error);
+        eventListeners['onCallAnswerFailed']?.(error);
+        throw error;
+    }
 }
 
 // Reject incoming call
 export function rejectCall() {
-    if (!incomingSession) throw new Error('No incoming call to reject');
+    if (!incomingSession) {
+        throw new Error('No incoming call to reject');
+    }
 
-    incomingSession.terminate({
-        status_code: 486,
-        reason_phrase: 'Busy Here'
-    });
-
-    incomingSession = null;
-    console.log('Call rejected successfully');
-    eventListeners['onCallRejected']?.();
+    try {
+        incomingSession.terminate({
+            status_code: 486,
+            reason_phrase: 'Busy Here'
+        });
+        incomingSession = null;
+        console.log('Call rejected successfully');
+        eventListeners['onCallRejected']?.();
+    } catch (error) {
+        console.error('Failed to reject call:', error);
+        eventListeners['onCallRejectFailed']?.(error);
+        throw error;
+    }
 }
 
 // Hang up active call
 export function hangupCall() {
-    if (!activeSession) throw new Error('No active call to hang up');
+    if (!activeSession) {
+        throw new Error('No active call to hang up');
+    }
 
-    activeSession.terminate();
-    activeSession = null;
-    console.log('Call ended successfully');
-    eventListeners['onCallEnded']?.();
+    try {
+        activeSession.terminate();
+        activeSession = null;
+        console.log('Call ended successfully');
+        eventListeners['onCallEnded']?.();
+    } catch (error) {
+        console.error('Failed to hang up call:', error);
+        eventListeners['onCallEndFailed']?.(error);
+        throw error;
+    }
 }
 
 // Mute/unmute call
 export function muteCall(mute = true) {
-    if (!activeSession) throw new Error('No active call to mute');
+    if (!activeSession) {
+        throw new Error('No active call to mute');
+    }
 
     try {
         const audioTrack = activeSession.connection.getSenders()
             .find(sender => sender.track && sender.track.kind === 'audio');
 
-    if (audioTrack) {
-        audioTrack.track.enabled = !mute;
-        console.log(mute ? 'Call muted' : 'Call unmuted');
-        eventListeners['onCallMuted']?.(mute);
+        if (audioTrack) {
+            audioTrack.track.enabled = !mute;
+            console.log(mute ? 'Call muted successfully' : 'Call unmuted successfully');
+            eventListeners['onCallMuted']?.(mute);
+        }
+    } catch (error) {
+        console.error('Failed to toggle mute:', error);
+        eventListeners['onCallMuteFailed']?.(error);
+        throw error;
     }
 }
 
 // Send DTMF tone
 export function sendDTMF(tone, duration = 100, interToneGap = 500) {
-    if (!activeSession) throw new Error('No active call to send DTMF');
+    if (!activeSession) {
+        throw new Error('No active call to send DTMF');
+    }
 
-    activeSession.sendDTMF(tone, { duration, interToneGap });
-    console.log('DTMF tone sent:', tone);
-    eventListeners['onDTMFSent']?.(tone);
+    try {
+        activeSession.sendDTMF(tone, {
+            duration,
+            interToneGap
+        });
+        console.log('DTMF tone sent successfully:', tone);
+        eventListeners['onDTMFSent']?.(tone);
+    } catch (error) {
+        console.error('Failed to send DTMF:', error);
+        eventListeners['onDTMFSendFailed']?.(error);
+        throw error;
+    }
 }
 
 // Get call status
@@ -354,17 +403,40 @@ function isCallMuted() {
 
 // Set up call event listeners
 function setupCallEvents(session) {
-    session.on('progress', data => eventListeners['onCallProgress']?.(session, data));
-    session.on('accepted', data => eventListeners['onCallAccepted']?.(session, data));
-    session.on('confirmed', data => eventListeners['onCallConfirmed']?.(session, data));
-    session.on('ended', data => {
-        if (session === activeSession) activeSession = null;
-        if (session === incomingSession) incomingSession = null;
+    session.on('progress', (data) => {
+        console.log('Call progress:', data);
+        eventListeners['onCallProgress']?.(session, data);
+    });
+
+    session.on('accepted', (data) => {
+        console.log('Call accepted:', data);
+        eventListeners['onCallAccepted']?.(session, data);
+    });
+
+    session.on('confirmed', (data) => {
+        console.log('Call confirmed:', data);
+        eventListeners['onCallConfirmed']?.(session, data);
+    });
+
+    session.on('ended', (data) => {
+        console.log('Call ended:', data);
+        if (session === activeSession) {
+            activeSession = null;
+        }
+        if (session === incomingSession) {
+            incomingSession = null;
+        }
         eventListeners['onCallEnded']?.(session, data);
     });
-    session.on('failed', data => {
-        if (session === activeSession) activeSession = null;
-        if (session === incomingSession) incomingSession = null;
+
+    session.on('failed', (data) => {
+        console.error('Call failed:', data);
+        if (session === activeSession) {
+            activeSession = null;
+        }
+        if (session === incomingSession) {
+            incomingSession = null;
+        }
         eventListeners['onCallFailed']?.(session, data);
     });
 
@@ -437,21 +509,27 @@ export function transferCall(targetExtension, isBlind = true) {
         throw new Error('No active call to transfer');
     }
 
-    const domain = ua.configuration.uri.split('@')[1];
-    const targetUri = `sip:${targetExtension}@${domain}`;
+    try {
+        const domain = ua.configuration.uri.split('@')[1];
+        const targetUri = `sip:${targetExtension}@${domain}`;
 
-    if (isBlind) {
-        activeSession.terminate({
-            status_code: 302,
-            reason_phrase: 'Moved Temporarily',
-            extraHeaders: [`Refer-To: <${targetUri}>`]
-        });
-    } else {
-        activeSession.refer(targetUri);
+        if (isBlind) {
+            activeSession.terminate({
+                status_code: 302,
+                reason_phrase: 'Moved Temporarily',
+                extraHeaders: [`Refer-To: <${targetUri}>`]
+            });
+        } else {
+            activeSession.refer(targetUri);
+        }
+
+        console.log(`Call ${isBlind ? 'blind' : 'attended'} transferred to:`, targetExtension);
+        eventListeners['onCallTransferred']?.(targetExtension, isBlind);
+    } catch (error) {
+        console.error('Failed to transfer call:', error);
+        eventListeners['onCallTransferFailed']?.(error);
+        throw error;
     }
-
-    console.log(`Call transferred to ${targetExtension} (${isBlind ? 'blind' : 'attended'})`);
-    eventListeners['onCallTransferred']?.(targetExtension, isBlind);
 }
 
 // Event management

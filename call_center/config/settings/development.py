@@ -11,6 +11,13 @@ ALLOWED_HOSTS = [
     '.localhost',
 ]
 
+ASTERISK_ARI_URL = 'http://YOUR_ASTERISK_SERVER_IP:8088/ari'
+ASTERISK_ARI_WS_URL = 'ws://YOUR_ASTERISK_SERVER_IP:8088/ari/events'
+ASTERISK_ARI_USERNAME = 'djangoari'
+ASTERISK_ARI_PASSWORD = '2001'
+ASTERISK_ARI_APP = 'django_calls'
+
+
 # Development-specific middleware
 MIDDLEWARE += [
     # 'debug_toolbar.middleware.DebugToolbarMiddleware',  # Commented out for now

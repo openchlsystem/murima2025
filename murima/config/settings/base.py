@@ -28,6 +28,7 @@ SHARED_APPS = [
     'apps.shared.administration',
     'apps.shared.core',
     'apps.shared.api',
+    
 ]
 
 # Tenant applications (isolated per tenant)
@@ -182,3 +183,9 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 # Email configuration (base settings)
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # DEFAULT_FROM_EMAIL = 'noreply@murima.com'
+
+ASTERISK_ARI_URL = 'http://18.177.175.202:8088/ari'
+ASTERISK_ARI_WS_URL = 'ws://18.177.175.202:8088/ari/events'
+ASTERISK_ARI_USERNAME = 'djangoari'
+ASTERISK_ARI_PASSWORD = '2001'
+ASTERISK_ARI_APP = 'django_calls'

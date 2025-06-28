@@ -25,6 +25,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('admin/', admin.site.urls),
     path('api/', include('apps.shared.api.urls')),
+    path('api/', include('apps.tenant.calls.urls')),
 ]
 
 # Serve media files in development

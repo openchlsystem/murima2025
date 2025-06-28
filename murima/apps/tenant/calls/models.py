@@ -1,69 +1,61 @@
 from django.db import models
-
-# Create your models here.
-# asterisk_app/models.py
-from django.db import models
+from django.contrib.auth import get_user_model
 from django.conf import settings
-import secrets
-import string
+from django.utils import timezone
 
 
-class AsteriskExtension(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE,
-        related_name='asterisk_extension'
-    )
-    extension_number = models.CharField(max_length=20, unique=True)
-    username = models.CharField(max_length=50, unique=True)
-    password = models.CharField(max_length=100)
-    tenant = models.ForeignKey(
-        'tenants.Tenant',  # Adjust this to your actual Tenant model path
-        on_delete=models.CASCADE,
-        related_name='asterisk_extensions'
-    )
+class Extension(models.Model):
+    username = models.CharField(max_length=50, unique=True, help_text="SIP extension number")
+    password = models.CharField(max_length=100, help_text="SIP password")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='extension')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    # Asterisk specific fields
-    asterisk_created = models.BooleanField(default=False)
-    asterisk_error = models.TextField(blank=True, null=True)
-    
+
     class Meta:
-        db_table = 'asterisk_extensions'
-        verbose_name = 'Asterisk Extension'
-        verbose_name_plural = 'Asterisk Extensions'
-    
+        db_table = 'extensions'
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"{self.user.email} - {self.extension_number}"
-    
-    @classmethod
-    def generate_extension_number(cls, tenant_id):
-        """Generate unique extension number for tenant"""
-        # Start with tenant-specific prefix (e.g., tenant_id + base)
-        base_number = 1000 + (tenant_id * 1000)
-        
-        # Find the next available number
-        existing_extensions = cls.objects.filter(
-            tenant_id=tenant_id
-        ).values_list('extension_number', flat=True)
-        
-        for i in range(100):  # Support up to 100 extensions per tenant
-            candidate = str(base_number + i)
-            if candidate not in existing_extensions:
-                return candidate
-        
-        raise ValueError(f"No available extension numbers for tenant {tenant_id}")
-    
-    @classmethod
-    def generate_credentials(cls):
-        """Generate random username and password"""
-        # Username: 8 characters alphanumeric
-        username = ''.join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(8))
-        
-        # Password: 12 characters with special chars
-        password_chars = string.ascii_letters + string.digits + "!@#$%^&*"
-        password = ''.join(secrets.choice(password_chars) for _ in range(12))
-        
-        return username, password
+        return f"Extension {self.username} - User: {self.user.username}"
+
+
+class CallLog(models.Model):
+    CALL_STATUS_CHOICES = [
+        ('answered', 'Answered'),
+        ('busy', 'Busy'),
+        ('no_answer', 'No Answer'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    caller_extension = models.ForeignKey(
+        Extension, 
+        on_delete=models.CASCADE, 
+        related_name='outgoing_calls',
+        help_text="Extension that initiated the call"
+    )
+    callee_extension = models.ForeignKey(
+        Extension, 
+        on_delete=models.CASCADE, 
+        related_name='incoming_calls',
+        help_text="Extension that received the call"
+    )
+    start_time = models.DateTimeField(help_text="When the call started")
+    end_time = models.DateTimeField(null=True, blank=True, help_text="When the call ended")
+    duration = models.IntegerField(default=0, help_text="Call duration in seconds")
+    call_status = models.CharField(max_length=20, choices=CALL_STATUS_CHOICES, default='failed')
+    asterisk_call_id = models.CharField(max_length=255, unique=True, help_text="Unique call ID from Asterisk")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'call_logs'
+        ordering = ['-start_time']
+
+    def __str__(self):
+        return f"Call from {self.caller_extension.username} to {self.callee_extension.username} - {self.call_status}"
+
+    def save(self, *args, **kwargs):
+        if self.end_time and self.start_time:
+            self.duration = int((self.end_time - self.start_time).total_seconds())
+        super().save(*args, **kwargs)
