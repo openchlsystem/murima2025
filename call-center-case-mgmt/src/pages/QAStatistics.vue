@@ -273,7 +273,7 @@ const callsDatabase = ref([
         resolution: 94,
         closing: 89
       },
-      notes: 'Outstanding performance across all categories. Excellent crisis management and resource coordination.',
+      notes: 'Outstanding performance in and across all categories. Excellent crisis management and resource coordination.',
       evaluatedBy: 'Milly Rodriguez',
       evaluationDate: new Date('2024-12-07T15:15:00')
     }
