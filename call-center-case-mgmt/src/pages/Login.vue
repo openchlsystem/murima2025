@@ -1,257 +1,268 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <!-- Left Flag Strip -->
-      <div class="flag-strip left-flag"></div>
-
-      <!-- Left Section - Welcome with Pattern -->
-      <div class="welcome-section">
-        <!-- Seamless Photo -->
-        <img src="/src/assets/images/welcome-helpline.png" alt="Welcome to MURIMA" class="welcome-photo">
-
-        <div class="welcome-content">
-          <h1 class="welcome-title">Welcome to <span>MURIMA</span></h1>
-          <p class="welcome-description">
-            Streamlining client communications and case management for efficient service delivery.
-          </p>
+  <div class="login-outer-wrapper">
+    <div class="login-container">
+      <div class="side-panel left-panel">
+        <div class="flag-strip left-flag">
+          <div class="flag-segment black"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment red"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment green"></div>
         </div>
-        <!-- Pattern Background -->
-        <div class="pattern-background"></div>
+        <div class="pattern-bg pattern-bg-left"></div>
       </div>
-
-      <!-- Right Section - Login Form -->
-      <div class="form-section">
-        <!-- Logo Container -->
-        <div class="logo-container">
-          <img src="/Openchs logo-1.png" alt="OpenCHS Logo" class="logo">
-        </div>
-
-        <!-- Dynamic Form Title -->
-        <h2 class="form-title">
-          <span v-if="currentStep === 'email'">Log in to your account</span>
-          <span v-else-if="currentStep === 'otp'">Enter verification code</span>
-          <span v-else-if="currentStep === 'password'">Enter your password</span>
-        </h2>
-
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-          <div class="step" :class="{ active: currentStep === 'email', completed: currentStep === 'otp' || currentStep === 'password' }">
-            <span class="step-number">1</span>
-            <span class="step-label">{{ getContactLabel() }}</span>
+      <div class="center-panel">
+        <div class="form-section">
+          <div class="coat-of-arms-container">
+            <img src="@/assets/images/coat of arms.png" alt="Kenya Coat of Arms" class="coat-of-arms" />
           </div>
-          <div class="step-divider"></div>
-          <div class="step" :class="{ active: currentStep === 'otp' || currentStep === 'password' }">
-            <span class="step-number">2</span>
-            <span class="step-label">{{ authMethod === 'otp' ? 'Verify' : 'Password' }}</span>
+          <h2 class="form-title">
+            <span v-if="currentStep === 'email'">
+              Welcome to <span class="openchs-kenya-flag">OPENCHS</span>
+            </span>
+            <span v-else-if="currentStep === 'otp'">Enter verification code</span>
+            <span v-else-if="currentStep === 'password'">Enter your password</span>
+          </h2>
+          <div class="step-indicator">
+            <div class="step" :class="{ active: currentStep === 'email', completed: currentStep === 'otp' || currentStep === 'password' }">
+              <span class="step-number">1</span>
+              <span class="step-label">{{ getContactLabel() }}</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step" :class="{ active: currentStep === 'otp' || currentStep === 'password' }">
+              <span class="step-number">2</span>
+              <span class="step-label">{{ authMethod === 'otp' ? 'Verify' : 'Password' }}</span>
+            </div>
           </div>
-        </div>
-
-        <form @submit.prevent="handleSubmit" class="login-form">
-          <!-- Error Message -->
-          <div v-if="error" class="error-message">
-            {{ error }}
-          </div>
-
-          <!-- Success Message -->
-          <div v-if="successMessage" class="success-message">
-            {{ successMessage }}
-          </div>
-
-          <!-- Step 1: Contact Info and Login Method Selection -->
-          <div v-if="currentStep === 'email'" class="step-content">
-            <!-- Dynamic Contact Input -->
-            <div class="input-group">
-              <label class="input-label">{{ getContactLabel() }}</label>
-              <input 
-                :type="getInputType()" 
-                v-model="contactInfo" 
-                class="form-input"
-                :class="{ 'input-error': submitted && !contactInfo }" 
-                :placeholder="getInputPlaceholder()" 
-                required
-                :disabled="loading">
-              <div v-if="submitted && !contactInfo" class="validation-error">
-                {{ getContactLabel() }} is required
-              </div>
+          <form @submit.prevent="handleSubmit" class="login-form">
+            <!-- Error Message -->
+            <div v-if="error" class="error-message">
+              {{ error }}
             </div>
 
-            <!-- Login Method Selection -->
-            <div class="input-group">
-              <label class="input-label">How would you like to log in?</label>
-              <div class="login-method-container">
-                <div class="method-option" 
-                     :class="{ active: loginMethod === 'password' }"
-                     @click="selectLoginMethod('password')">
-                  <div class="method-icon">🔐</div>
-                  <div class="method-info">
-                    <div class="method-title">Password</div>
-                    <div class="method-desc">Use your password</div>
-                  </div>
-                </div>
-                <div class="method-option" 
-                     :class="{ active: loginMethod === 'otp' }"
-                     @click="selectLoginMethod('otp')">
-                  <div class="method-icon">📧</div>
-                  <div class="method-info">
-                    <div class="method-title">OTP</div>
-                    <div class="method-desc">Get verification code</div>
-                  </div>
-                </div>
-              </div>
+            <!-- Success Message -->
+            <div v-if="successMessage" class="success-message">
+              {{ successMessage }}
             </div>
 
-            <!-- Password Input (if password method selected) -->
-            <div v-if="loginMethod === 'password'" class="input-group">
-              <label class="input-label">Password</label>
-              <div class="password-input-container">
+            <!-- Step 1: Contact Info and Login Method Selection -->
+            <div v-if="currentStep === 'email'" class="step-content">
+              <!-- Dynamic Contact Input -->
+              <div class="input-group">
+                <label class="input-label">{{ getContactLabel() }}</label>
                 <input 
-                  :type="showPassword ? 'text' : 'password'" 
-                  v-model="password" 
+                  :type="getInputType()" 
+                  v-model="contactInfo" 
                   class="form-input"
-                  :class="{ 'input-error': submitted && loginMethod === 'password' && !password }" 
-                  placeholder="Enter your password" 
+                  :class="{ 'input-error': submitted && !contactInfo }" 
+                  :placeholder="getInputPlaceholder()" 
+                  required
                   :disabled="loading">
-                <button 
-                  type="button" 
-                  class="password-toggle-button" 
-                  @click="showPassword = !showPassword"
-                  :disabled="loading">
-                  <span v-if="showPassword">👁️</span>
-                  <span v-else>👁️‍🗨️</span>
+                <div v-if="submitted && !contactInfo" class="validation-error">
+                  {{ getContactLabel() }} is required
+                </div>
+              </div>
+
+              <!-- Login Method Selection -->
+              <div class="input-group">
+                <label class="input-label">How would you like to log in?</label>
+                <div class="login-method-container">
+                  <div class="method-option" 
+                       :class="{ active: loginMethod === 'password' }"
+                       @click="selectLoginMethod('password')">
+                    <div class="method-icon">🔐</div>
+                    <div class="method-info">
+                      <div class="method-title">Password</div>
+                      <div class="method-desc">Use your password</div>
+                    </div>
+                  </div>
+                  <div class="method-option" 
+                       :class="{ active: loginMethod === 'otp' }"
+                       @click="selectLoginMethod('otp')">
+                    <div class="method-icon">📧</div>
+                    <div class="method-info">
+                      <div class="method-title">OTP</div>
+                      <div class="method-desc">Get verification code</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Password Input (if password method selected) -->
+              <div v-if="loginMethod === 'password'" class="input-group">
+                <label class="input-label">Password</label>
+                <div class="password-input-container">
+                  <input 
+                    :type="showPassword ? 'text' : 'password'" 
+                    v-model="password" 
+                    class="form-input"
+                    :class="{ 'input-error': submitted && loginMethod === 'password' && !password }" 
+                    placeholder="Enter your password" 
+                    :disabled="loading">
+                  <button 
+                    type="button" 
+                    class="password-toggle-button" 
+                    @click="showPassword = !showPassword"
+                    :disabled="loading">
+                    <span v-if="showPassword">👁️</span>
+                    <span v-else>👁️‍🗨️</span>
+                  </button>
+                </div>
+                <div v-if="submitted && loginMethod === 'password' && !password" class="validation-error">
+                  Password is required
+                </div>
+              </div>
+
+              <!-- OTP Delivery Method (if OTP method selected) -->
+              <div v-if="loginMethod === 'otp'" class="input-group">
+                <label class="input-label">How to receive OTP</label>
+                <div class="select-container">
+                  <select v-model="deliveryMethod" class="form-select"
+                    :class="{ 'input-error': submitted && loginMethod === 'otp' && !deliveryMethod }" 
+                    :disabled="loading"
+                    @change="handleDeliveryMethodChange">
+                    <option value="">Select delivery method</option>
+                    <option value="email">📧 Email</option>
+                    <option value="sms">📱 SMS</option>
+                    <option value="whatsapp">💬 WhatsApp</option>
+                  </select>
+                  <div class="select-arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="arrow-icon" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6,9 12,15 18,9"></polyline>
+                    </svg>
+                  </div>
+                </div>
+                <div v-if="submitted && loginMethod === 'otp' && !deliveryMethod" class="validation-error">
+                  Please select a delivery method
+                </div>
+
+                <!-- Delivery Method Description -->
+                <div v-if="deliveryMethod" class="means-description">
+                  <p v-if="deliveryMethod === 'email'" class="means-text">
+                    📧 OTP will be sent to your email address
+                  </p>
+                  <p v-else-if="deliveryMethod === 'sms'" class="means-text">
+                    📱 OTP will be sent via SMS to your phone number
+                  </p>
+                  <p v-else-if="deliveryMethod === 'whatsapp'" class="means-text">
+                    💬 OTP will be sent via WhatsApp to your phone number
+                  </p>
+                </div>
+              </div>
+
+              <!-- Remember Me Checkbox -->
+              <div class="remember-me">
+                <label class="checkbox-container">
+                  <input type="checkbox" v-model="rememberMe" :disabled="loading">
+                  <span class="checkmark"></span>
+                  Remember me
+                </label>
+              </div>
+            </div>
+
+            <!-- Step 2: OTP Input -->
+            <div v-if="currentStep === 'otp'" class="step-content">
+              <div class="otp-info">
+                <div class="selected-means-display">
+                  <div class="means-icon">
+                    <span v-if="deliveryMethod === 'sms'">📱</span>
+                    <span v-else-if="deliveryMethod === 'email'">📧</span>
+                    <span v-else-if="deliveryMethod === 'whatsapp'">💬</span>
+                  </div>
+                  <p class="otp-message">
+                    We've sent a 6-digit verification code to your 
+                    <span v-if="deliveryMethod === 'email'">email address <strong>{{ maskedContact }}</strong></span>
+                    <span v-else-if="deliveryMethod === 'sms'">phone number <strong>{{ maskedContact }}</strong></span>
+                    <span v-else-if="deliveryMethod === 'whatsapp'">WhatsApp number <strong>{{ maskedContact }}</strong></span>
+                  </p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label">Enter 6-digit OTP</label>
+                <div class="otp-input-container">
+                  <input v-for="(digit, index) in otpDigits" :key="index" type="text" maxlength="1"
+                    v-model="otpDigits[index]" @input="handleOtpInput(index, $event)"
+                    @keydown="handleOtpKeydown(index, $event)" :ref="el => otpInputs[index] = el" class="otp-input"
+                    :class="{ 'input-error': submitted && !isOtpComplete }" :disabled="loading">
+                </div>
+                <div v-if="submitted && !isOtpComplete" class="validation-error">
+                  Please enter the complete 6-digit OTP
+                </div>
+              </div>
+
+              <!-- Resend OTP -->
+              <div class="resend-container">
+                <span v-if="resendTimer > 0" class="resend-timer">
+                  Resend OTP in {{ resendTimer }}s
+                </span>
+                <button v-else type="button" class="resend-button" @click="resendOtp" :disabled="loading">
+                  <span v-if="deliveryMethod === 'sms'">📱 Resend SMS</span>
+                  <span v-else-if="deliveryMethod === 'email'">📧 Resend Email</span>
+                  <span v-else-if="deliveryMethod === 'whatsapp'">💬 Resend WhatsApp</span>
                 </button>
               </div>
-              <div v-if="submitted && loginMethod === 'password' && !password" class="validation-error">
-                Password is required
-              </div>
-            </div>
 
-            <!-- OTP Delivery Method (if OTP method selected) -->
-            <div v-if="loginMethod === 'otp'" class="input-group">
-              <label class="input-label">How to receive OTP</label>
-              <div class="select-container">
-                <select v-model="deliveryMethod" class="form-select"
-                  :class="{ 'input-error': submitted && loginMethod === 'otp' && !deliveryMethod }" 
-                  :disabled="loading"
-                  @change="handleDeliveryMethodChange">
-                  <option value="">Select delivery method</option>
-                  <option value="email">📧 Email</option>
-                  <option value="sms">📱 SMS</option>
-                  <option value="whatsapp">💬 WhatsApp</option>
-                </select>
-                <div class="select-arrow">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="arrow-icon" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6,9 12,15 18,9"></polyline>
-                  </svg>
-                </div>
-              </div>
-              <div v-if="submitted && loginMethod === 'otp' && !deliveryMethod" class="validation-error">
-                Please select a delivery method
-              </div>
-
-              <!-- Delivery Method Description -->
-              <div v-if="deliveryMethod" class="means-description">
-                <p v-if="deliveryMethod === 'email'" class="means-text">
-                  📧 OTP will be sent to your email address
-                </p>
-                <p v-else-if="deliveryMethod === 'sms'" class="means-text">
-                  📱 OTP will be sent via SMS to your phone number
-                </p>
-                <p v-else-if="deliveryMethod === 'whatsapp'" class="means-text">
-                  💬 OTP will be sent via WhatsApp to your phone number
-                </p>
-              </div>
-            </div>
-
-            <!-- Remember Me Checkbox -->
-            <div class="remember-me">
-              <label class="checkbox-container">
-                <input type="checkbox" v-model="rememberMe" :disabled="loading">
-                <span class="checkmark"></span>
-                Remember me
-              </label>
-            </div>
-          </div>
-
-          <!-- Step 2: OTP Input -->
-          <div v-if="currentStep === 'otp'" class="step-content">
-            <div class="otp-info">
-              <div class="selected-means-display">
-                <div class="means-icon">
-                  <span v-if="deliveryMethod === 'sms'">📱</span>
-                  <span v-else-if="deliveryMethod === 'email'">📧</span>
-                  <span v-else-if="deliveryMethod === 'whatsapp'">💬</span>
-                </div>
-                <p class="otp-message">
-                  We've sent a 6-digit verification code to your 
-                  <span v-if="deliveryMethod === 'email'">email address <strong>{{ maskedContact }}</strong></span>
-                  <span v-else-if="deliveryMethod === 'sms'">phone number <strong>{{ maskedContact }}</strong></span>
-                  <span v-else-if="deliveryMethod === 'whatsapp'">WhatsApp number <strong>{{ maskedContact }}</strong></span>
-                </p>
-              </div>
-            </div>
-
-            <div class="input-group">
-              <label class="input-label">Enter 6-digit OTP</label>
-              <div class="otp-input-container">
-                <input v-for="(digit, index) in otpDigits" :key="index" type="text" maxlength="1"
-                  v-model="otpDigits[index]" @input="handleOtpInput(index, $event)"
-                  @keydown="handleOtpKeydown(index, $event)" :ref="el => otpInputs[index] = el" class="otp-input"
-                  :class="{ 'input-error': submitted && !isOtpComplete }" :disabled="loading">
-              </div>
-              <div v-if="submitted && !isOtpComplete" class="validation-error">
-                Please enter the complete 6-digit OTP
-              </div>
-            </div>
-
-            <!-- Resend OTP -->
-            <div class="resend-container">
-              <span v-if="resendTimer > 0" class="resend-timer">
-                Resend OTP in {{ resendTimer }}s
-              </span>
-              <button v-else type="button" class="resend-button" @click="resendOtp" :disabled="loading">
-                <span v-if="deliveryMethod === 'sms'">📱 Resend SMS</span>
-                <span v-else-if="deliveryMethod === 'email'">📧 Resend Email</span>
-                <span v-else-if="deliveryMethod === 'whatsapp'">💬 Resend WhatsApp</span>
+              <!-- Back to Contact Info -->
+              <button type="button" class="back-button" @click="goBackToEmail" :disabled="loading">
+                <span class="back-arrow">←</span>
+                <span>Back to {{ getContactLabel() }}</span>
               </button>
             </div>
 
-            <!-- Back to Contact Info -->
-            <button type="button" class="back-button" @click="goBackToEmail" :disabled="loading">
-              <span class="back-arrow">←</span>
-              <span>Back to {{ getContactLabel() }}</span>
+            <!-- Submit Button -->
+            <button type="submit" class="login-button" :disabled="loading || !isFormValid">
+              <span v-if="!loading">
+                <span v-if="currentStep === 'email' && loginMethod === 'password'">Login</span>
+                <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Send OTP</span>
+                <span v-else-if="currentStep === 'otp'">Verify & Login</span>
+              </span>
+              <span v-else class="loading-content">
+                <div class="spinner"></div>
+                <span v-if="currentStep === 'email' && loginMethod === 'password'">Logging in...</span>
+                <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Sending OTP...</span>
+                <span v-else-if="currentStep === 'otp'">Verifying...</span>
+              </span>
             </button>
+          </form>
+
+          <!-- Forgot Password Link -->
+          <div class="forgot-password">
+            <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot your password?</a>
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" class="login-button" :disabled="loading || !isFormValid">
-            <span v-if="!loading">
-              <span v-if="currentStep === 'email' && loginMethod === 'password'">Login</span>
-              <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Send OTP</span>
-              <span v-else-if="currentStep === 'otp'">Verify & Login</span>
-            </span>
-            <span v-else class="loading-content">
-              <div class="spinner"></div>
-              <span v-if="currentStep === 'email' && loginMethod === 'password'">Logging in...</span>
-              <span v-else-if="currentStep === 'email' && loginMethod === 'otp'">Sending OTP...</span>
-              <span v-else-if="currentStep === 'otp'">Verifying...</span>
-            </span>
-          </button>
-        </form>
-
-        <!-- Forgot Password Link -->
-        <div class="forgot-password">
-          <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot your password?</a>
-        </div>
-
-        <!-- Help Text -->
-        <div class="help-text">
-          Need help? <a href="#" class="help-link" @click.prevent="handleHelp">Contact Support</a>
+          <!-- Help Text -->
+          <div class="help-text">
+            Need help? <a href="#" class="help-link" @click.prevent="handleHelp">Contact Support</a>
+          </div>
+          <!-- Partners section below help text -->
+          <div class="partners-section partners-section-noframe">
+            <div class="partners-label partners-label-colored">
+              <span class="c-black">O</span><span class="c-red">u</span><span class="c-green">r</span>
+              <span class="c-black"> </span>
+              <span class="c-red">P</span><span class="c-green">a</span><span class="c-black">r</span><span class="c-red">t</span><span class="c-green">n</span><span class="c-black">e</span><span class="c-red">r</span><span class="c-green">s</span>
+            </div>
+            <div class="partners-logos-row">
+              <img src="@/assets/images/welcome-helpline.png" alt="Childline Kenya" class="partner-logo" />
+              <img src="@/assets/images/MOH.png" alt="Ministry of Health" class="partner-logo" />
+              <img src="@/assets/images/unicef.png" alt="UNICEF" class="partner-logo" />
+              <img src="@/assets/images/GIZ.png" alt="GIZ" class="partner-logo" />
+              <img src="@/assets/images/UNFPA.png" alt="UNFPA" class="partner-logo" />
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Right Flag Strip -->
-      <div class="flag-strip right-flag"></div>
+      <div class="side-panel right-panel">
+        <div class="flag-strip right-flag-bar">
+          <div class="flag-segment black"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment red"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment green"></div>
+        </div>
+        <div class="pattern-bg pattern-bg-right"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -674,9 +685,36 @@ export default {
 };
 </script>
 
+<style>
+@font-face {
+  font-family: 'Lequire';
+  src: url('@/assets/fonts/Lequire.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+.openchs-lequire {
+  font-family: 'Lequire', sans-serif !important;
+  letter-spacing: 0.04em;
+  font-weight: normal;
+}
+.openchs-kenya-flag {
+  background: linear-gradient(
+    to right,
+    #000 0%, #000 33%,      /* Black */
+    #bc0103 33%, #bc0103 66%, /* Red */
+    #006817 66%, #006817 100% /* Green */
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  font-family: 'Lequire', sans-serif !important;
+  letter-spacing: 0.04em;
+}
+</style>
+
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 * {
   margin: 0;
   padding: 0;
@@ -689,66 +727,125 @@ body {
   background-color: #f7fafc;
 }
 
-.login-container {
-  min-height: 100vh;
-  background-color: #ffffff;
+.login-outer-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
-  position: relative;
-  overflow-y: auto; /* Fixed: Allow vertical scrolling */
+  min-height: 100vh;
+  width: 100vw;
+  background: #f8f9fa;
 }
-
-.login-card {
+.login-container {
   display: flex;
-  width: 930px;
-  max-width: 95%;
-  min-height: 600px; /* Fixed: Increased min-height */
-  max-height: 90vh; /* Fixed: Added max-height */
-  background-color: white;
-  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  background: #fff;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  position: relative;
 }
-
-/* Kenyan Flag Strips */
-.flag-strip {
-  width: 20px;
-  min-width: 20px;
-  background: linear-gradient(to bottom,
-      #000000 0%,
-      #000000 33.33%,
-      #bc0103 33.33%,
-      #bc0103 66.66%,
-      #006817 66.66%,
-      #006817 100%);
-  flex-shrink: 0;
-  height: 100%;
-}
-
-.left-flag {
-  border-top-left-radius: 20px;
-  border-bottom-left-radius: 20px;
-}
-
-.right-flag {
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
-}
-
-/* Left Section - Welcome */
-.welcome-section {
-  flex: 1;
-  background-color: #f8f9fa;
+.side-panel {
+  flex: 0 0 110px;
+  min-width: 90px;
+  max-width: 130px;
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: stretch;
+  background: #f8f9fa;
   overflow: hidden;
-  padding: 2rem;
+}
+.left-panel {
+  border-top-left-radius: 24px;
+  border-bottom-left-radius: 24px;
+}
+.right-panel {
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+.center-panel {
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #fff;
+  min-width: 400px;
+  max-width: 700px;
+  position: relative;
+  z-index: 2;
+  height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+.center-panel::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+.pattern-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    repeating-linear-gradient(135deg, #e0e0e0 0 8px, transparent 8px 24px),
+    repeating-linear-gradient(-135deg, #e0e0e0 0 8px, transparent 8px 24px),
+    linear-gradient(90deg, #fff 0%, #e0e0e0 100%);
+  background-size: 32px 32px, 32px 32px, 100% 100%;
+  background-position: 0 0, 16px 16px, 0 0;
+  opacity: 1;
+  pointer-events: none;
+  filter: none;
+}
+.pattern-bg-left {
+  background-position: left top;
+}
+.pattern-bg-right {
+  background-position: right top;
+}
+.flag-strip {
+  width: 32px;
+  min-width: 32px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}
+.right-flag-bar {
+  left: auto;
+  right: 0;
+}
+.flag-segment {
+  width: 100%;
+  height: 20%;
+}
+.flag-segment.black {
+  background: #000;
+  height: 32%;
+}
+.flag-segment.white {
+  background: #fff;
+  height: 4%;
+}
+.flag-segment.red {
+  background: #bc0103;
+  height: 28%;
+}
+.flag-segment.green {
+  background: #1e7e34;
+  height: 32%;
+}
+.welcome-section {
+  flex: 1;
+  min-width: 350px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
+  overflow: hidden;
+  background: #f8f9fa;
 }
 
 .welcome-photo {
@@ -788,64 +885,14 @@ body {
   margin: 0 auto;
 }
 
-.pattern-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0.1;
-  background:
-    linear-gradient(45deg, #000000 25%, transparent 25%, transparent 75%, #000000 75%, #000000),
-    linear-gradient(45deg, #000000 25%, transparent 25%, transparent 75%, #000000 75%, #000000),
-    linear-gradient(45deg, #bc0103 25%, transparent 25%, transparent 75%, #bc0103 75%, #bc0103),
-    linear-gradient(45deg, #006817 25%, transparent 25%, transparent 75%, #006817 75%, #006817);
-  background-size: 60px 60px;
-  background-position: 0 0, 30px 30px, 15px 15px, 45px 45px;
-  z-index: 1;
-}
-
-/* Right Section - Form */
-.form-section {
-  flex: 1;
-  padding: 2rem 1.5rem; /* Fixed: Reduced padding */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Fixed: Changed from center to flex-start */
-  position: relative;
-  background-color: white;
-  overflow-y: auto; /* Fixed: Allow scrolling in form section */
-  max-height: 100%; /* Fixed: Ensure it doesn't exceed container */
-}
-
-.logo-container {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 2px solid #e2e8f0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 1.5rem;
-  background-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
 .form-title {
-  font-size: 1.5rem;
-  color: #000000;
   text-align: center;
-  margin-bottom: 1rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  margin-top: 0;
 }
 
-/* Step Indicator */
 .step-indicator {
   display: flex;
   align-items: center;
@@ -907,7 +954,7 @@ body {
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
-  flex: 1; /* Fixed: Allow form to grow */
+  flex: 1;
 }
 
 .step-content {
@@ -989,7 +1036,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Password Input Container */
 .password-input-container {
   position: relative;
 }
@@ -1062,7 +1108,6 @@ body {
   font-weight: 500;
 }
 
-/* Select Dropdown Styles */
 .select-container {
   position: relative;
 }
@@ -1123,7 +1168,6 @@ body {
   margin-top: 0.5rem;
 }
 
-/* Means Description */
 .means-description {
   margin-top: 0.75rem;
   padding: 8px 12px;
@@ -1202,7 +1246,6 @@ body {
   transform: rotate(45deg);
 }
 
-/* OTP Specific Styles */
 .otp-info {
   margin-bottom: 1.5rem;
 }
@@ -1322,10 +1365,10 @@ body {
   width: 100%;
   padding: 14px;
   background-color: #1e7e34;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 30px;
-  font-size: 16px;
+  font-size: 1.15rem;
   font-weight: 700;
   cursor: pointer;
   margin-bottom: 1.5rem;
@@ -1340,9 +1383,9 @@ body {
 }
 
 .login-button:active:not(:disabled) {
-  background-color: #bc0103;
+  background-color: #167029;
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(188, 1, 3, 0.3);
+  box-shadow: 0 2px 4px rgba(30, 126, 52, 0.3);
 }
 
 .login-button:disabled {
@@ -1390,13 +1433,13 @@ body {
 
 .help-text {
   font-size: 14px;
-  color: #000000;
+  color: #222;
   text-align: center;
   font-weight: 600;
 }
 
 .help-link {
-  color: #bc0103;
+  color: #1e7e34;
   text-decoration: none;
   font-weight: 700;
 }
@@ -1405,100 +1448,49 @@ body {
   text-decoration: underline;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .login-container {
-    padding: 0.5rem;
-    align-items: flex-start; /* Fixed: Allow scrolling on mobile */
-    padding-top: 2rem;
-  }
-
-  .login-card {
     flex-direction: column;
-    max-width: 95%;
-    width: auto;
-    min-height: auto; /* Fixed: Remove min-height on mobile */
-    max-height: none; /* Fixed: Remove max-height restriction on mobile */
+    min-height: 0;
+    width: 98vw;
+    border-radius: 24px;
   }
-
   .flag-strip {
-    width: 15px;
-    height: 15px;
-  }
-
-  .left-flag {
-    border-radius: 20px 20px 0 0;
-    background: linear-gradient(to right,
-        #000000 0%,
-        #000000 33.33%,
-        #bc0103 33.33%,
-        #bc0103 66.66%,
-        #006817 66.66%,
-        #006817 100%);
-  }
-
-  .right-flag {
-    border-radius: 0 0 20px 20px;
-    background: linear-gradient(to right,
-        #000000 0%,
-        #000000 33.33%,
-        #bc0103 33.33%,
-        #bc0103 66.66%,
-        #006817 66.66%,
-        #006817 100%);
-  }
-
-  .form-section {
-    padding: 1.5rem 1rem; /* Fixed: Reduced padding on mobile */
-    overflow-y: visible; /* Fixed: Allow natural scrolling */
-  }
-
-  .otp-input {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .otp-input-container {
-    gap: 6px;
-  }
-
-  .means-icon {
-    font-size: 1.5rem;
-  }
-
-  .login-method-container {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .method-option {
     width: 100%;
+    min-width: 0;
+    height: 18px;
+    border-radius: 24px 24px 0 0;
+    background:
+      linear-gradient(to right, #000 0 20%, #bc0103 20% 40%, #fff 40% 44%, #006817 44% 100%);
+  }
+  .welcome-section {
+    min-width: 0;
+    padding: 32px 12px;
+    border-radius: 0 0 24px 24px;
+  }
+  .form-section {
+    min-width: 0;
+    padding: 32px 12px;
+  }
+  .right-flag-bar {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .login-card {
+  .login-container {
     min-height: auto;
   }
-
-  .flag-strip {
-    width: 12px;
-    height: 12px;
-  }
-
   .otp-input {
     width: 35px;
     height: 35px;
     font-size: 14px;
   }
-
   .otp-input-container {
     gap: 4px;
   }
 }
 
-/* Animation */
 .login-card {
   animation: floatIn 0.6s ease-out;
 }
@@ -1517,5 +1509,78 @@ body {
 .back-arrow {
   margin-right: 8px;
   font-weight: 700;
+}
+
+.openchs-green {
+  color: #1e7e34;
+}
+
+.coat-of-arms-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+.coat-of-arms {
+  max-width: 120px;
+  max-height: 180px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.18));
+  display: block;
+  z-index: 3;
+}
+
+.partners-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0 1rem 0;
+  margin-top: 1.5rem;
+}
+.partners-section-noframe {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+.partners-label {
+  color: #222;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  display: flex;
+  gap: 0;
+}
+.partners-label-colored .c-black { color: #222; }
+.partners-label-colored .c-red { color: #bc0103; }
+.partners-label-colored .c-green { color: #1e7e34; }
+.partners-logos-row {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+.partner-logo {
+  max-height: 48px;
+  max-width: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  padding: 2px 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  overflow: visible;
 }
 </style>

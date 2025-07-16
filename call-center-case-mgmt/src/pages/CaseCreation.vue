@@ -699,7 +699,7 @@
           
           <div class="form-actions">
             <button type="button" class="btn btn-back" @click="goToStep(4)">Back</button>
-            <button type="button" class="btn btn-submit" @click="submitCase">Submit Case</button>
+            <button type="button" class="glass-btn filled">Create Case</button>
           </div>
         </div>
       </div>
@@ -715,27 +715,21 @@
             </svg>
             <div class="ai-preview-title">AI Insights <span class="ai-badge">LIVE</span></div>
           </div>
-          
           <div class="ai-preview-content">
             <!-- Audio Transcription Results -->
             <div v-if="transcriptionData" class="ai-preview-section">
               <div class="ai-preview-section-title">Audio Analysis Results</div>
-              
               <!-- Transcription -->
               <div v-if="transcriptionData.transcript" class="transcription-section">
                 <h4 class="subsection-title">Transcription</h4>
                 <div class="transcription-text">{{ transcriptionData.transcript }}</div>
-                <button class="btn btn-tiny btn-outline" @click="useTranscription">
-                  Use in Case Narrative
-                </button>
+                <button class="btn btn-tiny btn-outline" @click="useTranscription">Use in Case Narrative</button>
               </div>
-
               <!-- Summary -->
               <div v-if="transcriptionData.summary" class="summary-section">
                 <h4 class="subsection-title">Summary</h4>
                 <div class="summary-text">{{ transcriptionData.summary }}</div>
               </div>
-
               <!-- Named Entities -->
               <div v-if="transcriptionData.summary_entities && transcriptionData.summary_entities.length" class="entities-section">
                 <h4 class="subsection-title">Detected Entities</h4>
@@ -743,13 +737,10 @@
                   <div v-for="entity in transcriptionData.summary_entities" :key="entity.text" class="entity-suggestion">
                     <span class="entity-text">{{ entity.text }}</span>
                     <span class="entity-label">{{ entity.label }}</span>
-                    <button class="btn btn-tiny btn-outline" @click="useEntity(entity)">
-                      Use
-                    </button>
+                    <button class="btn btn-tiny btn-outline" @click="useEntity(entity)">Use</button>
                   </div>
                 </div>
               </div>
-
               <!-- Classification Suggestions -->
               <div v-if="transcriptionData.summary_classification" class="classification-section">
                 <h4 class="subsection-title">AI Classification Suggestions</h4>
@@ -757,87 +748,61 @@
                   <div class="suggestion-item">
                     <span class="suggestion-label">Category:</span>
                     <span class="suggestion-value">{{ transcriptionData.summary_classification.sub_category }}</span>
-                    <button class="btn btn-tiny btn-primary" @click="useClassification('category', transcriptionData.summary_classification.sub_category)">
-                      Use This Category
-                    </button>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('category', transcriptionData.summary_classification.sub_category)">Use This Category</button>
                   </div>
                   <div class="suggestion-item">
                     <span class="suggestion-label">Priority:</span>
                     <span class="suggestion-value">{{ getPriorityText(transcriptionData.summary_classification.priority) }}</span>
-                    <button class="btn btn-tiny btn-primary" @click="useClassification('priority', getPriorityValue(transcriptionData.summary_classification.priority))">
-                      Use This Priority
-                    </button>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('priority', getPriorityValue(transcriptionData.summary_classification.priority))">Use This Priority</button>
                   </div>
                   <div class="suggestion-item">
                     <span class="suggestion-label">Intervention:</span>
                     <span class="suggestion-value">{{ transcriptionData.summary_classification.intervention }}</span>
-                    <button class="btn btn-tiny btn-primary" @click="useClassification('intervention', transcriptionData.summary_classification.intervention)">
-                      Add to Services
-                    </button>
+                    <button class="btn btn-tiny btn-primary" @click="useClassification('intervention', transcriptionData.summary_classification.intervention)">Add to Services</button>
                   </div>
                 </div>
               </div>
             </div>
-
             <!-- AI Insights from Audio -->
             <div v-if="aiInsights" class="ai-preview-section">
               <div class="ai-preview-section-title">Detailed AI Insights</div>
-              
               <!-- Case Summary -->
               <div v-if="aiInsights.case_summary" class="insight-section">
                 <h4 class="subsection-title">Case Summary</h4>
                 <p class="insight-text">{{ aiInsights.case_summary }}</p>
-                <button class="btn btn-tiny btn-outline" @click="useCaseSummary">
-                  Use in Case Plan
-                </button>
+                <button class="btn btn-tiny btn-outline" @click="useCaseSummary">Use in Case Plan</button>
               </div>
-
               <!-- Named Entities -->
               <div v-if="aiInsights.named_entities" class="insight-section">
                 <h4 class="subsection-title">Key Information</h4>
-                
                 <div v-if="aiInsights.named_entities.persons && aiInsights.named_entities.persons.length" class="entity-group">
                   <h5 class="entity-type">Persons Involved</h5>
                   <div class="entity-tags">
-                    <span v-for="person in aiInsights.named_entities.persons" :key="person" class="entity-tag">
-                      {{ person }}
-                      <button class="entity-use-btn" @click="usePerson(person)">+</button>
-                    </span>
+                    <span v-for="person in aiInsights.named_entities.persons" :key="person" class="entity-tag">{{ person }}<button class="entity-use-btn" @click="usePerson(person)">+</button></span>
                   </div>
                 </div>
-
                 <div v-if="aiInsights.named_entities.locations && aiInsights.named_entities.locations.length" class="entity-group">
                   <h5 class="entity-type">Locations</h5>
                   <div class="entity-tags">
-                    <span v-for="location in aiInsights.named_entities.locations" :key="location" class="entity-tag">
-                      {{ location }}
-                      <button class="entity-use-btn" @click="useLocation(location)">+</button>
-                    </span>
+                    <span v-for="location in aiInsights.named_entities.locations" :key="location" class="entity-tag">{{ location }}<button class="entity-use-btn" @click="useLocation(location)">+</button></span>
                   </div>
                 </div>
-
                 <div v-if="aiInsights.named_entities.organizations && aiInsights.named_entities.organizations.length" class="entity-group">
                   <h5 class="entity-type">Organizations</h5>
                   <div class="entity-tags">
-                    <span v-for="org in aiInsights.named_entities.organizations" :key="org" class="entity-tag">
-                      {{ org }}
-                      <button class="entity-use-btn" @click="useOrganization(org)">+</button>
-                    </span>
+                    <span v-for="org in aiInsights.named_entities.organizations" :key="org" class="entity-tag">{{ org }}<button class="entity-use-btn" @click="useOrganization(org)">+</button></span>
                   </div>
                 </div>
               </div>
-
               <!-- Risk Assessment -->
               <div v-if="aiInsights.risk_assessment" class="insight-section">
                 <h4 class="subsection-title">Risk Assessment</h4>
-                
                 <div v-if="aiInsights.risk_assessment.red_flags && aiInsights.risk_assessment.red_flags.length" class="risk-group">
                   <h5 class="risk-type">🚩 Red Flags</h5>
                   <ul class="risk-list">
                     <li v-for="flag in aiInsights.risk_assessment.red_flags" :key="flag">{{ flag }}</li>
                   </ul>
                 </div>
-
                 <div v-if="aiInsights.risk_assessment.protective_factors && aiInsights.risk_assessment.protective_factors.length" class="risk-group">
                   <h5 class="risk-type">🛡️ Protective Factors</h5>
                   <ul class="risk-list">
@@ -845,54 +810,29 @@
                   </ul>
                 </div>
               </div>
-
               <!-- Recommended Services -->
               <div v-if="aiInsights.case_management && aiInsights.case_management.psychosocial_support" class="insight-section">
                 <h4 class="subsection-title">Recommended Services</h4>
-                
                 <div v-if="aiInsights.case_management.psychosocial_support.short_term && aiInsights.case_management.psychosocial_support.short_term.length" class="service-group">
                   <h5 class="service-type">Immediate Support</h5>
                   <div class="service-suggestions">
-                    <button 
-                      v-for="service in aiInsights.case_management.psychosocial_support.short_term" 
-                      :key="service"
-                      class="service-suggestion-btn"
-                      @click="addRecommendedService(service)"
-                    >
-                      {{ service }}
-                      <span class="add-icon">+</span>
-                    </button>
+                    <button v-for="service in aiInsights.case_management.psychosocial_support.short_term" :key="service" class="service-suggestion-btn" @click="addRecommendedService(service)">{{ service }}<span class="add-icon">+</span></button>
                   </div>
                 </div>
-
                 <div v-if="aiInsights.case_management.psychosocial_support.long_term && aiInsights.case_management.psychosocial_support.long_term.length" class="service-group">
                   <h5 class="service-type">Long-term Support</h5>
                   <div class="service-suggestions">
-                    <button 
-                      v-for="service in aiInsights.case_management.psychosocial_support.long_term" 
-                      :key="service"
-                      class="service-suggestion-btn"
-                      @click="addRecommendedService(service)"
-                    >
-                      {{ service }}
-                      <span class="add-icon">+</span>
-                    </button>
+                    <button v-for="service in aiInsights.case_management.psychosocial_support.long_term" :key="service" class="service-suggestion-btn" @click="addRecommendedService(service)">{{ service }}<span class="add-icon">+</span></button>
                   </div>
                 </div>
               </div>
             </div>
-
             <!-- Original AI Auto-Fill Section -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">AI Auto-Fill</div>
               <div class="ai-autofill-section">
-                <p class="ai-autofill-description">
-                  Let AI automatically populate form fields with sample data based on common case patterns.
-                </p>
-                <button 
-                  class="btn btn-primary btn-small ai-autofill-btn" 
-                  @click="showAutoFillModal = true"
-                >
+                <p class="ai-autofill-description">Let AI automatically populate form fields with sample data based on common case patterns.</p>
+                <button class="btn btn-primary btn-small ai-autofill-btn" @click="showAutoFillModal = true">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
@@ -902,30 +842,21 @@
                 </button>
               </div>
             </div>
-
             <!-- Smart Suggestions -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">Smart Suggestions</div>
               <div class="ai-suggestions">
-                <div 
-                  v-for="suggestion in getActiveSuggestions()" 
-                  :key="suggestion.id"
-                  class="ai-suggestion"
-                  :class="`suggestion-${suggestion.type}`"
-                >
+                <div v-for="suggestion in getActiveSuggestions()" :key="suggestion.id" class="ai-suggestion" :class="`suggestion-${suggestion.type}`">
                   <div class="suggestion-icon">{{ suggestion.icon }}</div>
                   <div class="suggestion-content">
                     <div class="suggestion-text">{{ suggestion.text }}</div>
                     <div v-if="suggestion.action" class="suggestion-action">
-                      <button class="btn btn-tiny btn-outline" @click="applySuggestion(suggestion)">
-                        Apply
-                      </button>
+                      <button class="btn btn-tiny btn-outline" @click="applySuggestion(suggestion)">Apply</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
             <!-- Case Summary -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">Case Summary</div>
@@ -941,39 +872,30 @@
                 <div class="summary-item">
                   <div class="summary-label">Priority</div>
                   <div class="summary-value">
-                    <span v-if="formData.step4.priority" class="priority-badge" :class="`priority-${formData.step4.priority}`">
-                      {{ formatPriority(formData.step4.priority) }}
-                    </span>
+                    <span v-if="formData.step4.priority" class="priority-badge" :class="`priority-${formData.step4.priority}`">{{ formatPriority(formData.step4.priority) }}</span>
                     <span v-else class="text-muted">Not set</span>
                   </div>
                 </div>
                 <div class="summary-item">
                   <div class="summary-label">GBV Related</div>
                   <div class="summary-value">
-                    <span v-if="formData.step3.isGBVRelated !== null" class="status-badge" :class="formData.step3.isGBVRelated ? 'status-warning' : 'status-info'">
-                      {{ formData.step3.isGBVRelated ? 'Yes' : 'No' }}
-                    </span>
+                    <span v-if="formData.step3.isGBVRelated !== null" class="status-badge" :class="formData.step3.isGBVRelated ? 'status-warning' : 'status-info'">{{ formData.step3.isGBVRelated ? 'Yes' : 'No' }}</span>
                     <span v-else class="text-muted">Not specified</span>
                   </div>
                 </div>
               </div>
             </div>
-
             <!-- Progress Insights -->
             <div v-if="getCompletedSteps().length > 0" class="ai-preview-section">
               <div class="ai-preview-section-title">Progress Insights</div>
               <div class="progress-insights">
                 <div class="insight-item">
                   <div class="insight-icon">📊</div>
-                  <div class="insight-text">
-                    {{ getCompletedSteps().length }} of {{ totalSteps }} steps completed
-                  </div>
+                  <div class="insight-text">{{ getCompletedSteps().length }} of {{ totalSteps }} steps completed</div>
                 </div>
                 <div v-if="getEstimatedTime()" class="insight-item">
                   <div class="insight-icon">⏱️</div>
-                  <div class="insight-text">
-                    Estimated time remaining: {{ getEstimatedTime() }}
-                  </div>
+                  <div class="insight-text">Estimated time remaining: {{ getEstimatedTime() }}</div>
                 </div>
               </div>
             </div>
@@ -3194,5 +3116,40 @@ textarea.form-control {
   .ai-preview-content {
     padding: 15px;
   }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.fine-border {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.glass-btn.filled {
+  background: var(--accent-color);
+}
+
+.glass-btn.filled:hover {
+  background: var(--accent-hover);
 }
 </style>
