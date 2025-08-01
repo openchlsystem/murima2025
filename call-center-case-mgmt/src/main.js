@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
-import { applyTheme } from './utils/theme.js'
+import { useThemeStore } from './stores/theme.js'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -21,9 +21,9 @@ window.addEventListener('error', (event) => {
 app.use(pinia)
 app.use(router)
 
-// On app startup, set the theme globally
-const savedTheme = localStorage.getItem('theme') || 'dark';
-applyTheme(savedTheme);
+// Initialize theme store
+const themeStore = useThemeStore()
+themeStore.initializeTheme()
 
 // Add debugging
 console.log('Mounting app...')

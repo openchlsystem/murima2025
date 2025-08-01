@@ -55,9 +55,4 @@
 [data-theme='dark'] .glass-btn.filled {
   background: var(--accent-color, #964B00);
   color: #fff;
-}
-
-[data-theme='dark'] .glass-card {
-  background: var(--card-bg) !important;
-  color: var(--text-color) !important;
 } 
