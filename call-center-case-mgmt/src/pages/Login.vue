@@ -417,7 +417,7 @@ export default {
 
       try {
         // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000));  
         
         // Simulate successful login
         const mockResponse = {
