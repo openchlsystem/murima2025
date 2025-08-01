@@ -6,63 +6,7 @@
       </svg>
     </button>
 
-    <div class="sidebar" id="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': mobileOpen }">
-      <div class="sidebar-content">
-        <div class="logo-container">
-          <div class="logo">
-            <img alt="OpenCHS Logo" src="/Openchs logo-1.png" />
-          </div>
-        </div>
-
-        <router-link class="nav-item" to="/dashboard">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Dashboard</div>
-        </router-link>
-        <router-link class="nav-item" to="/calls">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Calls</div>
-        </router-link>
-        <router-link class="nav-item" to="/cases">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Cases</div>
-        </router-link>
-        <router-link class="nav-item" to="/chats">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Chats</div>
-        </router-link>
-        <router-link class="nav-item" to="/qa-statistics">
-          <div class="nav-icon"></div>
-          <div class="nav-text">QA Statistics</div>
-        </router-link>
-        <router-link class="nav-item" to="/wallboard">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Wallboard</div>
-        </router-link>
-        <router-link class="nav-item active" to="/settings">
-          <div class="nav-icon"></div>
-          <div class="nav-text">Settings</div>
-        </router-link>
-
-        <div class="user-profile">
-          <a class="user-avatar" href="/edit-profile">
-            <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" />
-              <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z" />
-            </svg>
-          </a>
-        </div>
-
-        <div class="status">
-          <div class="status-dot"></div>
-          <span>Status: Online</span>
-        </div>
-
-        <div class="button-container">
-          <button class="join-queue-btn">Join Queue</button>
-          <button class="logout-btn" @click="$router.push('/')">Logout</button>
-        </div>
-      </div>
-    </div>
+    <SidePanel :userRole="userRole" :isInQueue="isInQueue" :isProcessingQueue="isProcessingQueue" :currentCall="currentCall" @toggle-queue="handleQueueToggle" @logout="handleLogout" @sidebar-toggle="handleSidebarToggle" />
 
     <div class="main-content" :style="{ marginLeft: mainContentMarginLeft }">
       <div class="header">
@@ -88,7 +32,7 @@
               <div class="option-description">Choose between light and dark mode</div>
             </div>
             <div class="toggle-switch">
-              <input checked id="theme-toggle" type="checkbox" />
+              <input id="theme-toggle" type="checkbox" />
               <span class="toggle-slider"></span>
             </div>
           </div>
@@ -100,7 +44,7 @@
             <div class="select-wrapper">
               <select class="settings-select" id="font-size">
                 <option value="small">Small</option>
-                <option selected value="medium">Medium</option>
+                <option value="medium">Medium</option>
                 <option value="large">Large</option>
               </select>
               <div class="select-arrow">
@@ -109,6 +53,23 @@
                 </svg>
               </div>
             </div>
+          </div>
+          <div class="settings-option">
+            <div>
+              <div class="option-label">High Contrast</div>
+              <div class="option-description">Enable high-contrast mode for better visibility</div>
+            </div>
+            <div class="toggle-switch">
+              <input id="high-contrast-toggle" type="checkbox" />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+          <div class="settings-option">
+            <div>
+              <div class="option-label">Read Aloud</div>
+              <div class="option-description">Read this page aloud for accessibility</div>
+            </div>
+            <button class="btn btn-secondary" @click="readAloud">{{ isReading ? 'Stop Read Aloud' : 'Read Aloud' }}</button>
           </div>
         </div>
 
@@ -224,7 +185,7 @@
         </div>
 
         <div class="save-settings">
-          <button class="btn btn-primary" id="save-settings">Save Settings</button>
+          <button class="glass-btn filled">Save</button>
         </div>
       </div>
     </div>
@@ -234,11 +195,13 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import SidePanel from '../components/SidePanel.vue'
 
 const router = useRouter()
 
 const isSidebarCollapsed = ref(false);
 const mobileOpen = ref(false);
+const isReading = ref(false);
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
@@ -258,24 +221,92 @@ const mainContentMarginLeft = computed(() => {
   }
 });
 
+function setBodyFontSizeClass(size) {
+  document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+  document.body.classList.add('font-size-' + size);
+}
+
+function setHighContrast(enabled) {
+  if (enabled) {
+    document.body.classList.add('high-contrast');
+    localStorage.setItem('high-contrast', 'true');
+  } else {
+    document.body.classList.remove('high-contrast');
+    localStorage.setItem('high-contrast', 'false');
+  }
+  // Force update for SPA navigation
+  document.body.setAttribute('data-contrast', enabled ? 'high' : 'normal');
+}
+
+function readAloud() {
+  if (!window.speechSynthesis) return;
+  if (isReading.value) {
+    window.speechSynthesis.cancel();
+    isReading.value = false;
+    return;
+  }
+  const content = document.querySelector('.main-content')?.innerText;
+  if (content) {
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(content);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.lang = 'en-US';
+    utterance.onend = () => { isReading.value = false; };
+    utterance.onerror = () => { isReading.value = false; };
+    isReading.value = true;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 onMounted(() => {
   const sidebar = document.getElementById('sidebar');
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const themeToggle = document.getElementById('theme-toggle');
+  const fontSizeSelect = document.getElementById('font-size');
+  const highContrastToggle = document.getElementById('high-contrast-toggle');
   const saveSettingsBtn = document.getElementById('save-settings');
   const html = document.documentElement;
 
   function applyTheme(isDark) {
     html.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    if (themeToggle) {
-      themeToggle.checked = isDark;
-    }
+    if (themeToggle) themeToggle.checked = isDark;
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    // Force update for SPA navigation
+    document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
   }
 
+  function applyFontSize(size) {
+    let px = '16px';
+    if (size === 'small') px = '14px';
+    else if (size === 'large') px = '18px';
+    html.style.fontSize = px;
+    document.body.style.fontSize = px;
+    setBodyFontSizeClass(size);
+    if (fontSizeSelect) fontSizeSelect.value = size;
+    localStorage.setItem('font-size', size);
+  }
+
+  // Apply saved theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme) {
     applyTheme(savedTheme === 'dark');
+  } else {
+    applyTheme(true); // Default to dark
   }
+
+  // Apply saved font size
+  const savedFontSize = localStorage.getItem('font-size');
+  if (savedFontSize) {
+    applyFontSize(savedFontSize);
+  } else {
+    applyFontSize('medium');
+  }
+
+  // Apply saved high contrast
+  const savedContrast = localStorage.getItem('high-contrast');
+  setHighContrast(savedContrast === 'true');
+  if (highContrastToggle) highContrastToggle.checked = savedContrast === 'true';
 
   mobileMenuBtn?.addEventListener('click', () => {
     sidebar?.classList.toggle('mobile-open');
@@ -296,35 +327,44 @@ onMounted(() => {
 
   themeToggle?.addEventListener('change', function () {
     const isDark = this.checked;
-    const newTheme = isDark ? 'dark' : 'light';
     applyTheme(isDark);
-    localStorage.setItem('theme-preference', newTheme);
+  });
+
+  fontSizeSelect?.addEventListener('change', function () {
+    applyFontSize(this.value);
+  });
+
+  highContrastToggle?.addEventListener('change', function () {
+    setHighContrast(this.checked);
   });
 
   saveSettingsBtn?.addEventListener('click', () => {
-    const themePreference = localStorage.getItem('theme-preference');
-    if (themePreference) {
-      localStorage.setItem('theme', themePreference);
-    }
-
+    // No need to save theme/font-size here, already saved on change
     const settings = {
       theme: themeToggle.checked ? 'dark' : 'light',
-      fontSize: document.getElementById('font-size')?.value,
+      fontSize: fontSizeSelect?.value,
+      highContrast: highContrastToggle?.checked,
       emailNotifications: document.getElementById('email-notifications')?.checked,
       desktopNotifications: document.getElementById('desktop-notifications')?.checked,
       soundAlerts: document.getElementById('sound-alerts')?.checked,
       twoFactor: document.getElementById('two-factor')?.checked,
       sessionTimeout: document.getElementById('session-timeout')?.value
     };
-
     console.log('Settings saved:', settings);
     alert('Settings saved successfully!');
+  });
+
+  // Listen for theme/contrast changes (for SPA navigation)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme') applyTheme(e.newValue === 'dark');
+    if (e.key === 'high-contrast') setHighContrast(e.newValue === 'true');
   });
 });
 </script>
 
 <style scoped>
     :root {
+        --base-font-size: 16px;
         /* Dark theme variables */
         --background-color: #0a0a0a;
         --sidebar-bg: #111;
@@ -374,6 +414,35 @@ onMounted(() => {
         display: flex;
         min-height: 100vh;
         transition: background-color 0.3s, color 0.3s;
+        font-size: var(--base-font-size);
+    }
+    
+    body.font-size-small {
+        font-size: 14px !important;
+    }
+    
+    body.font-size-medium {
+        font-size: 16px !important;
+    }
+    
+    body.font-size-large {
+        font-size: 18px !important;
+    }
+    
+    body.high-contrast, .high-contrast .main-content, .high-contrast .settings-container, .high-contrast .settings-section, .high-contrast .settings-option {
+        background: #000 !important;
+        color: #fff !important;
+        border-color: #fff !important;
+    }
+    
+    .high-contrast .option-label, .high-contrast .option-description, .high-contrast .settings-section-title, .high-contrast .settings-section-description {
+        color: #fff !important;
+    }
+    
+    .high-contrast .btn, .high-contrast .toggle-slider, .high-contrast .settings-select {
+        background: #fff !important;
+        color: #000 !important;
+        border-color: #fff !important;
     }
     
     .settings-wrapper {
@@ -583,6 +652,7 @@ onMounted(() => {
         padding: 20px;
         overflow-y: auto;
         transition: margin-left 0.3s ease;
+        font-size: var(--base-font-size);
     }
     
     .sidebar.collapsed ~ .main-content {
@@ -608,7 +678,7 @@ onMounted(() => {
     }
     
     .settings-container {
-        background-color: var(--card-bg);
+        background-color: var(--content-bg);
         border-radius: 15px;
         padding: 20px;
         display: flex;
@@ -759,8 +829,12 @@ onMounted(() => {
     }
     
     .btn-danger {
-        background-color: var(--danger-color);
+        background-color: #8B0000;
         color: white;
+    }
+    
+    .btn-danger:hover {
+        background-color: #8B0000;
     }
     
     .save-settings {
@@ -913,5 +987,17 @@ onMounted(() => {
         font-weight: bold;
         font-size: 14px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .main-content, .settings-container, .settings-card, .status-badge, .view-tab, .settings-table {
+        background: var(--content-bg);
+        color: var(--text-color);
+        border-color: var(--border-color);
+    }
+
+    .status-badge, .view-tab.active {
+        background: var(--accent-color) !important;
+        color: #fff !important;
+        border-color: var(--accent-color) !important;
     }
 </style>

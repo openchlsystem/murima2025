@@ -34,12 +34,6 @@
             </svg>
             <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
           </button>
-          <button class="new-call-btn" @click="initiateNewCall">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            New Call
-          </button>
         </div>
       </div>
       
@@ -70,7 +64,7 @@
             <div 
               v-for="(call, index) in group" 
               :key="call.id" 
-              class="call-item" 
+              class="call-item glass-card fine-border" 
               :class="{ 
                 selected: call.id === selectedCallId,
                 'timeline-connector': index < group.length - 1
@@ -970,6 +964,10 @@ import { useRouter } from 'vue-router'
 import SidePanel from '@/components/SidePanel.vue'
 
 const router = useRouter()
+const isSidebarCollapsed = ref(false)
+function handleSidebarToggle(collapsed) {
+  isSidebarCollapsed.value = collapsed
+}
 
 // Reactive state
 const activeView = ref('timeline')
@@ -1445,10 +1443,6 @@ const handleQueueToggle = async () => {
 const handleLogout = () => {
   console.log('Logging out...')
   alert('Logged out successfully!')
-}
-
-const handleSidebarToggle = (collapsed) => {
-  console.log('Sidebar toggled:', collapsed)
 }
 
 const closeQueuePopup = () => {
@@ -1932,7 +1926,36 @@ onUnmounted(() => {
 })
 </script>
 
-<style>
+<style scoped>
+:root {
+  --accent-color: #FF8C00;
+}
+.main-content {
+  transition: margin-left 0.3s, width 0.3s;
+  margin-left: 250px;
+  width: calc(100% - 250px);
+}
+.main-content.sidebar-collapsed {
+  margin-left: 20px;
+  width: calc(100% - 20px);
+}
+/* Unify accent color usage */
+.status-badge,
+.view-tab.active,
+.queue-action-btn.accept,
+.call-btn.answer {
+  background: var(--accent-color) !important;
+  color: #fff !important;
+  border-color: var(--accent-color) !important;
+}
+.status-badge svg,
+.view-tab.active svg,
+.queue-action-btn.accept svg,
+.call-btn.answer svg {
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
 /* Global styles - not scoped */
 * {
   margin: 0;
@@ -1959,6 +1982,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  color: var(--text-color);
 }
 
 .calls-container {
@@ -1968,6 +1992,7 @@ body {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  background: var(--background-color);
 }
 
 .calls-container::-webkit-scrollbar {
@@ -2085,18 +2110,15 @@ body {
 }
 
 .view-tab.active {
-  color: var(--text-color);
+  color: var(--accent-color);
   font-weight: 700;
+  background: rgba(255, 140, 0, 0.12); /* subtle glassmorphic accent */
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 4px 16px 0 rgba(255,140,0,0.08);
 }
 
 .view-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: var(--accent-color);
+  display: none;
 }
 
 /* Status Cards - Horizontal Layout */
@@ -3906,5 +3928,127 @@ body {
     font-size: 13px;
     min-width: 100px;
   }
+}
+@media (max-width: 1200px) {
+  .calls-container {
+    padding: 10px 2vw;
+  }
+}
+@media (max-width: 1024px) {
+  .main-content {
+    margin-left: 0;
+    width: 100vw;
+  }
+  .calls-container {
+    padding: 10px 2vw;
+  }
+}
+@media (max-width: 900px) {
+  .calls-container {
+    padding: 8px 1vw;
+  }
+}
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    width: 100vw;
+    padding: 10px 2vw;
+  }
+  .calls-container {
+    padding: 6px 1vw;
+  }
+  .view-tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .main-content {
+    margin-left: 0;
+    width: 100vw;
+    padding: 4px 1vw;
+  }
+  .calls-container {
+    padding: 2px 0.5vw;
+  }
+  .view-tabs {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+.fab-new-call {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: var(--success-color);
+  color: #fff;
+  border-radius: 50px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.fab-new-call:hover {
+  background: #45a049;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+}
+@media (max-width: 768px) {
+  .fab-new-call {
+    bottom: 16px;
+    right: 16px;
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+}
+
+.calls-container, .calls-container * {
+  color: #222 !important;
+}
+.status-card-label, .status-card-count, .status-card-progress, .queue-title, .queue-stat, .queue-subtitle, .queue-call-type, .queue-call-details, .queue-call-info, .queue-call-actions, .call-type, .call-time, .call-meta, .case-link, .call-id, .status-badge, .table-actions, .view-tab, .page-title, .header, .header-actions, .main-content, .call-details-title, .call-details-header, .call-details-panel {
+  color: #222 !important;
+}
+
+/* Dark mode overrides */
+:root.dark .calls-container, :root.dark .calls-container *,
+body.dark .calls-container, body.dark .calls-container * {
+  color: #fff !important;
+}
+:root.dark .call-type, :root.dark .call-time, :root.dark .call-meta, :root.dark .case-link, :root.dark .status-card-label, :root.dark .status-card-count, :root.dark .queue-title, :root.dark .queue-stat, :root.dark .queue-subtitle, :root.dark .queue-call-type, :root.dark .queue-call-details, :root.dark .queue-call-info, :root.dark .queue-call-actions, :root.dark .status-badge, :root.dark .table-actions, :root.dark .view-tab, :root.dark .page-title, :root.dark .header, :root.dark .header-actions, :root.dark .main-content, :root.dark .call-details-title, :root.dark .call-details-header, :root.dark .call-details-panel {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+body.dark .call-type, body.dark .call-time, body.dark .call-meta, body.dark .case-link, body.dark .status-card-label, body.dark .status-card-count, body.dark .queue-title, body.dark .queue-stat, body.dark .queue-subtitle, body.dark .queue-call-type, body.dark .queue-call-details, body.dark .queue-call-info, body.dark .queue-call-actions, body.dark .status-badge, body.dark .table-actions, body.dark .view-tab, body.dark .page-title, body.dark .header, body.dark .header-actions, body.dark .main-content, body.dark .call-details-title, body.dark .call-details-header, body.dark .call-details-panel {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+[data-theme="dark"] .call-type, [data-theme="dark"] .call-time, [data-theme="dark"] .call-meta, [data-theme="dark"] .case-link, [data-theme="dark"] .status-card-label, [data-theme="dark"] .status-card-count, [data-theme="dark"] .queue-title, [data-theme="dark"] .queue-stat, [data-theme="dark"] .queue-subtitle, [data-theme="dark"] .queue-call-type, [data-theme="dark"] .queue-call-details, [data-theme="dark"] .queue-call-info, [data-theme="dark"] .queue-call-actions, [data-theme="dark"] .status-badge, [data-theme="dark"] .table-actions, [data-theme="dark"] .view-tab, [data-theme="dark"] .page-title, [data-theme="dark"] .header, [data-theme="dark"] .header-actions, [data-theme="dark"] .main-content, [data-theme="dark"] .call-details-title, [data-theme="dark"] .call-details-header, [data-theme="dark"] .call-details-panel {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode overrides */
+:root.dark .calls-container, :root.dark .calls-container *,
+body.dark .calls-container, body.dark .calls-container *,
+[data-theme="dark"] .calls-container, [data-theme="dark"] .calls-container * {
+  color: #fff !important;
+}
+:root.dark .calls-table th, :root.dark .calls-table td,
+body.dark .calls-table th, body.dark .calls-table td,
+[data-theme="dark"] .calls-table th, [data-theme="dark"] .calls-table td {
+  color: #fff !important;
+}
+:root.dark .queue-section, :root.dark .queue-section *,
+body.dark .queue-section, body.dark .queue-section *,
+[data-theme="dark"] .queue-section, [data-theme="dark"] .queue-section * {
+  color: #fff !important;
 }
 </style>

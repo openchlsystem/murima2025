@@ -13,69 +13,43 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Chat Interface -->
-      <div class="chat-interface" :class="{ 'chat-selected': selectedContactId }">
-        <!-- Left Panel - Chat List -->
-        <div class="chat-sidebar" :class="{ 'full-width': !selectedContactId }">
-          <!-- Header -->
-          <div class="sidebar-header">
-            <div class="header-content">
-              <h1 class="header-title">Messages</h1>
+      <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
+        <div class="header">
+          <h1 class="page-title">All Chats</h1>
               <div class="header-actions">
-                <button class="header-btn" @click="toggleTheme" title="Toggle Theme">
-                  <svg v-if="currentTheme === 'dark'" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
+            <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
+              <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
-                    <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/>
-                    <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/>
-                    <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/>
-                    <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/>
+              <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                </button>
-                <button class="header-btn" @click="showNewChatModal" title="New Chat">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2"/>
-                  </svg>
+              <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
                 </button>
               </div>
             </div>
+        <!-- Channel Filters as View Tabs -->
+        <div class="channel-filters" role="tablist" aria-label="Chat Channels">
+          <div v-for="platform in channelFilters" :key="platform.id" :class="['channel-pill', { active: activePlatform === platform.id }]" @click="setActivePlatform(platform.id)" role="tab" :aria-selected="activePlatform === platform.id" tabindex="0">
+            {{ platform.name }}
           </div>
-
-          <!-- Platform Tabs -->
-          <div class="platform-tabs">
-            <button 
-              v-for="platform in platforms" 
-              :key="platform.id"
-              :class="['platform-tab', { active: activePlatform === platform.id }]"
-              @click="setActivePlatform(platform.id)"
-            >
-              <span class="tab-text">{{ platform.name }}</span>
-              <span v-if="getPlatformUnreadCount(platform.id) > 0" class="tab-badge">
-                {{ getPlatformUnreadCount(platform.id) }}
-              </span>
-            </button>
           </div>
-
-          <!-- Search -->
-          <div class="search-section">
+        <!-- Search and Toggle Row -->
+        <div class="search-and-toggle-row">
             <div class="search-container">
               <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
               </svg>
-              <input 
-                v-model="searchQuery"
-                type="text" 
-                class="search-input" 
-                placeholder="Search conversations..."
-                @input="handleSearch"
-              />
+          <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
               <button v-if="searchQuery" class="search-clear" @click="clearSearch">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -83,301 +57,117 @@
                 </svg>
               </button>
             </div>
+          <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
+            <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
+            <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
           </div>
-
-          <!-- Chat List -->
-          <div class="chat-list">
-            <div class="list-header">
-              <span class="list-title">{{ activePlatform === 'past' ? 'Past Conversations' : 'Active Chats' }}</span>
-              <span class="list-count">{{ filteredContacts.length }}</span>
             </div>
-            
-            <div class="chat-contacts">
-              <div
-                v-for="contact in filteredContacts"
-                :key="contact.id"
-                :class="['chat-contact', { 
-                  active: selectedContactId === contact.id, 
-                  ended: contact.status === 'ended',
-                  unread: contact.unreadCount > 0
-                }]"
-                @click="selectContact(contact.id)"
-              >
-                <div class="contact-avatar-wrapper">
-                  <div class="contact-avatar" :style="{ backgroundColor: getAvatarColor(contact.name) }">
-                    {{ contact.initials }}
+        <!-- Timeline View -->
+        <div class="view-container" v-show="activeView === 'timeline'">
+          <div v-if="groupedMessagesByDayWithDummy['Today'].length === 0 && groupedMessagesByDayWithDummy['Yesterday'].length === 0" class="no-chats">No chats to display.</div>
+          <div class="time-section" v-for="(group, label) in groupedMessagesByDayWithDummy" :key="label">
+            <h2 class="time-section-title">{{ label }}</h2>
+            <div class="call-list">
+              <div v-for="message in group" :key="message.id" :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message.id }]" @click="openChatPanel(message)">
+                <div class="call-icon">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                  </svg>
                   </div>
-                  <div v-if="contact.status === 'active'" class="online-dot"></div>
+                <div class="call-details">
+                  <div class="call-type">{{ message.senderName }} ({{ getPlatformShortName(message.platform) }})</div>
+                  <div class="call-time">{{ message.time }}</div>
+                  <div class="call-meta">
+                    <span class="case-link">{{ message.text }}</span>
                 </div>
-                
-                <div class="contact-details">
-                  <div class="contact-header">
-                    <h4 class="contact-name">{{ contact.name }}</h4>
-                    <div class="contact-meta">
-                      <span class="contact-time">{{ contact.time }}</span>
-                      <div v-if="contact.unreadCount > 0" class="unread-count">
-                        {{ contact.unreadCount }}
                       </div>
                     </div>
                   </div>
-                  <div class="contact-footer">
-                    <p class="contact-preview">{{ contact.preview }}</p>
-                    <div class="platform-badge" :class="contact.platform">
-                      {{ getPlatformShortName(contact.platform) }}
                     </div>
                   </div>
+        <!-- Table View -->
+        <div class="view-container" v-show="activeView === 'table'">
+          <div v-if="filteredChats.length > 0" class="calls-table-container">
+            <table class="calls-table">
+              <thead>
+                <tr>
+                  <th>Contact</th>
+                  <th>Platform</th>
+                  <th>Last Message</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="contact in filteredChats" :key="contact.id">
+                  <td>{{ contact.senderName }}</td>
+                  <td>{{ getPlatformShortName(contact.platform) }}</td>
+                  <td>{{ contact.text }}</td>
+                  <td>{{ contact.time }}</td>
+                  <td><span :class="['status-badge', contact.status]">{{ contact.status }}</span></td>
+                </tr>
+              </tbody>
+            </table>
                 </div>
+          <tbody v-else>
+            <tr><td colspan="5" class="no-chats">No chats to display.</td></tr>
+          </tbody>
               </div>
             </div>
+      <!-- Chat Panel Modal (Centered) -->
+      <div v-if="showChatPanel" class="chat-modal-overlay" @click.self="closeChatPanel" role="dialog" aria-modal="true">
+        <div class="chat-modal-panel">
+          <div class="chat-details-header">
+            <div class="chat-details-avatar">
+              <div class="avatar-circle" :style="{ background: getAvatarColor(selectedMessage?.senderName || '') }">
+                {{ selectedMessage?.senderName?.charAt(0) || '?' }}
           </div>
+              <div class="chat-details-title">
+                <span class="contact-name">{{ selectedMessage?.senderName || 'Chat Details' }}</span>
+                <span class="chat-channel-badge">{{ getPlatformShortName(selectedMessage?.platform) }}</span>
+                <span class="chat-status">{{ selectedMessage?.status || 'Active' }}</span>
         </div>
-
-        <!-- Right Panel - Chat View -->
-        <div class="chat-main" v-if="selectedContact">
-          <!-- Chat Header -->
-          <div class="chat-header">
-            <div class="chat-header-left">
-              <button class="back-btn" @click="deselectContact" title="Back to chats">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-              <div class="contact-avatar-header" :style="{ backgroundColor: getAvatarColor(selectedContact.name) }">
-                {{ selectedContact.initials }}
               </div>
-              <div class="contact-info">
-                <h3 class="contact-name">{{ selectedContact.name }}</h3>
-                <p class="contact-status">
-                  <span class="status-indicator" :class="{ online: selectedContact.status === 'active' }"></span>
-                  {{ getContactStatus(selectedContact) }}
-                </p>
-              </div>
-            </div>
-            
             <div class="chat-header-actions">
-              <button class="action-btn" @click="initiateCall" title="Call">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2"/>
-                </svg>
+              <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <button class="action-btn" @click="toggleContactInfo" title="Contact Info">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                  <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-              <button v-if="selectedContact.status === 'active'" class="action-btn end-chat-btn" @click="endChat" title="End Chat">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
+              <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
             </div>
           </div>
-
-          <!-- Messages Area -->
-          <div class="messages-area" ref="messagesArea">
-            <div class="messages-content">
-              <div v-for="(group, index) in groupedMessages" :key="index" class="message-group">
-                <div v-if="group.date" class="date-divider">
-                  <span class="date-text">{{ group.date }}</span>
-                </div>
-                
-                <div v-for="message in group.messages" :key="message.id" 
-                     :class="['message-container', message.sender]">
-                  <div class="message-bubble" :class="message.sender">
-                    <p class="message-text">{{ message.text }}</p>
-                    <div class="message-info">
-                      <span class="message-time">{{ message.time }}</span>
-                      <div v-if="message.sender === 'received'" class="message-status">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Message Input -->
-          <div class="message-input-area" v-if="activePlatform !== 'past' && selectedContact.status === 'active'">
-            <div class="input-container">
-              <button class="input-action-btn" @click="showAttachmentMenu" title="Attach">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49" stroke="currentColor" stroke-width="2"/>
-                </svg>
+          <div class="chat-details-actions">
+            <button class="chat-action-btn view" @click="viewCase" title="View Case">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
               </button>
-              
-              <div class="text-input-wrapper">
-                <input 
-                  v-model="newMessageText"
-                  type="text" 
-                  class="message-input" 
-                  placeholder="Type a message..."
-                  @keypress.enter="sendMessage"
-                  @input="handleTyping"
-                />
-              </div>
-              
-              <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" stroke-width="2"/>
-                  <polygon points="22,2 15,22 11,13 2,9 22,2" fill="currentColor"/>
-                </svg>
+            <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
               </button>
-              <button v-else class="voice-btn" @click="startVoiceMessage" title="Voice Message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2"/>
-                </svg>
+            <button class="chat-action-btn create" @click="createCase" title="Create Case">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
               </button>
-            </div>
-          </div>
-          
-          <!-- Ended Chat Message -->
-          <div class="ended-chat-message" v-if="selectedContact.status === 'ended'">
-            <div class="ended-chat-content">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2"/>
-              </svg>
-              <p>This conversation has ended</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contact Info Panel -->
-        <div class="contact-info-panel" v-if="selectedContact && showContactInfo">
-          <div class="info-header">
-            <button class="close-info-btn" @click="toggleContactInfo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
-              </svg>
+            <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
             </button>
-            <div class="info-avatar" :style="{ backgroundColor: getAvatarColor(selectedContact.name) }">
-              {{ selectedContact.initials }}
+            <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
+              </button>
             </div>
-            <h3 class="info-name">{{ selectedContact.name }}</h3>
-            <p class="info-subtitle">Survivor Information</p>
+          <div class="chat-details-content">
+            <div class="chat-thread whatsapp-style">
+              <div v-for="msg in simulatedChatThread" :key="msg.id" :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']">
+                <div class="bubble-text">{{ msg.text }}</div>
+                <div class="bubble-time">{{ msg.time }}</div>
           </div>
-
-          <div class="info-content">
-            <div class="info-section">
-              <h4 class="section-title">Contact Details</h4>
-              <div class="info-items">
-                <div class="info-item">
-                  <span class="info-label">Phone</span>
-                  <span class="info-value">{{ selectedContact.phone || 'Not provided' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Age</span>
-                  <span class="info-value">{{ selectedContact.age || 'Not provided' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Date of Birth</span>
-                  <span class="info-value">{{ selectedContact.dateOfBirth || 'Not provided' }}</span>
-                </div>
+        </div>
+            <div class="message-input-area chat-panel-input">
+            <div class="input-container">
+                <input v-model="newMessageText" type="text" class="message-input" placeholder="Type a message..." @keypress.enter="sendMessage" />
+                <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">Send</button>
               </div>
             </div>
-
-            <div class="info-section">
-              <h4 class="section-title">Case Information</h4>
-              <div class="info-items">
-                <div class="info-item">
-                  <span class="info-label">Risk Level</span>
-                  <span class="info-value risk-level" :class="getRiskLevelClass(selectedContact.riskLevel)">
-                    {{ selectedContact.riskLevel || 'Not assessed' }}
-                  </span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Case Manager</span>
-                  <span class="info-value">{{ selectedContact.caseManager || 'Unassigned' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-actions">
-              <button class="info-btn primary" @click="createCaseFromChat">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
-                  <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                Create Case
-              </button>
-              <button class="info-btn" @click="viewFullProfile">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                View Profile
-              </button>
-              <button v-if="selectedContact.status === 'active'" class="info-btn danger" @click="endChat">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                End Chat
-              </button>
             </div>
           </div>
         </div>
-
-        <!-- Call Modal -->
-        <div class="modal-overlay" v-if="showCallModal" @click="cancelCall">
-          <div class="call-modal" @click.stop>
-            <div class="call-header">
-              <div class="call-avatar" :style="{ backgroundColor: getAvatarColor(selectedContact.name) }">
-                {{ selectedContact.initials }}
-              </div>
-              <h3 class="call-name">{{ selectedContact.name }}</h3>
-              <p class="call-number">{{ selectedContact.phone }}</p>
-              <p class="call-status">{{ callStatus }}</p>
-            </div>
-            
-            <div class="call-actions">
-              <button class="call-btn end-call" @click="endCall" title="End Call">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-              <button class="call-btn mute" @click="toggleMute" title="Mute">
-                <svg v-if="!isMuted" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
-                  <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
-                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" stroke="currentColor" stroke-width="2"/>
-                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" stroke="currentColor" stroke-width="2"/>
-                  <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- End Chat Confirmation Modal -->
-        <div class="modal-overlay" v-if="showEndChatModal" @click="cancelEndChat">
-          <div class="modal-container" @click.stop>
-            <div class="modal-header">
-              <h3>End Conversation</h3>
-            </div>
-            <div class="modal-body">
-              <p>Are you sure you want to end this conversation? It will be moved to archived conversations.</p>
-            </div>
-            <div class="modal-footer">
-              <button class="modal-btn" @click="cancelEndChat">Cancel</button>
-              <button class="modal-btn danger" @click="confirmEndChat">End Conversation</button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -386,13 +176,14 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import SidePanel from '@/components/SidePanel.vue'
+import { applyTheme } from '@/utils/theme.js'
 
 const router = useRouter()
+const isSidebarCollapsed = ref(false)
 
 // Reactive state
 const searchQuery = ref('')
-const activePlatform = ref('whatsapp')
-const selectedContactId = ref(null)
+const activePlatform = ref('all')
 const newMessageText = ref('')
 const currentTheme = ref(localStorage.getItem('theme') || 'dark')
 const showContactInfo = ref(false)
@@ -419,153 +210,58 @@ const platforms = ref([
   { id: 'past', name: 'Archive' }
 ])
 
-// Sample contacts data
-const contacts = ref([
-  {
-    id: 'sarah-miller',
-    name: 'Sarah Miller',
-    initials: 'SM',
-    preview: 'I need help with a domestic violence situation...',
-    time: '10:30 AM',
-    unreadCount: 2,
-    platform: 'whatsapp',
-    status: 'active',
-    dateOfBirth: '1992-06-15',
-    age: 31,
-    phone: '+1 623-555-0123',
-    riskLevel: 'Medium Risk',
-    caseManager: 'Emily Rodriguez',
-    messages: [
-      { id: 1, text: 'Hello Sarah, this is Maria from the Survivor Helpline. How can I assist you today?', sender: 'received', time: '09:00 AM', date: 'Today' },
-      { id: 2, text: 'I need help with a domestic violence situation. My partner has been threatening me and I don\'t know what to do.', sender: 'sent', time: '09:05 AM' },
-      { id: 3, text: 'I\'m very sorry to hear that you\'re going through this difficult situation. Your safety is our top priority. Are you currently in a safe location?', sender: 'received', time: '09:07 AM' },
-      { id: 4, text: 'Yes, I\'m at work right now. My partner doesn\'t know I\'m reaching out for help.', sender: 'sent', time: '09:10 AM' },
-      { id: 5, text: 'I\'m glad you\'re in a safe place at the moment. Would you like me to provide you with information about emergency shelters, safety planning, or legal options?', sender: 'received', time: '09:15 AM' },
-      { id: 6, text: 'I think I need information about all of those. I\'m not sure if I need to leave immediately or if there are other options.', sender: 'sent', time: '09:20 AM' }
-    ]
-  },
-  {
-    id: 'john-doe',
-    name: 'John Doe',
-    initials: 'JD',
-    preview: 'Thank you for helping me find shelter yesterday...',
-    time: 'Yesterday',
-    platform: 'sms',
-    status: 'active',
-    age: 28,
-    phone: '+1 623-555-0124',
-    riskLevel: 'Low Risk',
-    caseManager: 'Michael Torres',
-    messages: [
-      { id: 1, text: 'Thank you for helping me find shelter yesterday.', sender: 'sent', time: '2:30 PM', date: 'Yesterday' },
-      { id: 2, text: 'You\'re welcome, John. I\'m glad I could assist you. How are you settling in?', sender: 'received', time: '2:45 PM' }
-    ]
-  },
-  {
-    id: 'emily-brown',
-    name: 'Emily Brown',
-    initials: 'EB',
-    preview: 'When is my counseling appointment scheduled?',
-    time: 'Yesterday',
-    unreadCount: 1,
-    platform: 'messenger',
-    status: 'active',
-    age: 35,
-    phone: '+1 623-555-0125',
-    riskLevel: 'High Risk',
-    caseManager: 'Lisa Chen',
-    messages: [
-      { id: 1, text: 'When is my counseling appointment scheduled?', sender: 'sent', time: '11:00 AM', date: 'Yesterday' },
-      { id: 2, text: 'Let me check the schedule for you, Emily.', sender: 'received', time: '11:05 AM' }
-    ]
-  },
-  {
-    id: 'michael-johnson',
-    name: 'Michael Johnson',
-    initials: 'MJ',
-    preview: 'I need to reschedule my safety planning session...',
-    time: 'Mon',
-    platform: 'telegram',
-    status: 'active',
-    age: 42,
-    phone: '+1 623-555-0126',
-    riskLevel: 'High Risk',
-    caseManager: 'David Wilson',
-    messages: [
-      { id: 1, text: 'I need to reschedule my safety planning session.', sender: 'sent', time: '9:00 AM', date: 'Monday' },
-      { id: 2, text: 'Of course, Michael. What time would work best for you?', sender: 'received', time: '9:15 AM' }
-    ]
-  },
-  // Past conversations
-  {
-    id: 'david-clark',
-    name: 'David Clark',
-    initials: 'DC',
-    preview: 'Thank you for all your help. Case resolved.',
-    time: 'Last week',
-    platform: 'messenger',
-    status: 'ended',
-    age: 38,
-    phone: '+1 623-555-0128',
-    riskLevel: 'Low Risk',
-    caseManager: 'Robert Jackson',
-    messages: [
-      { id: 1, text: 'Can you provide more information about emergency housing?', sender: 'sent', time: '11:45 AM', date: 'Last Week' },
-      { id: 2, text: 'Thank you for all your help. Case resolved.', sender: 'sent', time: '2:30 PM' }
-    ]
-  }
-])
+// Dummy chat records for each channel
+const dummyChats = [
+  // WhatsApp
+  { id: 101, senderName: 'Alice Mwangi', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:00AM', text: 'Hi, I need help with my case.' },
+  { id: 102, senderName: 'Brian Otieno', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:30AM', text: 'Can I get an update on my report?' },
+  { id: 103, senderName: 'Cynthia Wanjiku', platform: 'whatsapp', status: 'Pending', date: 'Yesterday', time: '10:00AM', text: 'Thank you for your assistance.' },
+  { id: 104, senderName: 'David Kimani', platform: 'whatsapp', status: 'Active', date: 'Today', time: '10:45AM', text: 'Is my case being processed?' },
+  { id: 105, senderName: 'Esther Njeri', platform: 'whatsapp', status: 'Closed', date: 'Yesterday', time: '11:15AM', text: 'My issue was resolved, thanks.' },
+  // SMS
+  { id: 201, senderName: 'Faith Ouma', platform: 'sms', status: 'Active', date: 'Today', time: '09:10AM', text: 'I have a new concern.' },
+  { id: 202, senderName: 'George Kariuki', platform: 'sms', status: 'Pending', date: 'Yesterday', time: '10:20AM', text: 'Please call me back.' },
+  { id: 203, senderName: 'Helen Achieng', platform: 'sms', status: 'Active', date: 'Today', time: '11:00AM', text: 'How do I follow up?' },
+  { id: 204, senderName: 'Isaac Mutua', platform: 'sms', status: 'Closed', date: 'Yesterday', time: '11:30AM', text: 'Thank you for your support.' },
+  { id: 205, senderName: 'Janet Waweru', platform: 'sms', status: 'Active', date: 'Today', time: '12:00PM', text: 'I need urgent help.' },
+  // Messenger
+  { id: 301, senderName: 'Kevin Maina', platform: 'messenger', status: 'Active', date: 'Today', time: '09:20AM', text: 'Can I get more information?' },
+  { id: 302, senderName: 'Lydia Chebet', platform: 'messenger', status: 'Pending', date: 'Yesterday', time: '10:40AM', text: 'I am waiting for a response.' },
+  { id: 303, senderName: 'Martin Otieno', platform: 'messenger', status: 'Active', date: 'Today', time: '12:15PM', text: 'Please update me.' },
+  { id: 304, senderName: 'Nancy Wambui', platform: 'messenger', status: 'Closed', date: 'Yesterday', time: '01:00PM', text: 'Case closed, thank you.' },
+  { id: 305, senderName: 'Oscar Kiptoo', platform: 'messenger', status: 'Active', date: 'Today', time: '01:30PM', text: 'I have a question.' },
+  // Telegram
+  { id: 401, senderName: 'Pauline Njeri', platform: 'telegram', status: 'Active', date: 'Today', time: '09:50AM', text: 'How do I escalate my case?' },
+  { id: 402, senderName: 'Quincy Mwenda', platform: 'telegram', status: 'Pending', date: 'Yesterday', time: '11:10AM', text: 'Still waiting for feedback.' },
+  { id: 403, senderName: 'Ruth Muthoni', platform: 'telegram', status: 'Active', date: 'Today', time: '12:45PM', text: 'Can I speak to an agent?' },
+  { id: 404, senderName: 'Samuel Karanja', platform: 'telegram', status: 'Closed', date: 'Yesterday', time: '01:20PM', text: 'Issue resolved.' },
+  { id: 405, senderName: 'Terry Wainaina', platform: 'telegram', status: 'Active', date: 'Today', time: '02:00PM', text: 'I need more details.' },
+  // Archive
+  { id: 501, senderName: 'Ursula Mwende', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:00AM', text: 'Thank you for your help.' },
+  { id: 502, senderName: 'Victor Ochieng', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:30AM', text: 'Case archived.' },
+  { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
+  { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
+  { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
+];
 
-// Computed properties
-const filteredContacts = computed(() => {
-  let filtered = contacts.value.filter(contact => {
-    if (activePlatform.value === 'past') {
-      return contact.status === 'ended'
-    } else {
-      return contact.platform === activePlatform.value && contact.status === 'active'
-    }
-  })
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(contact =>
-      contact.name.toLowerCase().includes(query) ||
-      contact.preview.toLowerCase().includes(query)
-    )
-  }
-
-  return filtered
-})
-
-const selectedContact = computed(() => {
-  return contacts.value.find(contact => contact.id === selectedContactId.value)
-})
-
-const groupedMessages = computed(() => {
-  if (!selectedContact.value || !selectedContact.value.messages) return []
-  
-  const groups = []
-  let currentGroup = null
-  
-  selectedContact.value.messages.forEach(message => {
-    if (message.date && (!currentGroup || currentGroup.date !== message.date)) {
-      currentGroup = { date: message.date, messages: [] }
-      groups.push(currentGroup)
-    }
-    
-    if (currentGroup) {
-      currentGroup.messages.push(message)
-    }
-  })
-  
-  return groups
-})
+// Timeline view: always show all chats grouped by day
+const groupedMessagesByDayWithDummy = computed(() => {
+  const groups = {};
+  filteredChats.value.forEach(chat => {
+    const day = chat.date;
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(chat);
+  });
+  return {
+    'Today': groups['Today'] || [],
+    'Yesterday': groups['Yesterday'] || []
+  };
+});
 
 // Helper functions
 const getPlatformUnreadCount = (platformId) => {
-  return contacts.value
-    .filter(contact => contact.platform === platformId && contact.status === 'active')
-    .reduce((total, contact) => total + (contact.unreadCount || 0), 0)
+  // Dummy implementation: count active chats for the platform
+  return dummyChats.filter(chat => chat.platform === platformId && chat.status.toLowerCase() === 'active').length;
 }
 
 const getPlatformShortName = (platform) => {
@@ -595,12 +291,6 @@ const getRiskLevelClass = (riskLevel) => {
   return ''
 }
 
-const getContactStatus = (contact) => {
-  if (!contact) return ''
-  if (contact.status === 'ended') return 'Conversation ended'
-  return `Active • Last seen ${contact.time}`
-}
-
 // SidePanel event handlers
 const handleQueueToggle = () => {
   isInQueue.value = !isInQueue.value
@@ -611,52 +301,10 @@ const handleLogout = () => {
 }
 
 const handleSidebarToggle = (collapsed) => {
-  console.log('Sidebar toggled:', collapsed)
+  isSidebarCollapsed.value = collapsed
 }
 
 // Methods
-const applyTheme = (theme) => {
-  const root = document.documentElement
-  
-  if (theme === 'light') {
-    root.style.setProperty('--bg-primary', '#ffffff')
-    root.style.setProperty('--bg-secondary', '#f8f9fa')
-    root.style.setProperty('--bg-tertiary', '#f1f3f4')
-    root.style.setProperty('--text-primary', '#1a1a1a')
-    root.style.setProperty('--text-secondary', '#5f6368')
-    root.style.setProperty('--text-tertiary', '#80868b')
-    root.style.setProperty('--border-color', '#e8eaed')
-    root.style.setProperty('--accent-color', '#FF8C00')
-    root.style.setProperty('--accent-light', '#FFF4E6')
-    root.style.setProperty('--success-color', '#34C759')
-    root.style.setProperty('--warning-color', '#FF9500')
-    root.style.setProperty('--error-color', '#FF3B30')
-    root.style.setProperty('--danger-color', '#FF3B30')
-    root.style.setProperty('--message-sent', '#FF8C00')
-    root.style.setProperty('--message-received', '#E5E5EA')
-    root.style.setProperty('--shadow-light', '0 1px 3px rgba(0, 0, 0, 0.1)')
-    root.style.setProperty('--shadow-medium', '0 4px 6px rgba(0, 0, 0, 0.1)')
-  } else {
-    root.style.setProperty('--bg-primary', '#000000')
-    root.style.setProperty('--bg-secondary', '#1C1C1E')
-    root.style.setProperty('--bg-tertiary', '#2C2C2E')
-    root.style.setProperty('--text-primary', '#FFFFFF')
-    root.style.setProperty('--text-secondary', '#AEAEB2')
-    root.style.setProperty('--text-tertiary', '#8E8E93')
-    root.style.setProperty('--border-color', '#38383A')
-    root.style.setProperty('--accent-color', '#FF8C00')
-    root.style.setProperty('--accent-light', '#2D1B0A')
-    root.style.setProperty('--success-color', '#30D158')
-    root.style.setProperty('--warning-color', '#FF9F0A')
-    root.style.setProperty('--error-color', '#FF453A')
-    root.style.setProperty('--danger-color', '#FF453A')
-    root.style.setProperty('--message-sent', '#FF8C00')
-    root.style.setProperty('--message-received', '#3A3A3C')
-    root.style.setProperty('--shadow-light', '0 1px 3px rgba(0, 0, 0, 0.3)')
-    root.style.setProperty('--shadow-medium', '0 4px 6px rgba(0, 0, 0, 0.3)')
-  }
-}
-
 const toggleTheme = () => {
   const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
   localStorage.setItem('theme', newTheme)
@@ -666,27 +314,19 @@ const toggleTheme = () => {
 
 const setActivePlatform = (platformId) => {
   activePlatform.value = platformId
-  selectedContactId.value = null
   searchQuery.value = ''
 }
 
 const selectContact = (contactId) => {
-  selectedContactId.value = contactId
-  
-  // Clear unread count
-  const contact = contacts.value.find(c => c.id === contactId)
-  if (contact) {
-    contact.unreadCount = 0
-  }
-  
-  // Scroll to bottom
+  selectedMessageId.value = contactId;
+  // No unread count to clear in dummy data
   nextTick(() => {
-    scrollToBottom()
-  })
+    scrollToBottom();
+  });
 }
 
 const deselectContact = () => {
-  selectedContactId.value = null
+  selectedMessageId.value = null
   showContactInfo.value = false
 }
 
@@ -695,82 +335,36 @@ const toggleContactInfo = () => {
 }
 
 const endChat = () => {
-  showEndChatModal.value = true
+  if (selectedMessage) {
+    const chat = dummyChats.find(c => c.id === selectedMessage.id);
+    if (chat) {
+      chat.status = 'Closed';
+      chat.platform = 'archive';
+    }
+  }
+  closeChatPanel();
 }
 
 const cancelEndChat = () => {
   showEndChatModal.value = false
 }
 
-const confirmEndChat = () => {
-  if (selectedContact.value) {
-    // Add end message
-    const contact = contacts.value.find(c => c.id === selectedContactId.value)
-    if (contact) {
-      contact.status = 'ended'
-      contact.messages.push({
-        id: contact.messages.length + 1,
-        text: 'This conversation has been ended by the agent.',
-        sender: 'received',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: 'Today'
-      })
-      
-      // Close modal
-      showEndChatModal.value = false
-      
-      // If we're not already in the past conversations tab, switch to it
-      if (activePlatform.value !== 'past') {
-        activePlatform.value = 'past'
-      }
-    }
-  }
-}
-
-const initiateCall = () => {
-  if (selectedContact.value && selectedContact.value.phone) {
-    showCallModal.value = true
-    callStatus.value = 'Calling...'
-    
-    // Simulate call connection
-    setTimeout(() => {
-      callStatus.value = 'Connected'
-    }, 2000)
-  }
-}
-
-const endCall = () => {
-  showCallModal.value = false
-  callStatus.value = 'Calling...'
-  isMuted.value = false
-}
-
-const cancelCall = () => {
-  showCallModal.value = false
-  callStatus.value = 'Calling...'
-  isMuted.value = false
-}
-
-const toggleMute = () => {
-  isMuted.value = !isMuted.value
-}
-
 const sendMessage = () => {
-  if (newMessageText.value.trim() !== '' && selectedContactId.value !== null) {
-    const contact = contacts.value.find(c => c.id === selectedContactId.value)
-    if (contact && contact.messages && contact.status === 'active') {
-      const newMessage = {
-        id: contact.messages.length + 1,
+  if (newMessageText.value.trim() !== '' && selectedMessageId.value !== null) {
+    // Find the chat in dummyChats
+    const chat = dummyChats.find(c => c.id === selectedMessageId.value);
+    if (chat && chat.status.toLowerCase() === 'active') {
+      // For demo, just update the selectedMessageThread
+      selectedMessageThread.value.push({
+        id: selectedMessageThread.value.length + 1,
         text: newMessageText.value,
-        sender: 'received',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-      contact.messages.push(newMessage)
-      newMessageText.value = ''
-      
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: 'me'
+      });
+      newMessageText.value = '';
       nextTick(() => {
-        scrollToBottom()
-      })
+        scrollToBottom();
+      });
     }
   }
 }
@@ -793,26 +387,6 @@ const handleTyping = () => {
   // Handle typing indicator
 }
 
-const createCaseFromChat = () => {
-  if (!selectedContact.value) return
-  
-  const chatSummary = selectedContact.value.messages
-    ?.map(msg => `${msg.sender === 'sent' ? 'Survivor' : 'Agent'}: ${msg.text}`)
-    .join('\n') || ''
-  
-  router.push({
-    path: '/case-creation',
-    query: {
-      survivorName: selectedContact.value.name,
-      survivorPhone: selectedContact.value.phone,
-      riskLevel: selectedContact.value.riskLevel,
-      chatSummary: chatSummary,
-      platform: activePlatform.value,
-      fromChat: 'true'
-    }
-  })
-}
-
 // Placeholder methods
 const showNewChatModal = () => console.log('Show new chat modal')
 const showAttachmentMenu = () => console.log('Show attachment menu')
@@ -821,1379 +395,929 @@ const viewFullProfile = () => console.log('View full profile')
 
 // Lifecycle
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme')
-  if (savedTheme) {
+  const savedTheme = localStorage.getItem('theme') || 'dark'
     currentTheme.value = savedTheme
-  }
-  applyTheme(currentTheme.value)
+  applyTheme(savedTheme)
 })
+
+const queueStatus = computed(() => {
+  return isInQueue ? 'In Queue' : 'Not in queue'
+})
+
+const showChatPanel = ref(false)
+const selectedMessageId = ref(null)
+const selectedMessage = ref(null)
+const selectedMessageThread = ref([])
+
+function openChatPanel(message) {
+  selectedMessageId.value = message.id
+  selectedMessage.value = message
+  // Dummy thread for now, could be replaced with real data
+  selectedMessageThread.value = [
+    { id: 1, text: message.text, time: message.time },
+    { id: 2, text: 'This is a reply.', time: '10:35 AM' }
+  ]
+  showChatPanel.value = true
+}
+function closeChatPanel() {
+  showChatPanel.value = false
+  selectedMessageId.value = null
+  selectedMessage.value = null
+  selectedMessageThread.value = []
+}
+
+// In script, define channelFilters with an 'All' option:
+const channelFilters = [
+  { id: 'all', name: 'All' },
+  { id: 'whatsapp', name: 'WhatsApp' },
+  { id: 'sms', name: 'SMS' },
+  { id: 'messenger', name: 'Messenger' },
+  { id: 'telegram', name: 'Telegram' },
+  { id: 'archive', name: 'Archive' }
+];
+
+// For table view, filter by activePlatform unless 'all'
+const filteredChats = computed(() => {
+  if (activePlatform.value === 'all') return dummyChats;
+  return dummyChats.filter(chat => chat.platform === activePlatform.value);
+});
+
+// Set timeline as the default view on load
+const activeView = ref('timeline');
+
+// In <script setup>, add dummy functions for actions:
+function linkToCase() { alert('Link to Case (dummy)'); }
+function createCase() {
+  // Navigate to case creation with chat data
+  router.push({
+    path: '/case-creation',
+    query: {
+      reporter: selectedMessage?.senderName,
+      platform: selectedMessage?.platform,
+      chatId: selectedMessage?.id
+    }
+  });
+}
+function archiveChat() { alert('Archive Chat (dummy)'); }
+function editReporter() { alert('Add/Edit Reporter (dummy)'); }
+
+// In <script setup>, add a simulated chat thread:
+const simulatedChatThread = computed(() => [
+  { id: 1, sender: 'user', text: selectedMessage?.text || 'Hi, I need help with my case.', time: selectedMessage?.time || '09:00AM' },
+  { id: 2, sender: 'counsellor', text: 'Hello, how can I assist you today?', time: '09:01AM' },
+  { id: 3, sender: 'user', text: 'I want to know the status of my report.', time: '09:02AM' },
+  { id: 4, sender: 'counsellor', text: 'Your report is being processed. We will update you soon.', time: '09:03AM' },
+  { id: 5, sender: 'user', text: 'Thank you!', time: '09:04AM' },
+  { id: 6, sender: 'counsellor', text: 'You are welcome!', time: '09:05AM' },
+  ...selectedMessageThread.value
+]);
+
+// In <script setup>, update viewCase and createCase to navigate to real pages:
+function viewCase() {
+  // If selectedMessage has a caseId, navigate to /cases/:id, else alert
+  if (selectedMessage?.caseId) {
+    router.push(`/cases/${selectedMessage.caseId}`);
+  } else {
+    alert('No case linked to this chat.');
+  }
+}
 </script>
 
 <style>
-/* Global Styles */
-* {
+  /* Root theme variables and resets */
+  :root, body, html {
+    --background-color: #f5f5f5;
+    --content-bg: #fff;
+    --text-color: #222;
+    --text-secondary: #666;
+    --border-color: #ddd;
+  --accent-color: #964B00;
+  --accent-hover: #b25900;
+    --success-color: #4CAF50;
+    --pending-color: #FFA500;
+    --unassigned-color: #808080;
+    --highlight-color: #ff3b30;
+    --card-bg: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  [data-theme="dark"], body.dark, :root.dark {
+    --background-color: #000;
+    --content-bg: #181818;
+    --text-color: #fff;
+    --text-secondary: #bbb;
+    --border-color: #333;
+    --card-bg: #181818;
+  --accent-color: #964B00;
+  --accent-hover: #b25900;
+    --success-color: #4CAF50;
+    --pending-color: #FFA500;
+    --unassigned-color: #808080;
+    --highlight-color: #ff3b30;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
+  body, html {
+    background-color: var(--background-color);
+    color: var(--text-color);
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-}
+    min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+  }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  overflow: hidden;
-}
-
-.app-container {
-  display: flex;
-  height: 100vh;
-  background-color: var(--bg-primary);
-}
-
+  /* Main layout */
 .main-content {
-  flex: 1;
-  margin-left: var(--sidebar-width, 250px);
+    background-color: var(--background-color);
+    min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-primary);
-  transition: margin-left 0.3s ease;
-}
-
-/* Chat Interface */
-.chat-interface {
-  display: flex;
-  flex: 1;
+    transition: background-color 0.3s;
+  height: 100vh;
   overflow: hidden;
 }
-
-/* Chat Sidebar */
-.chat-sidebar {
-  width: 380px;
-  background-color: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  .calls-container {
+    background-color: var(--background-color);
+  flex: 1;
+    padding: 0 0 40px 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  transition: width 0.3s ease;
-}
+    transition: background-color 0.3s;
+  overflow-y: auto;
+  min-height: 0;
+  }
 
-.chat-sidebar.full-width {
-  width: 100%;
-}
-
-.sidebar-header {
-  padding: 20px 20px 16px 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.header-content {
+  /* Header */
+  .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.header-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
-}
-
+    padding: 32px 32px 0 32px;
+    background: var(--background-color);
+    flex-shrink: 0;
+  }
+  .page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0;
+  }
 .header-actions {
   display: flex;
-  gap: 8px;
-}
+    align-items: center;
+    gap: 20px;
+  }
+  .theme-toggle {
+    background-color: var(--content-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 8px 15px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  display: flex;
+  align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+  .theme-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
 
-.header-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  background-color: var(--bg-tertiary);
-  border: none;
-  color: var(--text-secondary);
+  /* Tabs */
+  .view-toggle-pills {
+    display: flex;
+    flex-shrink: 0;
+    gap: 12px;
+    min-width: 0;
+    height: 48px;
+  }
+  .view-toggle-pill {
+    border-radius: 30px;
+    height: 48px;
+    min-width: 110px;
+    max-width: 160px;
+    width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.header-btn:hover {
-  background-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-/* Platform Tabs */
-.platform-tabs {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.platform-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 16px;
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
+    font-size: 16px;
+    font-weight: 600;
+    border: 1.5px solid var(--border-color);
   white-space: nowrap;
-  font-size: 13px;
-  font-weight: 500;
-  min-height: 36px;
-}
+    background: var(--content-bg);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+    padding: 0 22px;
+  }
+  .view-toggle-pill.active {
+    background: var(--accent-color);
+    color: #fff;
+    border: 1.5px solid var(--accent-color);
+    z-index: 1;
+  }
 
-.platform-tab:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.platform-tab.active {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
-}
-
-.tab-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.tab-badge {
-  background-color: rgba(255, 255, 255, 0.3);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 16px;
-  text-align: center;
-}
-
-.platform-tab:not(.active) .tab-badge {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-/* Search Section */
-.search-section {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
+  /* Search Bar */
+.search-and-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 0 32px 18px 32px;
+    flex-wrap: wrap;
+  }
 .search-container {
-  position: relative;
+    width: 100%;
+    border-radius: 30px;
+    margin: 0;
   display: flex;
   align-items: center;
+    background: var(--content-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 0 18px;
 }
-
 .search-icon {
-  position: absolute;
-  left: 12px;
-  color: var(--text-tertiary);
-  z-index: 1;
-}
-
+    color: var(--text-secondary);
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
 .search-input {
-  width: 100%;
-  padding: 10px 12px 10px 36px;
-  border-radius: 20px;
+    flex: 1;
   border: none;
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
+    background: transparent;
+    color: var(--text-color);
+    font-size: 15px;
+    outline: none;
+    padding: 14px 0;
+    border-radius: 30px;
+    box-shadow: none;
+    height: 48px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+  }
 .search-input:focus {
   outline: none;
-  background-color: var(--bg-primary);
-  box-shadow: 0 0 0 2px var(--accent-color);
+    box-shadow: none;
 }
-
-.search-input::placeholder {
-  color: var(--text-tertiary);
-}
-
 .search-clear {
-  position: absolute;
-  right: 8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  background-color: var(--text-tertiary);
+    background: none;
   border: none;
-  color: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
-
 .search-clear:hover {
-  background-color: var(--text-secondary);
+    color: var(--accent-color);
 }
 
-/* Chat List */
-.chat-list {
+  /* Timeline View */
+  .view-container {
+    margin: 0 32px;
   flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px 12px 20px;
-}
-
-.list-title {
+  .time-section-title {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.list-count {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  background-color: var(--bg-tertiary);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-.chat-contacts {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 8px 20px 8px;
-}
-
-.chat-contact {
+    font-weight: 700;
+    color: var(--accent-color);
+    margin: 18px 0 10px 0;
+  }
+  .call-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .call-item {
+    background: var(--content-bg);
+    color: var(--text-color);
+    border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: background 0.3s, color 0.3s, border 0.3s;
+    border: 1.5px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
-  position: relative;
-}
-
-.chat-contact:hover {
-  background-color: var(--bg-tertiary);
-}
-
-.chat-contact.active {
-  background-color: var(--accent-light);
-}
-
-.chat-contact.unread {
-  background-color: var(--bg-tertiary);
-}
-
-.chat-contact.ended {
-  opacity: 0.6;
-}
-
-.contact-avatar-wrapper {
-  position: relative;
-}
-
-.contact-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 25px;
+    font-size: 15px;
+  }
+  .call-item.selected {
+    border: 2px solid var(--accent-color);
+    background: rgba(150,75,0,0.07);
+    box-shadow: 0 2px 8px rgba(150,75,0,0.08);
+  }
+  .call-item:hover {
+    background: rgba(150,75,0,0.04);
+  }
+  .call-item .call-icon {
+    margin-right: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 18px;
-}
-
-.online-dot {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  background-color: var(--success-color);
-  border: 2px solid var(--bg-secondary);
-  border-radius: 6px;
-}
-
-.contact-details {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .call-details {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.contact-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.contact-name {
-  font-size: 16px;
+  }
+  .call-type, .call-time, .call-meta, .case-link {
+    color: var(--text-color);
+    font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+  .call-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    white-space: normal;
+  }
 
-.contact-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.contact-time {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.unread-count {
-  background-color: var(--accent-color);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.contact-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.contact-preview {
+  /* Table View */
+  .calls-table-container {
+    background: var(--content-bg);
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  .calls-table {
+    width: 100%;
+    background: var(--content-bg);
+    color: var(--text-color);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
   font-size: 14px;
-  color: var(--text-secondary);
-  white-space: nowrap;
+    border-collapse: separate;
+    border-spacing: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  margin-right: 8px;
-}
+  }
+  .calls-table th, .calls-table td {
+    padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+    text-align: left;
+  }
+  .calls-table th {
+    background: var(--background-color);
+  color: var(--text-secondary);
+    font-weight: 700;
+  }
+  .calls-table tr:last-child td {
+    border-bottom: none;
+  }
+  .status-badge {
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 12px;
+    display: inline-block;
+    font-weight: 700;
+    text-align: center;
+    min-width: 100px;
+    transition: all 0.3s ease;
+    background: var(--accent-color);
+  }
 
-.platform-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background-color: var(--bg-tertiary);
-  color: var(--text-tertiary);
-}
-
-.platform-badge.whatsapp { background-color: #25D366; color: white; }
-.platform-badge.sms { background-color: var(--accent-color); color: white; }
-.platform-badge.messenger { background-color: #0084FF; color: white; }
-.platform-badge.telegram { background-color: #0088cc; color: white; }
-
-/* Chat Main */
-.chat-main {
-  flex: 1;
+  /* Chat Details Panel (see previous code for details) */
+  .chat-details-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--content-bg);
+    border-left: 1px solid var(--border-color);
+    z-index: 2000;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-primary);
-  overflow: hidden;
-  position: relative;
-}
-
-.chat-header {
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  .chat-details-panel.active {
+    transform: translateX(0);
+  }
+  .chat-details-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+    justify-content: space-between;
+    padding: 20px 24px 16px 24px;
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-primary);
+    background: var(--content-bg);
+    flex-shrink: 0;
 }
-
-.chat-header-left {
+  .chat-details-avatar {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.back-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  background-color: var(--bg-secondary);
-  border: none;
-  color: var(--text-secondary);
+    gap: 16px;
+  }
+  .avatar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.back-btn:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.contact-avatar-header {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.contact-info {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .chat-details-title {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
-.contact-info .contact-name {
+  .contact-name {
   font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.contact-status {
+    font-weight: 700;
+    color: var(--text-color);
+  }
+  .chat-channel-badge {
+    background: var(--accent-color);
+    color: #fff;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 0;
+    margin-top: 4px;
+    align-self: flex-start;
+  }
+  .chat-status {
   font-size: 13px;
   color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .close-details {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: 700;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.status-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 3px;
-  background-color: var(--text-tertiary);
-}
-
-.status-indicator.online {
-  background-color: var(--success-color);
-}
-
-.chat-header-actions {
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .close-details:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  .chat-details-actions {
   display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  background-color: var(--bg-secondary);
+    gap: 10px;
+    padding: 12px 24px;
+    background: var(--content-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+  }
+  .chat-action-btn {
+    background: #f5f5f5;
+    color: #222;
   border: none;
-  color: var(--text-secondary);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.end-chat-btn {
-  color: var(--danger-color);
-}
-
-.end-chat-btn:hover {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-/* Messages Area */
-.messages-area {
+    font-size: 22px;
+    margin: 0 2px;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .chat-action-btn.view { background: #2196f3; color: #fff; }
+  .chat-action-btn.link { background: #ff9800; color: #fff; }
+  .chat-action-btn.create { background: #4caf50; color: #fff; }
+  .chat-action-btn.reporter { background: #757575; color: #fff; }
+  .chat-action-btn.archive { background: #e53935; color: #fff; }
+  .chat-action-btn:hover { filter: brightness(1.1); }
+  .chat-details-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
-  scroll-behavior: smooth;
-}
-
-.messages-content {
+    overflow-x: hidden;
+    padding: 24px 24px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.message-group {
+    gap: 18px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  .chat-thread.whatsapp-style {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0 0 10px 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.date-divider {
-  display: flex;
-  justify-content: center;
-  margin: 16px 0;
-}
-
-.date-text {
-  background-color: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.message-container {
-  display: flex;
-  margin-bottom: 2px;
-}
-
-.message-container.sent {
-  justify-content: flex-end;
-}
-
-.message-container.received {
-  justify-content: flex-start;
-}
-
-.message-bubble {
-  max-width: 75%;
-  padding: 12px 16px;
-  border-radius: 20px;
+    gap: 10px;
+    max-height: 350px;
+    padding-bottom: 10px;
+  }
+  .chat-bubble {
+    max-width: 80%;
+    padding: 12px 18px;
+    border-radius: 18px;
+    font-size: 15px;
+    background: var(--background-color);
+    color: var(--text-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    align-self: flex-start;
   position: relative;
-  word-wrap: break-word;
-  box-shadow: var(--shadow-light);
-}
-
-.message-bubble.sent {
-  background-color: var(--message-sent);
-  color: white;
-  border-bottom-right-radius: 6px;
-}
-
-.message-bubble.received {
-  background-color: var(--message-received);
-  color: var(--text-primary);
-  border-bottom-left-radius: 6px;
-}
-
-.message-text {
-  font-size: 15px;
-  line-height: 1.4;
+    word-break: break-word;
+  }
+  .chat-bubble.sent {
+    align-self: flex-end;
+    background: var(--accent-color);
+    color: #fff;
+  }
+  .bubble-text {
   margin-bottom: 4px;
 }
-
-.message-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.message-time {
-  font-size: 11px;
-  opacity: 0.7;
-}
-
-.message-status {
-  display: flex;
-  align-items: center;
-}
-
-/* Message Input */
-.message-input-area {
-  padding: 16px 20px;
+  .bubble-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+  .chat-panel-input {
+    margin-top: 10px;
+    background: var(--content-bg);
   border-top: 1px solid var(--border-color);
-  background-color: var(--bg-primary);
+    padding-top: 10px;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
 }
-
 .input-container {
   display: flex;
-  align-items: flex-end;
+    align-items: center;
   gap: 8px;
-  background-color: var(--bg-secondary);
-  border-radius: 24px;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.input-action-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  background-color: transparent;
-  border: none;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.input-action-btn:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.text-input-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
+  }
 .message-input {
   flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 10px 16px;
   font-size: 15px;
-  padding: 8px 0;
+    background: var(--content-bg);
+    color: var(--text-color);
   outline: none;
-  resize: none;
-}
-
-.message-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.send-btn, .voice-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
+    transition: border 0.2s;
+  }
+  .send-btn {
+    background: var(--accent-color);
+    color: #fff;
   border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    border-radius: 18px;
+    padding: 8px 18px;
+    font-size: 15px;
+    font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.send-btn {
-  background-color: var(--accent-color);
-  color: white;
-}
-
+    transition: background 0.2s;
+  }
 .send-btn:hover {
-  opacity: 0.9;
-}
+    background: var(--accent-hover);
+  }
+  @media (max-width: 600px) {
+    .chat-details-panel {
+      width: 100vw;
+      max-width: 100vw;
+      border-radius: 0;
+    }
+    .chat-details-header, .chat-details-actions, .chat-details-content {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+  }
 
-.voice-btn {
-  background-color: transparent;
+  /* Empty state */
+  .call-list:empty::before, .calls-table tbody:empty::before {
+    content: 'No messages yet.';
   color: var(--text-secondary);
-}
-
-.voice-btn:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-/* Ended Chat Message */
-.ended-chat-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  background-color: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
-}
-
-.ended-chat-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-secondary);
-}
-
-.ended-chat-content svg {
-  color: var(--success-color);
-}
-
-.ended-chat-content p {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-/* Contact Info Panel */
-.contact-info-panel {
-  width: 320px;
-  background-color: var(--bg-secondary);
-  border-left: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.info-header {
-  padding: 20px;
+    font-size: 15px;
   text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
-}
+    display: block;
+    margin: 40px 0;
+  }
 
-.close-info-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 28px;
-  height: 28px;
-  border-radius: 14px;
-  background-color: var(--bg-tertiary);
+  /* Add or update this in the <style> section */
+  .read-aloud-btn, .read-aloud-btn, button.read-aloud-btn {
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
+    background: var(--accent-color);
+    color: #fff;
   border: none;
-  color: var(--text-secondary);
+    border-radius: 16px;
+    padding: 8px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    z-index: 1000;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+    gap: 8px;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .read-aloud-btn:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 16px rgba(150,75,0,0.12);
+  }
 
-.close-info-btn:hover {
-  background-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.info-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 40px;
+  /* Channel filter pills */
+  .channel-filters {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+    gap: 16px;
+    margin: 0 32px 18px 32px;
+    padding-top: 10px;
+    padding-bottom: 0;
+  }
+  .channel-pill {
+    padding: 10px 22px;
+    border-radius: 24px;
+    background: var(--content-bg);
+    color: var(--text-color);
+    border: 1.5px solid var(--border-color);
+    font-size: 15px;
   font-weight: 600;
-  font-size: 32px;
-  margin: 0 auto 16px auto;
-}
-
-.info-name {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.info-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.info-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.info-section {
-  margin-bottom: 28px;
-}
-
-.section-title {
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+  }
+  .channel-pill.active {
+    background: var(--accent-color);
+    color: #fff;
+    border: 1.5px solid var(--accent-color);
+  }
+  .channel-pill:not(.active):hover {
+    background: var(--accent-light);
+    color: var(--accent-color);
+    border: 1.5px solid var(--accent-color);
+  }
+  /* No chats fallback */
+  .no-chats {
+    text-align: center;
+    color: var(--text-secondary);
   font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-}
+    padding: 40px 0;
+  }
 
-.info-items {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+  .main-content, .calls-container, .view-container, .call-item, .calls-table-container, .chat-details-panel, .channel-pill, .view-toggle-pill {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+  }
+  .channel-pill, .view-toggle-pill {
+    background: var(--content-bg) !important;
+    color: var(--text-color) !important;
+  }
+  .channel-pill.active, .view-toggle-pill.active {
+    background: var(--accent-color) !important;
+    color: #fff !important;
+  }
+  .call-item, .calls-table, .calls-table th, .calls-table td {
+    background: var(--content-bg) !important;
+    color: var(--text-color) !important;
+  }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.info-label {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  font-size: 14px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.risk-level.high-risk {
-  color: var(--error-color);
-}
-
-.risk-level.medium-risk {
-  color: var(--warning-color);
-}
-
-.risk-level.low-risk {
-  color: var(--success-color);
-}
-
-.info-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.info-btn {
+  /* Search and Toggle Row */
+  .search-and-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 0 32px 18px 32px;
+    flex-wrap: wrap;
+  }
+  .search-section {
+    flex: 0 1 400px;
+    max-width: 400px;
+    min-width: 200px;
+    margin-right: 0;
+  }
+  .search-container {
+    width: 100%;
+    border-radius: 30px;
+    margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: 12px;
+    background: var(--content-bg);
   border: 1px solid var(--border-color);
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.info-btn:hover {
-  background-color: var(--bg-primary);
-  box-shadow: var(--shadow-medium);
-}
-
-.info-btn.primary {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
-}
-
-.info-btn.primary:hover {
-  opacity: 0.9;
-}
-
-.info-btn.danger {
-  background-color: var(--danger-color);
-  color: white;
-  border-color: var(--danger-color);
-}
-
-.info-btn.danger:hover {
-  opacity: 0.9;
-}
-
-/* Call Modal */
-.call-modal {
-  background-color: var(--bg-secondary);
-  border-radius: 20px;
-  padding: 40px 30px;
-  text-align: center;
-  box-shadow: var(--shadow-medium);
-  width: 320px;
-  max-width: 90%;
-}
-
-.call-header {
-  margin-bottom: 30px;
-}
-
-.call-avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 0 18px;
+  }
+  .search-icon {
+    color: var(--text-secondary);
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 15px;
+    outline: none;
+    padding: 14px 0;
+    border-radius: 30px;
+    box-shadow: none;
+    height: 48px;
+    line-height: 1.4;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 36px;
-  margin: 0 auto 20px auto;
-}
-
-.call-name {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.call-number {
-  font-size: 16px;
+  }
+  .search-input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  .search-clear {
+    background: none;
+    border: none;
   color: var(--text-secondary);
-  margin-bottom: 12px;
-}
-
-.call-status {
-  font-size: 14px;
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+  }
+  .search-clear:hover {
   color: var(--accent-color);
-  font-weight: 500;
 }
-
-.call-actions {
+  .view-toggle-pills {
   display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-.call-btn {
-  width: 60px;
-  height: 60px;
+    flex-shrink: 0;
+    gap: 12px;
+    min-width: 0;
+    height: 48px;
+  }
+  .view-toggle-pill {
   border-radius: 30px;
-  border: none;
+    height: 48px;
+    min-width: 110px;
+    max-width: 160px;
+    width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+    font-size: 16px;
+    font-weight: 600;
+    border: 1.5px solid var(--border-color);
+    white-space: nowrap;
+    background: var(--content-bg);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+    padding: 0 22px;
+  }
+  .view-toggle-pill.active {
+    background: var(--accent-color);
+    color: #fff;
+    border: 1.5px solid var(--accent-color);
+    z-index: 1;
+  }
+  @media (max-width: 900px) {
+    .search-and-toggle-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin: 0 10px 18px 10px;
+    }
+    .search-section {
+      max-width: 100%;
+    }
+    .search-container, .view-toggle-pills, .view-toggle-pill {
+      border-radius: 30px;
+      min-width: 0;
+      width: 100%;
+      margin: 0;
+    }
+    .view-toggle-pills {
+      flex-direction: row;
+      width: 100%;
+      gap: 12px;
+      height: auto;
+    }
+    .view-toggle-pill {
+      border-radius: 30px;
+      margin: 0;
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+    }
+  }
 
-.call-btn.end-call {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.call-btn.end-call:hover {
-  opacity: 0.9;
-  transform: scale(1.05);
-}
-
-.call-btn.mute {
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-.call-btn.mute:hover {
-  background-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-/* Modal */
-.modal-overlay {
+  /* Chat Modal Overlay */
+  .chat-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.25);
+    z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-}
-
-.modal-container {
-  width: 400px;
-  background-color: var(--bg-secondary);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow-medium);
-}
-
-.modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.modal-header h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-body p {
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.modal-btn {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-btn:hover {
-  background-color: var(--bg-primary);
-  box-shadow: var(--shadow-light);
-}
-
-.modal-btn.danger {
-  background-color: var(--danger-color);
-  color: white;
-  border-color: var(--danger-color);
-}
-
-.modal-btn.danger:hover {
-  opacity: 0.9;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .contact-info-panel {
-    display: none;
   }
-  
-  .chat-sidebar {
-    width: 320px;
-  }
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-  }
-  
-  .chat-interface {
-    flex-direction: column;
-  }
-  
-  .chat-sidebar {
+  .chat-modal-panel {
+    background: var(--content-bg);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     width: 100%;
-    height: 50%;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
+    max-width: 420px;
+    max-height: 90vh;
+  display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeInScale 0.25s cubic-bezier(.4,1.4,.6,1) 1;
   }
-  
-  .chat-main {
-    height: 50%;
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
-  
-  .platform-tabs {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+  .chat-details-header {
+    border-radius: 28px 28px 0 0;
   }
-  
-  .back-btn {
-    display: flex;
+  .chat-details-content {
+    border-radius: 0 0 28px 28px;
+    padding-bottom: 0;
   }
-  
-  .header-title {
-    font-size: 28px;
+  .chat-details-actions {
+    justify-content: center;
+    gap: 18px;
+    padding: 14px 0 10px 0;
+    border-bottom: none;
   }
-  
-  .contact-avatar {
+  .chat-action-btn {
+    background: var(--content-bg);
+    color: var(--accent-color);
+    border: 2px solid var(--accent-color);
+  border-radius: 50%;
     width: 44px;
     height: 44px;
-    font-size: 16px;
+  display: flex;
+  align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin: 0 2px;
+    transition: background 0.2s, color 0.2s, border 0.2s;
   }
-  
-  .contact-name {
-    font-size: 15px;
+  .chat-action-btn:hover {
+    background: var(--accent-color);
+  color: #fff;
+    border-color: var(--accent-color);
   }
-  
-  .contact-preview {
-    font-size: 13px;
-  }
+  .action-icon {
+  display: flex;
+    align-items: center;
+  justify-content: center;
 }
-
-@media (max-width: 480px) {
-  .sidebar-header {
-    padding: 16px;
-  }
-  
-  .header-title {
-    font-size: 24px;
-  }
-  
-  .platform-tabs {
-    padding: 12px 16px;
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .search-section {
-    padding: 12px 16px;
-  }
-  
-  .list-header {
-    padding: 12px 16px 8px 16px;
-  }
-  
-  .chat-contacts {
-    padding: 0 8px 16px 8px;
-  }
-  
-  .contact-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 14px;
-  }
-  
-  .contact-name {
-    font-size: 14px;
-  }
-  
-  .contact-preview {
-    font-size: 12px;
-  }
-  
-  .message-bubble {
-    max-width: 85%;
-    padding: 10px 14px;
-  }
-  
-  .message-text {
-    font-size: 14px;
-  }
-  
-  .messages-area {
-    padding: 16px;
-  }
-  
-  .message-input-area {
-    padding: 12px 16px;
-  }
-  
-  .chat-header {
-    padding: 12px 16px;
-  }
-  
-  .contact-info .contact-name {
-    font-size: 16px;
-  }
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
-/* Animations */
-@keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.message-container {
-  animation: fadeIn 0.3s ease;
-}
-
-.chat-contact {
-  animation: fadeIn 0.2s ease;
-}
-
-/* Focus States for Accessibility */
-.platform-tab:focus,
-.header-btn:focus,
-.action-btn:focus,
-.info-btn:focus,
-.input-action-btn:focus,
-.send-btn:focus,
-.voice-btn:focus,
-.back-btn:focus,
-.close-info-btn:focus {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-}
-
-.search-input:focus,
-.message-input:focus {
-  outline: none;
-}
-
-/* High Contrast Mode */
-@media (prefers-contrast: high) {
-  .chat-contact.active {
-    border: 2px solid var(--accent-color);
-  }
-  
-  .message-bubble.sent {
-    border: 1px solid var(--accent-color);
-  }
-  
-  .message-bubble.received {
-    border: 1px solid var(--border-color);
-  }
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Loading States */
-.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid var(--border-color);
-  border-top: 2px solid var(--accent-color);
+.end-chat-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 4px;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  cursor: pointer;
 }
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Hover Effects */
-.chat-contact:hover .contact-avatar {
-  transform: scale(1.05);
-}
-
-.message-bubble:hover {
-  transform: translateY(-1px);
-}
-
-.platform-tab:hover {
-  transform: translateY(-1px);
-}
-
-/* Selection States */
-::selection {
-  background-color: var(--accent-light);
-  color: var(--accent-color);
-}
-
-::-moz-selection {
-  background-color: var(--accent-light);
-  color: var(--accent-color);
-}
-
-/* Custom Properties for Dynamic Theming */
-:root {
-  --sidebar-width: 250px;
-  --transition-timing: ease;
-  --border-radius-sm: 8px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 16px;
-  --border-radius-xl: 20px;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-lg: 16px;
-  --spacing-xl: 20px;
-  --spacing-2xl: 24px;
-}
-
-/* Dark mode specific adjustments */
-@media (prefers-color-scheme: dark) {
-  .message-bubble.sent {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-  
-  .message-bubble.received {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-  
-  .chat-contact:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom scrollbar for webkit browsers */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-tertiary);
-}
-
-/* Print styles */
-@media print {
-  .chat-sidebar,
-  .contact-info-panel,
-  .message-input-area {
-    display: none;
-  }
-  
-  .chat-main {
-    width: 100%;
-  }
-  
-  .message-bubble {
-    box-shadow: none;
-    border: 1px solid var(--border-color);
-  }
+.end-chat-btn:hover {
+  background: #b71c1c;
 }
 </style>

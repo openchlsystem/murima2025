@@ -6,89 +6,7 @@
         </path>
       </svg>
     </button>
-    <div class="sidebar" id="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': mobileOpen }">
-      <div class="sidebar-content">
-        <div class="logo-container">
-          <div class="logo">
-            <img alt="OpenCHS Logo" src="/Openchs logo-1.png"/>
-          </div>
-        </div>
-        <router-link class="nav-item" to="/dashboard">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Dashboard
-          </div>
-        </router-link>
-        <router-link class="nav-item" to="/calls">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Calls
-          </div>
-        </router-link>
-        <router-link class="nav-item" to="/cases">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Cases
-          </div>
-        </router-link>
-        <router-link class="nav-item" to="/chats">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Chats
-          </div>
-        </router-link>
-        <router-link class="nav-item" to="/qa-statistics">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            QA Statistics
-          </div>
-        </router-link>
-        <router-link class="nav-item active" to="/wallboard">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Wallboard
-          </div>
-        </router-link>
-        <router-link class="nav-item" to="/settings">
-          <div class="nav-icon">
-          </div>
-          <div class="nav-text">
-            Settings
-          </div>
-        </router-link>
-        <div class="user-profile">
-          <router-link class="user-avatar" to="/edit-profile">
-            <svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z">
-              </path>
-              <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z">
-              </path>
-            </svg>
-          </router-link>
-        </div>
-        <div class="status">
-          <div class="status-dot">
-          </div>
-          <span>
-            Status: Online
-          </span>
-        </div>
-        <div class="button-container">
-          <button class="join-queue-btn">
-            Join Queue
-          </button>
-          <button class="logout-btn" @click="logout">
-            Logout
-          </button>
-        </div>
-      </div>
-    </div>
+    <SidePanel :userRole="userRole" :isInQueue="isInQueue" :isProcessingQueue="isProcessingQueue" :currentCall="currentCall" @toggle-queue="handleQueueToggle" @logout="handleLogout" @sidebar-toggle="handleSidebarToggle" />
     <div class="main-content" :style="{ marginLeft: mainContentMarginLeft }">
       <div class="header">
         <button class="sidebar-toggle" @click="toggleSidebar">
@@ -149,7 +67,7 @@
         </select>
       </div>
       <div class="dashboard-grid">
-        <div class="dashboard-card">
+        <div class="dashboard-card glass-card fine-border">
           <div class="card-header">
             <div class="card-title">
               Total Calls
@@ -168,7 +86,7 @@
             +12% from last week
           </div>
         </div>
-        <div class="dashboard-card">
+        <div class="dashboard-card glass-card fine-border">
           <div class="card-header">
             <div class="card-title">
               Average Call Duration
@@ -189,7 +107,7 @@
             -2:15 from last week
           </div>
         </div>
-        <div class="dashboard-card">
+        <div class="dashboard-card glass-card fine-border">
           <div class="card-header">
             <div class="card-title">
               Average QA Score
@@ -210,7 +128,7 @@
             +5% from last week
           </div>
         </div>
-        <div class="dashboard-card">
+        <div class="dashboard-card glass-card fine-border">
           <div class="card-header">
             <div class="card-title">
               Achievements Unlocked
@@ -723,8 +641,12 @@
 <script>
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import SidePanel from '../components/SidePanel.vue';
 
 export default {
+  components: {
+    SidePanel,
+  },
   setup() {
     const router = useRouter();
     const logout = () => {
@@ -1099,10 +1021,14 @@ body {
 }
 
 .main-content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  transition: margin-left 0.3s ease;
+  background: rgba(10, 10, 10, 0.92);
+  color: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  margin: 0 auto;
+  max-width: 1400px;
+  min-height: 100vh;
 }
 
 .sidebar.collapsed ~ .main-content {
@@ -1120,6 +1046,9 @@ body {
   font-size: 24px;
   font-weight: 600;
   margin: 0 auto 0 0;
+  color: var(--accent-color);
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .theme-toggle {
@@ -1159,12 +1088,14 @@ body {
   margin-bottom: 30px;
 }
 
-.dashboard-card {
-  background-color: var(--card-bg);
-  border-radius: 15px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+.dashboard-card, .leaderboard-section, .achievement-card, .chart-container, .pie-chart {
+  background: rgba(24, 24, 24, 0.65);
+  border-radius: 22px;
+  border: 1.5px solid rgba(255, 215, 0, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  color: #fff;
 }
 
 .card-header {
@@ -1209,9 +1140,8 @@ body {
 }
 
 .leaderboard-section {
-  background-color: var(--card-bg);
-  border-radius: 15px;
-  padding: 20px;
+  margin-top: 30px;
+  padding: 32px 24px;
 }
 
 .section-header {
@@ -1225,27 +1155,31 @@ body {
   font-size: 20px;
   font-weight: 600;
   color: var(--text-color);
+  color: var(--accent-color);
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .leaderboard-tabs {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .leaderboard-tab {
-  padding: 8px 15px;
-  border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: 16px 16px 0 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+  border: none;
 }
 
 .leaderboard-tab.active {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(255, 140, 0, 0.12);
+  box-shadow: 0 4px 16px 0 rgba(255,140,0,0.08);
 }
 
 .leaderboard-table-container {
@@ -1286,8 +1220,6 @@ body {
 }
 
 .chart-container {
-  background-color: var(--content-bg);
-  border-radius: 15px;
   padding: 20px;
 }
 
@@ -1433,9 +1365,6 @@ body {
 }
 
 .achievements-section {
-  background-color: var(--content-bg);
-  border-radius: 15px;
-  padding: 20px;
   margin-bottom: 30px;
 }
 
@@ -1446,165 +1375,61 @@ body {
   margin-top: 20px;
 }
 
-.achievement-card {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: transform 0.2s;
-}
-
-.achievement-card:hover {
-  transform: translateY(-5px);
-}
-
-.achievement-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: var(--content-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.achievement-icon svg {
-  width: 30px;
-  height: 30px;
-  stroke: var(--text-color);
-}
-
-.achievement-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.achievement-description {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-}
-
-.achievement-progress {
-  width: 100%;
-  height: 6px;
-  background-color: var(--content-bg);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 5px;
-}
-
-.achievement-progress-bar {
-  height: 100%;
-  background-color: var(--accent-color);
-  border-radius: 3px;
-}
-
-.achievement-progress-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.achievement-unlocked .achievement-icon {
-  background-color: rgba(76, 175, 80, 0.2);
-}
-
-.achievement-unlocked .achievement-icon svg {
-  stroke: var(--success-color);
+.leaderboard-name {
+  color: var(--accent-color);
+  font-weight: 700;
 }
 
 /* Responsive styles */
-@media (max-width: 768px) {
-  .page-layout {
-    flex-direction: column;
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
   }
-
-  .mobile-menu-btn {
-    display: block;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    height: 100vh;
-    z-index: 1000;
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar.collapsed {
-    transform: translateX(0);
-    left: -250px;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(250px);
-    left: 0;
-  }
-
+}
+@media (max-width: 1024px) {
   .main-content {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    margin-left: 0 !important; /* Override desktop margin */
+    margin-left: 0;
+    width: 100vw;
   }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .page-title {
-    font-size: 20px;
-  }
-
-  .filter-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+}
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
   }
 }
-
-@media (min-width: 769px) {
-  .mobile-menu-btn {
-    display: none;
-  }
-
-  .sidebar {
-    width: 250px;
-    transition: width 0.3s ease;
-    transform: translateX(0);
-    left: 0;
-  }
-
-  .sidebar.collapsed {
-    width: 80px;
-  }
-
-  .sidebar.mobile-open { /* This class is for mobile, hide on desktop */
-    transform: translateX(0);
-    left: 0;
-  }
-
+@media (max-width: 768px) {
   .main-content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
+    margin-left: 0;
+    width: 100vw;
+    padding: 10px 2vw;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .leaderboard-section {
+    padding: 16px 6px;
+  }
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .main-content {
+    margin-left: 0;
+    width: 100vw;
+    padding: 4px 1vw;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .leaderboard-section {
+    padding: 8px 2px;
+  }
+  .achievements-grid {
+    grid-template-columns: 1fr;
   }
 }
 
