@@ -8,7 +8,7 @@
     </button>
 
     <!-- Sidebar -->
-    <div class="sidebar" :class="{ collapsed: isSidebarCollapsed, 'mobile-open': mobileOpen }" id="sidebar">
+    <div class="sidebar glass-panel fine-border" :class="{ collapsed: isSidebarCollapsed, 'mobile-open': mobileOpen }" id="sidebar">
       <div class="toggle-btn" @click="toggleSidebar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -16,12 +16,11 @@
       </div>
 
       <div class="sidebar-content">
+        <div class="sidepanel-coatofarms">
+          <img src="@/assets/images/coat of arms.png" alt="Kenya Coat of Arms" />
+        </div>
         <div class="sidebar-header">
-          <div class="logo-container">
-            <div class="logo">
-              <img src="/Openchs logo-1.png" alt="OpenCHS Logo">
-            </div>
-          </div>
+          <!-- Logo removed as requested -->
         </div>
         
         <div class="nav-section">
@@ -90,6 +89,17 @@
             <div class="nav-text">Wallboard</div>
           </router-link>
           
+          <router-link to="/admin" class="nav-item" :class="{ active: $route.path === '/admin' }">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="nav-text">Admin</div>
+          </router-link>
+          
           <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
             <div class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -98,17 +108,6 @@
               </svg>
             </div>
             <div class="nav-text">Settings</div>
-          </router-link>
-
-          <!-- Super Admin Dashboard Button -->
-          <router-link to="/superadmin" class="nav-item" :class="{ active: $route.path === '/superadmin' }" v-if="userRole === 'super-admin'">
-            <div class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22S8 18 8 12V5L12 2L16 5V12C16 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="nav-text">Super Admin</div>
           </router-link>
         </div>
         
@@ -251,6 +250,8 @@ onMounted(() => {
   z-index: 100;
   display: flex;
   flex-direction: column;
+  border: none;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
 }
 
 .sidebar-content {
@@ -265,6 +266,7 @@ onMounted(() => {
   flex-shrink: 0;
   padding: 20px;
   text-align: center;
+  border-bottom: none;
 }
 
 .nav-section {
@@ -285,8 +287,8 @@ onMounted(() => {
 .sidebar-bottom {
   padding: 15px;
   flex-shrink: 0;
-  background-color: var(--sidebar-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  border-top: none;
 }
 
 .toggle-btn {
@@ -384,6 +386,7 @@ onMounted(() => {
   color: var(--text-color);
   transition: all 0.3s ease;
   min-height: 44px;
+  background: transparent;
 }
 
 .nav-item:hover {
@@ -392,7 +395,17 @@ onMounted(() => {
 }
 
 .nav-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
+  background: #964B00 !important;
+  color: #fff !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  padding: 10px 18px !important;
+}
+
+.nav-item.active .nav-icon svg,
+.nav-item.active .nav-text {
+  color: #fff !important;
+  stroke: #fff !important;
 }
 
 .nav-icon {
@@ -418,6 +431,11 @@ onMounted(() => {
   stroke: var(--text-color);
   width: 18px;
   height: 18px;
+  transition: color 0.3s, stroke 0.3s;
+}
+
+.nav-item.active .nav-icon {
+  background: rgba(255, 140, 0, 0.10);
 }
 
 .nav-text {
@@ -527,7 +545,7 @@ onMounted(() => {
 }
 
 .logout-btn {
-  background-color: var(--danger-color);
+  background-color: #8B0000;
   color: white;
   border: none;
   border-radius: 25px;
@@ -540,7 +558,7 @@ onMounted(() => {
 }
 
 .logout-btn:hover {
-  background-color: #e60000;
+  background-color: #8B0000;
   transform: translateY(-1px);
 }
 
@@ -568,22 +586,82 @@ onMounted(() => {
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 200px;
+  }
+}
 @media (max-width: 1024px) {
   .mobile-menu-btn {
     display: flex;
   }
-  
   .sidebar {
-    transform: translateX(-100%);
+    position: fixed;
+    left: -250px;
+    top: 0;
+    height: 100vh;
     z-index: 200;
+    width: 250px;
+    transform: translateX(-100%);
+    transition: transform 0.3s;
   }
-  
   .sidebar.mobile-open {
     transform: translateX(0);
+    left: 0;
   }
-  
-  .expand-btn {
-    display: none !important;
+  .main-content {
+    margin-left: 0 !important;
+    width: 100vw !important;
   }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    width: 180px;
+  }
+}
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100vw;
+    left: -100vw;
+  }
+  .sidebar.mobile-open {
+    left: 0;
+    width: 100vw;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    padding: 10px 2vw;
+  }
+}
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100vw;
+    left: -100vw;
+  }
+  .sidebar.mobile-open {
+    left: 0;
+    width: 100vw;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    padding: 6px 1vw;
+  }
+}
+
+.sidepanel-coatofarms {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5rem 0 1rem 0;
+}
+
+.sidepanel-coatofarms img {
+  max-width: 60px;
+  max-height: 90px;
+  object-fit: contain;
+  display: block;
 }
 </style>

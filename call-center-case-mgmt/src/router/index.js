@@ -13,7 +13,7 @@ import CaseCreation from '../pages/CaseCreation.vue'
 import superadmin from '../pages/SuperAdminDashboard.vue'
 import AdminPanel from '../pages/AdminPanel.vue'
 import TestCall from '../pages/TestCall.vue'
-import myadmintest from '../pages/myadmintest.vue'
+
 
 const routes = [
   { path: '/', component: Login },
@@ -29,7 +29,7 @@ const routes = [
   { path: '/superadmin', component: superadmin },
   { path: '/admin', component: AdminPanel },
   { path: '/test-call', component: TestCall },
-  { path: '/myadmintest', component: myadmintest }
+
 
 ]
 

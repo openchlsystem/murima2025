@@ -231,9 +231,9 @@
 </template>
 
 <script setup>
-import SidePanel from '@/components/SidePanel.vue'
+import SidePanel from '../components/SidePanel.vue'
 import { ref, computed, onMounted } from 'vue'
-import { useThemeStore } from '@/stores/theme.js'
+import { useThemeStore } from '../stores/theme.js'
 
 // Theme store
 const themeStore = useThemeStore()

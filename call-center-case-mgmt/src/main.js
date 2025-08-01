@@ -2,9 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
-import i18n from '@/utils/i18n'
-import '@/assets/styles/reset.css'
-
+import { useThemeStore } from './stores/theme.js'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -22,7 +20,11 @@ window.addEventListener('error', (event) => {
 
 app.use(pinia)
 app.use(router)
-app.use(i18n)
+// app.use(i18n)
+
+// Initialize theme store
+const themeStore = useThemeStore()
+themeStore.initializeTheme()
 
 // Add debugging
 console.log('Mounting app...')
