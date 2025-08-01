@@ -128,46 +128,79 @@
             </div>
 
             <!-- Queue Status -->
-            <!-- (REMOVED from here, now at top) -->
+            <div v-if="!activeCall && !incomingCall" class="queue-status">
+              <div class="queue-state">
+                {{ isInQueue ? 'In Queue - Ready for calls' : 'Not in queue' }}
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Dashboard Grid -->
         <div class="dashboard-grid">
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Total Calls</div>
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
             </div>
-            <div class="card-value gold-text">53</div>
+            <div class="card-value">53</div>
             <div class="card-subtitle">+12% from last week</div>
           </div>
 
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Active Cases</div>
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>
+              </div>
             </div>
             <div class="card-value">24</div>
             <div class="card-subtitle">+5% from last week</div>
           </div>
 
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Pending Calls</div>
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>
+              </div>
             </div>
             <div class="card-value">5</div>
             <div class="card-subtitle">-2% from last week</div>
           </div>
 
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Completed Calls</div>
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M22 4L12 14.01l-3-3" stroke="white" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>
+              </div>
             </div>
             <div class="card-value">42</div>
             <div class="card-subtitle">+8% from last week</div>
           </div>
 
           <!-- New Prank Calls Card -->
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Prank Calls</div>
               <div class="card-icon prank-calls">
@@ -186,7 +219,7 @@
           </div>
 
           <!-- New Counsellors Online Card -->
-          <div class="dashboard-card glass-card fine-border">
+          <div class="dashboard-card">
             <div class="card-header">
               <div class="card-title">Counsellors Online</div>
               <div class="card-icon counsellors-online">
@@ -243,6 +276,13 @@
 
           <div class="call-list">
             <div v-for="call in recentCalls" :key="call.id" class="call-item">
+              <div class="call-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
               <div class="call-details">
                 <div class="call-type">{{ call.type }}</div>
                 <div class="call-time">{{ call.time }}</div>
@@ -378,17 +418,13 @@
 <script setup>
   import { ref, computed, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-import SidePanel from '@/components/SidePanel.vue'
-import { joinQueue } from '@/utils/sipClient.js'
-import { useThemeStore } from '../stores/theme.js'
+  import SidePanel from '@/components/SidePanel.vue'
+  import { joinQueue } from '@/utils/sipClient.js'
 
-// Theme store
-const themeStore = useThemeStore()
-
-// Reactive state
-const route = useRoute()
-const router = useRouter()
-const currentTheme = computed(() => themeStore.currentTheme)
+  // Reactive state
+  const route = useRoute()
+  const router = useRouter()
+  const currentTheme = ref('dark')
   const userRole = ref('super-admin')
 
   // Queue management state
@@ -648,40 +684,44 @@ const currentTheme = computed(() => themeStore.currentTheme)
   }
 
   const toggleTheme = () => {
-    themeStore.toggleTheme()
+    currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('theme', currentTheme.value)
+    applyTheme(currentTheme.value)
   }
 
   // Lifecycle
   onMounted(() => {
-    // Theme is already initialized in main.js
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme) {
+      currentTheme.value = savedTheme
+    }
+
+    // Apply theme immediately
+    applyTheme(currentTheme.value)
   })
 </script>
 
 <style>
+
   body {
     background-color: var(--background-color);
     color: var(--text-color);
+    display: flex;
     min-height: 100vh;
-    margin: 0;
-    padding: 0;
+    transition: background-color 0.3s, color 0.3s;
+    overflow: hidden;
   }
 
-  .main-content, .dashboard-container, .dashboard-card, .status-badge, .view-tab, .dashboard-table {
-    background: var(--content-bg);
-    color: var(--text-color);
-    border-color: var(--border-color);
-  }
-
-  .status-badge, .view-tab.active {
-    background: var(--accent-color) !important;
-    color: #fff !important;
-    border-color: var(--accent-color) !important;
-  }
-
-  .main-content, .main-scroll-content {
-    min-height: 100vh;
-    overflow-y: auto;
+  .main-content {
     flex: 1;
+    margin-left: var(--sidebar-width, 250px);
+    height: 100vh;
+    background-color: var(--background-color);
+    transition: margin-left 0.3s ease, background-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .header {
@@ -723,6 +763,7 @@ const currentTheme = computed(() => themeStore.currentTheme)
   }
 
   .main-scroll-content {
+    flex: 1;
     padding: 20px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -859,6 +900,21 @@ const currentTheme = computed(() => themeStore.currentTheme)
 
   .call-item:hover {
     transform: translateX(5px);
+  }
+
+  .call-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--content-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+  }
+
+  .call-icon svg {
+    stroke: var(--text-color);
   }
 
   .call-details {
@@ -1195,12 +1251,6 @@ const currentTheme = computed(() => themeStore.currentTheme)
     min-width: 100px;
   }
 
-  .status-available,
-  .status-in-call,
-  .status-on-break {
-    color: #fff !important;
-  }
-
   .status-available {
     background-color: var(--success-color);
   }
@@ -1306,69 +1356,5 @@ const currentTheme = computed(() => themeStore.currentTheme)
       padding: 4px 8px;
       font-size: 11px;
     }
-  }
-
-  .dashboard-queue-status {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 10px;
-    margin-bottom: 10px;
-  }
-  .queue-state {
-    display: flex;
-    align-items: center;
-    font-size: 1.05rem;
-    font-weight: 600;
-    background: rgba(255,255,255,0.25);
-    border-radius: 18px;
-    padding: 8px 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    backdrop-filter: blur(8px);
-    color: var(--accent-color);
-    transition: background 0.3s, color 0.3s;
-  }
-  .queue-state.in-queue {
-    color: var(--accent-color);
-    background: rgba(150,75,0,0.12);
-  }
-  .queue-state.not-in-queue {
-    color: #fff;
-    background: rgba(0,0,0,0.25);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    border: 1px solid rgba(255,255,255,0.12);
-  }
-
-  .dashboard-card, .dashboard-card * {
-    color: #222 !important;
-  }
-  .card-subtitle, .dashboard-card .card-subtitle {
-    color: #444 !important;
-  }
-  .status-offline {
-    color: #bc0103 !important;
-    font-weight: 600;
-  }
-  .status-available {
-    color: #1e7e34 !important;
-    font-weight: 600;
-  }
-
-  /* Dark mode overrides */
-  :root.dark .dashboard-card, :root.dark .dashboard-card *,
-  body.dark .dashboard-card, body.dark .dashboard-card *,
-  [data-theme="dark"] .dashboard-card, [data-theme="dark"] .dashboard-card * {
-    color: #fff !important;
-  }
-  :root.dark .card-subtitle, :root.dark .dashboard-card .card-subtitle,
-  body.dark .card-subtitle, body.dark .dashboard-card .card-subtitle,
-  [data-theme="dark"] .card-subtitle, [data-theme="dark"] .dashboard-card .card-subtitle {
-    color: #eee !important;
-  }
-  :root.dark .status-offline, body.dark .status-offline, [data-theme="dark"] .status-offline {
-    color: #ff6b6b !important;
-  }
-  :root.dark .status-available, body.dark .status-available, [data-theme="dark"] .status-available {
-    color: #7fff7f !important;
   }
 </style>

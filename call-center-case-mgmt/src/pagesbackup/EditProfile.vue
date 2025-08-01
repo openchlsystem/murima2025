@@ -133,8 +133,8 @@
           <router-link to="/dashboard" class="btn btn-cancel">
             Cancel
           </router-link>
-          <button class="glass-btn filled">
-            Update Profile
+          <button class="btn btn-save" type="submit">
+            Save Profile
           </button>
         </div>
       </form>
@@ -307,28 +307,6 @@ label {
 }
 
 .btn-save:hover {
-  background-color: var(--accent-hover);
-}
-
-.glass-btn {
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-btn.filled {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-}
-
-.glass-btn.filled:hover {
   background-color: var(--accent-hover);
 }
 </style>

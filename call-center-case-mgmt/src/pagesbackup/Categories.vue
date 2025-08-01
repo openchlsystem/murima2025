@@ -105,7 +105,7 @@
           <div 
             v-for="category in filteredCategories" 
             :key="category.id"
-            class="category-card glass-card fine-border"
+            class="category-card"
           >
             <div class="category-header">
               <div class="category-title">{{ category.title }}</div>
