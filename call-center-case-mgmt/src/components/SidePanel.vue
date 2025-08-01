@@ -89,6 +89,17 @@
             <div class="nav-text">Wallboard</div>
           </router-link>
           
+          <router-link to="/admin" class="nav-item" :class="{ active: $route.path === '/admin' }">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="nav-text">Admin</div>
+          </router-link>
+          
           <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
             <div class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -652,48 +663,5 @@ onMounted(() => {
   max-height: 90px;
   object-fit: contain;
   display: block;
-}
-
-[data-theme='dark'] .sidebar {
-  background-color: var(--sidebar-bg) !important;
-  color: var(--text-color) !important;
-}
-[data-theme='dark'] .nav-item,
-[data-theme='dark'] .nav-text,
-[data-theme='dark'] .nav-icon svg {
-  color: #fff !important;
-  stroke: #fff !important;
-}
-[data-theme='dark'] .nav-item,
-[data-theme='dark'] .nav-text {
-  opacity: 1 !important;
-}
-[data-theme='dark'] .nav-item.active {
-  background: var(--accent-color) !important;
-  color: #fff !important;
-}
-[data-theme='dark'] .nav-icon {
-  background: rgba(255,255,255,0.08) !important;
-}
-[data-theme='dark'] .nav-item.active .nav-icon svg,
-[data-theme='dark'] .nav-item.active .nav-text {
-  color: #fff !important;
-  stroke: #fff !important;
-}
-[data-theme='dark'] .nav-text {
-  color: var(--text-color) !important;
-}
-[data-theme='dark'] .user-avatar {
-  background-color: var(--text-color) !important;
-}
-[data-theme='dark'] .user-avatar svg {
-  fill: var(--background-color) !important;
-}
-[data-theme='dark'] .status {
-  color: #fff !important;
-}
-[data-theme='dark'] .toggle-btn, [data-theme='dark'] .expand-btn {
-  background-color: var(--sidebar-bg) !important;
-  color: var(--text-color) !important;
 }
 </style>
