@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/stores/auth';
 
 // Auto-detect baseURL
 const isLocalhost = window.location.hostname === 'localhost' ||
@@ -6,7 +7,7 @@ const isLocalhost = window.location.hostname === 'localhost' ||
   window.location.hostname === '0.0.0.0';
 
 const baseURL = import.meta.env.VITE_API_URL ||
-  (isLocalhost ?  'http://Localhost:8520/api/v1' : window.location.origin);
+  (isLocalhost ? 'http://acme-healthcare.localhost:8520/api/v1' : window.location.origin);
 
 const axiosInstance = axios.create({
   baseURL,
@@ -20,6 +21,8 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
+    const authStore = useAuthStore();
+
     // Log request details in development
     if (import.meta.env.DEV) {
       console.log('Request:', {
@@ -31,9 +34,8 @@ axiosInstance.interceptors.request.use(
     }
 
     // Add authorization token if available
-    const accessToken = localStorage.getItem('access_token');
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    if (authStore.accessToken) {
+      config.headers.Authorization = `Bearer ${authStore.accessToken}`;
     }
 
     return config;
@@ -49,6 +51,13 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
+    const authStore = useAuthStore();
+
+    // If this is a login response, store the auth data
+    if (response.config.url.includes('/auth/login/') && response.data.access_token) {
+      authStore.setAuthData(response.data);
+    }
+
     // Log response details in development
     if (import.meta.env.DEV) {
       console.log('Response:', {
@@ -60,6 +69,8 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const authStore = useAuthStore();
+
     if (import.meta.env.DEV) {
       console.error('Response Error Interceptor:', error);
     }
@@ -72,19 +83,22 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) throw new Error('No refresh token available');
+        if (!authStore.refreshToken) {
+          throw new Error('No refresh token available');
+        }
 
         // Request new access token
         const response = await axios.post(`${baseURL}/auth/token/refresh/`, {
-          refresh: refreshToken
+          refresh: authStore.refreshToken
         });
 
-        // Store new tokens
-        localStorage.setItem('access_token', response.data.access);
-        if (response.data.refresh) {
-          localStorage.setItem('refresh_token', response.data.refresh);
-        }
+        // Update auth store with new tokens
+        authStore.setAuthData({
+          access_token: response.data.access,
+          refresh_token: response.data.refresh || authStore.refreshToken, // Keep old refresh if new one isn't provided
+          user: authStore.user,
+          session_id: authStore.sessionId
+        });
 
         // Update authorization header
         originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
@@ -92,10 +106,8 @@ axiosInstance.interceptors.response.use(
         // Retry original request
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Token refresh failed - clear storage and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        // Token refresh failed - clear auth data
+        authStore.clearAuthData();
 
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);

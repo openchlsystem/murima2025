@@ -1,5 +1,5 @@
-<template>
-
+image.png<template>
+<div>
   <!-- SidePanel Component -->
   <SidePanel 
     :userRole="userRole"
@@ -92,72 +92,6 @@
               </div>
             </div>
           </div>
-          <button class="theme-toggle" @click="toggleTheme">
-            <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-              <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-          </button>
-        </div>
-        
-        <!-- Side Drawer for Case Details -->
-        <div class="case-detail-drawer" v-if="selectedCaseDetails">
-          <div class="case-detail-drawer-header">
-            <div class="case-detail-title">{{ selectedCaseDetails.caseTitle || selectedCaseDetails.title }}</div>
-            <div class="case-detail-id">Case ID: {{ selectedCaseDetails.id }}</div>
-            <button class="close-details" @click="selectedCaseId = null">×</button>
-          </div>
-          <div class="case-detail-content">
-            <div class="detail-item">
-              <div class="detail-label">Case Filer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseFiler || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Caseer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseer || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Case Priority</div>
-              <div :class="['detail-value', selectedCaseDetails.priority.toLowerCase()]">{{ selectedCaseDetails.priority }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Jurisdiction</div>
-              <div class="detail-value">{{ selectedCaseDetails.jurisdiction || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Disposition</div>
-              <div :class="['detail-value', { abusive: selectedCaseDetails.disposition === 'Abusive Call' }]">
-                {{ selectedCaseDetails.disposition || 'N/A' }}
-              </div>
-            </div>
-          </div>
         </div>
         
         <!-- Side Drawer for Case Details -->
@@ -209,7 +143,7 @@
       </div>
     </div>
   </div>
-
+</div>
 </template>
 
 <script setup>
@@ -930,23 +864,6 @@ body {
 }
 @media (max-width: 768px) {
   .main-content {
-    flex: 1;
-    margin-left: var(--sidebar-width, 250px);
-    height: 100vh;
-    background-color: var(--background-color);
-    transition: margin-left 0.3s ease, background-color 0.3s;
-    display: flex;
-    flex-direction: column;
-  }
-  .case-detail-drawer {
-    width: 100vw;
-    border-radius: 0;
-    left: 0;
-    right: 0;
-  }
-}
-@media (max-width: 768px) {
-  .main-content {
     margin-left: 0;
     padding: 15px;
   }
@@ -972,168 +889,6 @@ body {
 
   .case-meta {
     font-size: 11px;
-  }
-
-  .cases-main-content {
-    padding-top: 4px;
-  }
-}
-.cases-main-content {
-  padding-top: 8px;
-}
-:root {
-  --drawer-bg-dark: rgba(34,34,34,0.98);
-  --drawer-bg-light: #fff;
-  --drawer-card-bg-dark: rgba(255,255,255,0.07);
-  --drawer-card-bg-light: #f5f5f5;
-  --drawer-card-border-dark: 1px solid rgba(255,255,255,0.08);
-  --drawer-card-border-light: 1px solid #e0e0e0;
-  --drawer-title-dark: #fff;
-  --drawer-title-light: #222;
-  --drawer-label-dark: #bbb;
-  --drawer-label-light: #555;
-  --drawer-value-dark: #fff;
-  --drawer-value-light: #222;
-  --drawer-value-high: #ff3b30;
-  --drawer-value-medium: #FFA500;
-  --drawer-value-low: #4CAF50;
-  --priority-dot-border-dark: #fff;
-  --priority-dot-border-light: #fff;
-  --priority-dot-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-}
-[data-theme="light"] .case-detail-drawer {
-  background: var(--drawer-bg-light);
-}
-[data-theme="dark"] .case-detail-drawer {
-  background: var(--drawer-bg-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-item {
-  background: var(--drawer-card-bg-light);
-  border: var(--drawer-card-border-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-item {
-  background: var(--drawer-card-bg-dark);
-  border: var(--drawer-card-border-dark);
-}
-[data-theme="light"] .case-detail-drawer .case-detail-title {
-  color: var(--drawer-title-light);
-}
-[data-theme="dark"] .case-detail-drawer .case-detail-title {
-  color: var(--drawer-title-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-label {
-  color: var(--drawer-label-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-label {
-  color: var(--drawer-label-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-value {
-  color: var(--drawer-value-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value {
-  color: var(--drawer-value-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.high {
-  color: var(--drawer-value-high);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.medium {
-  color: var(--drawer-value-medium);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.low {
-  color: var(--drawer-value-low);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.high {
-  color: var(--drawer-value-high);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.medium {
-  color: var(--drawer-value-medium);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.low {
-  color: var(--drawer-value-low);
-}
-[data-theme="light"] .priority-dot {
-  border: 1.5px solid var(--priority-dot-border-light);
-  box-shadow: var(--priority-dot-shadow);
-}
-[data-theme="dark"] .priority-dot {
-  border: 1.5px solid var(--priority-dot-border-dark);
-  box-shadow: var(--priority-dot-shadow);
-}
-[data-theme="light"] .case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: #fff8f0;
-}
-[data-theme="dark"] .case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: rgba(150,75,0,0.08);
-}
-body.high-contrast .case-detail-drawer,
-body.high-contrast .case-detail-drawer .detail-item,
-body.high-contrast .case-detail-drawer .case-detail-title,
-body.high-contrast .case-detail-drawer .detail-label,
-body.high-contrast .case-detail-drawer .detail-value,
-body.high-contrast .case-item.selected,
-body.high-contrast .priority-dot {
-  background: #000 !important;
-  color: #fff !important;
-  border-color: #fff !important;
-}
-body.high-contrast .priority-dot.high { background: #ff3b30 !important; }
-body.high-contrast .priority-dot.medium { background: #FFA500 !important; }
-body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
-@media (max-width: 900px) {
-  .case-item {
-    padding: 14px 10px;
-    max-width: 100vw;
-    min-width: 0;
-  }
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
-  }
-}
-@media (max-width: 600px) {
-  .case-item {
-    padding: 12px 6px 14px 6px;
-    gap: 8px;
-    border-radius: 12px;
-  }
-  .case-icon {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    max-width: 28px;
-    max-height: 28px;
-    margin-right: 6px;
-  }
-  .case-title {
-    font-size: 0.95rem;
-  }
-  .case-meta {
-    font-size: 11px;
-  }
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
   }
 
   .cases-main-content {

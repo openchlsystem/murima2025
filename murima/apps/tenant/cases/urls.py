@@ -1,71 +1,35 @@
 from django.urls import path
 from .views import (
-    CaseTypeListCreateView,
-    CaseTypeRetrieveUpdateDestroyView,
-    CaseStatusListCreateView,
-    CaseStatusRetrieveUpdateDestroyView,
-    CaseListCreateView,
-    CaseRetrieveUpdateDestroyView,
-    MyAssignedCasesView,
-    MyTeamCasesView,
-    CaseDocumentListCreateView,
-    CaseDocumentRetrieveUpdateDestroyView,
-    CaseNoteListCreateView,
-    CaseNoteRetrieveUpdateDestroyView,
-    CaseHistoryListView,
-    CaseLinkListCreateView,
-    CaseLinkRetrieveUpdateDestroyView,
-    CaseTemplateListCreateView,
-    CaseTemplateRetrieveUpdateDestroyView,
-    SLAListCreateView,
-    SLARetrieveUpdateDestroyView,
-    WorkflowRuleListCreateView,
-    WorkflowRuleRetrieveUpdateDestroyView,
-    AuditLogListView,
+    CaseTypeListAPIView, CaseStatusListAPIView,
+    CaseListCreateAPIView, CaseRetrieveUpdateDestroyAPIView,
+    CaseDocumentListCreateAPIView, CaseDocumentRetrieveUpdateDestroyAPIView,
+    CaseNoteListCreateAPIView, CaseNoteRetrieveUpdateDestroyAPIView,
+    ProtectionDetailRetrieveUpdateAPIView, SafetyPlanRetrieveUpdateAPIView,
+    CaseStatusUpdateAPIView, CaseBulkUpdateAPIView
 )
 
 urlpatterns = [
-    # Case Types
-    path('case-types/', CaseTypeListCreateView.as_view(), name='case-type-list'),
-    path('case-types/<int:pk>/', CaseTypeRetrieveUpdateDestroyView.as_view(), name='case-type-detail'),
-    
-    # Case Statuses
-    path('case-statuses/', CaseStatusListCreateView.as_view(), name='case-status-list'),
-    path('case-statuses/<int:pk>/', CaseStatusRetrieveUpdateDestroyView.as_view(), name='case-status-detail'),
+    # Case Types and Statuses
+    path('case-types/', CaseTypeListAPIView.as_view(), name='case-type-list'),
+    path('case-statuses/', CaseStatusListAPIView.as_view(), name='case-status-list'),
     
     # Cases
-    path('cases/', CaseListCreateView.as_view(), name='case-list'),
-    path('cases/<int:pk>/', CaseRetrieveUpdateDestroyView.as_view(), name='case-detail'),
-    path('my-assigned-cases/', MyAssignedCasesView.as_view(), name='my-assigned-cases'),
-    path('my-team-cases/', MyTeamCasesView.as_view(), name='my-team-cases'),
+    path('cases/', CaseListCreateAPIView.as_view(), name='case-list'),
+    path('cases/<int:pk>/', CaseRetrieveUpdateDestroyAPIView.as_view(), name='case-detail'),
     
     # Case Documents
-    path('cases/<int:case_pk>/documents/', CaseDocumentListCreateView.as_view(), name='case-document-list'),
-    path('cases/<int:case_pk>/documents/<int:pk>/', CaseDocumentRetrieveUpdateDestroyView.as_view(), name='case-document-detail'),
+    path('cases/<int:case_id>/documents/', CaseDocumentListCreateAPIView.as_view(), name='case-document-list'),
+    path('cases/<int:case_id>/documents/<int:pk>/', CaseDocumentRetrieveUpdateDestroyAPIView.as_view(), name='case-document-detail'),
     
     # Case Notes
-    path('cases/<int:case_pk>/notes/', CaseNoteListCreateView.as_view(), name='case-note-list'),
-    path('cases/<int:case_pk>/notes/<int:pk>/', CaseNoteRetrieveUpdateDestroyView.as_view(), name='case-note-detail'),
+    path('cases/<int:case_id>/notes/', CaseNoteListCreateAPIView.as_view(), name='case-note-list'),
+    path('cases/<int:case_id>/notes/<int:pk>/', CaseNoteRetrieveUpdateDestroyAPIView.as_view(), name='case-note-detail'),
     
-    # Case History
-    path('cases/<int:case_pk>/history/', CaseHistoryListView.as_view(), name='case-history-list'),
+    # Protection Case Features
+    path('cases/<int:case_id>/protection-details/', ProtectionDetailRetrieveUpdateAPIView.as_view(), name='protection-details'),
+    path('cases/<int:case_id>/safety-plan/', SafetyPlanRetrieveUpdateAPIView.as_view(), name='safety-plan'),
     
-    # Case Links
-    path('cases/<int:case_pk>/links/', CaseLinkListCreateView.as_view(), name='case-link-list'),
-    path('cases/<int:case_pk>/links/<int:pk>/', CaseLinkRetrieveUpdateDestroyView.as_view(), name='case-link-detail'),
-    
-    # Case Templates
-    path('case-templates/', CaseTemplateListCreateView.as_view(), name='case-template-list'),
-    path('case-templates/<int:pk>/', CaseTemplateRetrieveUpdateDestroyView.as_view(), name='case-template-detail'),
-    
-    # SLAs
-    path('slas/', SLAListCreateView.as_view(), name='sla-list'),
-    path('slas/<int:pk>/', SLARetrieveUpdateDestroyView.as_view(), name='sla-detail'),
-    
-    # Workflow Rules
-    path('workflow-rules/', WorkflowRuleListCreateView.as_view(), name='workflow-rule-list'),
-    path('workflow-rules/<int:pk>/', WorkflowRuleRetrieveUpdateDestroyView.as_view(), name='workflow-rule-detail'),
-    
-    # Audit Logs
-    path('audit-logs/', AuditLogListView.as_view(), name='audit-log-list'),
+    # Workflow Actions
+    path('cases/<int:case_id>/change-status/', CaseStatusUpdateAPIView.as_view(), name='change-status'),
+    path('cases/bulk-update/', CaseBulkUpdateAPIView.as_view(), name='bulk-update'),
 ]

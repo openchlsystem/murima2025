@@ -472,3 +472,9 @@ class TenantAPIUsageView(ListAPIView):
                 'total_errors': sum(t['error_requests'] for t in usage_by_tenant),
             }
         })
+        
+        
+        
+# Temporarry placeholder for Tenant building
+
+

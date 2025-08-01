@@ -20,6 +20,7 @@ window.addEventListener('error', (event) => {
 
 app.use(pinia)
 app.use(router)
+// app.use(i18n)
 
 // Initialize theme store
 const themeStore = useThemeStore()

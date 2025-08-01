@@ -14,6 +14,7 @@ import superadmin from '../pages/SuperAdminDashboard.vue'
 import AdminPanel from '../pages/AdminPanel.vue'
 import TestCall from '../pages/TestCall.vue'
 
+
 const routes = [
   { path: '/', component: Login },
   { path: '/dashboard', component: Dashboard },
@@ -27,7 +28,9 @@ const routes = [
   { path: '/case-creation', component: CaseCreation },
   { path: '/superadmin', component: superadmin },
   { path: '/admin', component: AdminPanel },
-  { path: '/test-call', component: TestCall }
+  { path: '/test-call', component: TestCall },
+
+
 ]
 
 export const router = createRouter({
