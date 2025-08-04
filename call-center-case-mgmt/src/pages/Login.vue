@@ -268,422 +268,302 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-// import axiosInstance from '../utils/axios';
+  import { ref, computed, onMounted, onUnmounted } from 'vue';
+  import { useRouter, useRoute } from 'vue-router';
+  import { useAuthStore } from '@/stores/auth';
+  import axios from '@/utils/axios'; // Adjust as needed
 
-export default {
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
+  export default {
+    setup() {
+      const router = useRouter();
+      const route = useRoute();
+      const authStore = useAuthStore();
 
-    // Form data
-    const contactInfo = ref(''); // This will hold email or phone based on delivery method
-    const password = ref('');
-    const loginMethod = ref('otp'); // 'password' or 'otp'
-    const deliveryMethod = ref(''); // 'email', 'sms', 'whatsapp'
-    const rememberMe = ref(false);
-    const otpDigits = ref(['', '', '', '', '', '']);
-    const otpInputs = ref([]);
-    const showPassword = ref(false);
+      const contactInfo = ref('');
+      const password = ref('');
+      const loginMethod = ref('otp');
+      const deliveryMethod = ref('');
+      const rememberMe = ref(false);
+      const otpDigits = ref(['', '', '', '', '', '']);
+      const otpInputs = ref([]);
+      const showPassword = ref(false);
 
-    // Form state
-    const currentStep = ref('email');
-    const loading = ref(false);
-    const submitted = ref(false);
-    const error = ref('');
-    const successMessage = ref('');
-    const returnUrl = ref(route.query.returnUrl || '/dashboard');
-    const resendTimer = ref(0);
-    const resendInterval = ref(null);
-    const userId = ref('');
-    const maskedContact = ref('');
+      const currentStep = ref('email');
+      const loading = ref(false);
+      const submitted = ref(false);
+      const error = ref('');
+      const successMessage = ref('');
+      const returnUrl = ref(route.query.returnUrl || '/dashboard');
+      const resendTimer = ref(0);
+      const resendInterval = ref(null);
+      const userId = ref('');
+      const maskedContact = ref('');
 
-    // SIP Details 
-    const sipConnectionDetails = ref({
-      uri: 'sip:6001@54.238.49.155',
-      password: 'securepassword',
-      websocketURL: 'wss://54.238.49.155:8089/ws'
-    });
+      const sipConnectionDetails = ref({
+        uri: 'sip:6001@54.238.49.155',
+        password: 'securepassword',
+        websocketURL: 'wss://54.238.49.155:8089/ws'
+      });
 
-    // Computed properties
-    const isOtpComplete = computed(() => {
-      return otpDigits.value.every(digit => digit !== '');
-    });
-
-    const isFormValid = computed(() => {
-      if (currentStep.value === 'email') {
-        if (loginMethod.value === 'password') {
-          return contactInfo.value.length > 0 && password.value.length > 0;
-        } else if (loginMethod.value === 'otp') {
-          return contactInfo.value.length > 0 && deliveryMethod.value !== '';
+      const isOtpComplete = computed(() => otpDigits.value.every(d => d !== ''));
+      const isFormValid = computed(() => {
+        if (currentStep.value === 'email') {
+          if (loginMethod.value === 'password') {
+            return contactInfo.value && password.value;
+          } else {
+            return contactInfo.value && deliveryMethod.value;
+          }
+        } else if (currentStep.value === 'otp') {
+          return isOtpComplete.value;
         }
-      } else if (currentStep.value === 'otp') {
-        return isOtpComplete.value;
-      }
-      return false;
-    });
+        return false;
+      });
 
-    // Helper methods for dynamic input handling
-    const getContactLabel = () => {
-      if (deliveryMethod.value === 'sms' || deliveryMethod.value === 'whatsapp') {
-        return 'Phone Number';
-      }
-      return 'Email Address';
-    };
+      const getContactLabel = () =>
+        ['sms', 'whatsapp'].includes(deliveryMethod.value) ? 'Phone Number' : 'Email Address';
 
-    const getInputType = () => {
-      if (deliveryMethod.value === 'sms' || deliveryMethod.value === 'whatsapp') {
-        return 'tel';
-      }
-      return 'email';
-    };
+      const getInputType = () =>
+        ['sms', 'whatsapp'].includes(deliveryMethod.value) ? 'tel' : 'email';
 
-    const getInputPlaceholder = () => {
-      if (deliveryMethod.value === 'sms' || deliveryMethod.value === 'whatsapp') {
-        return 'Enter your phone number';
-      }
-      return 'Enter your email address';
-    };
+      const getInputPlaceholder = () =>
+        ['sms', 'whatsapp'].includes(deliveryMethod.value)
+          ? 'Enter your phone number'
+          : 'Enter your email address';
 
-    const validateContactInfo = () => {
-      if (deliveryMethod.value === 'sms' || deliveryMethod.value === 'whatsapp') {
-        // Enhanced phone number validation
-        const phoneRegex = /^[\+]?[1-9][\d]{7,15}$/;
-        const cleanPhone = contactInfo.value.replace(/[\s\-$$$$]/g, '');
-        return phoneRegex.test(cleanPhone);
-      } else {
-        // Enhanced email validation
-        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+      const validateContactInfo = () => {
+        if (['sms', 'whatsapp'].includes(deliveryMethod.value)) {
+          const phoneRegex = /^[\+]?[1-9][\d]{7,15}$/;
+          const cleanPhone = contactInfo.value.replace(/[\s\-]/g, '');
+          return phoneRegex.test(cleanPhone);
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(contactInfo.value.trim());
-      }
-    };
+      };
 
-    // Methods
-    const selectLoginMethod = (method) => {
-      loginMethod.value = method;
-      error.value = '';
-      // Reset delivery method when switching to password
-      if (method === 'password') {
-        deliveryMethod.value = 'email';
+      const selectLoginMethod = (method) => {
+        loginMethod.value = method;
+        error.value = '';
+        if (method === 'password') {
+          deliveryMethod.value = 'email';
+          contactInfo.value = '';
+        }
+      };
+
+      const handleDeliveryMethodChange = () => {
         contactInfo.value = '';
-      }
-    };
+        error.value = '';
+      };
 
-    const handleDeliveryMethodChange = () => {
-      // Clear contact info when delivery method changes to force re-entry
-      contactInfo.value = '';
-      error.value = '';
-    };
-
-    const handleOtpInput = (index, event) => {
-      const value = event.target.value;
-      if (value && index < 5) {
-        otpInputs.value[index + 1]?.focus();
-      }
-    };
-
-    const handleOtpKeydown = (index, event) => {
-      if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
-        otpInputs.value[index - 1]?.focus();
-      }
-    };
-
-    const startResendTimer = () => {
-      resendTimer.value = 30;
-      resendInterval.value = setInterval(() => {
-        resendTimer.value--;
-        if (resendTimer.value <= 0) {
-          clearInterval(resendInterval.value);
+      const handleOtpInput = (index, event) => {
+        if (event.target.value && index < 5) {
+          otpInputs.value[index + 1]?.focus();
         }
-      }, 1000);
-    };
+      };
 
-    const maskContactInfo = (contact) => {
-      if (deliveryMethod.value === 'sms' || deliveryMethod.value === 'whatsapp') {
-        // Mask phone number
-        return contact.length > 4 ? '***' + contact.slice(-4) : contact;
-      } else {
-        // Mask email
-        const [username, domain] = contact.split('@');
-        const maskedUsername = username.length > 2 
-          ? username.substring(0, 2) + '*'.repeat(username.length - 2)
-          : username;
-        return `${maskedUsername}@${domain}`;
-      }
-    };
+      const handleOtpKeydown = (index, event) => {
+        if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
+          otpInputs.value[index - 1]?.focus();
+        }
+      };
 
-    const passwordLogin = async () => {
-      loading.value = true;
-      error.value = '';
+      const startResendTimer = () => {
+        resendTimer.value = 30;
+        resendInterval.value = setInterval(() => {
+          resendTimer.value--;
+          if (resendTimer.value <= 0) clearInterval(resendInterval.value);
+        }, 1000);
+      };
 
-      // Validate contact info
-      if (!validateContactInfo()) {
-        error.value = `Please enter a valid ${getContactLabel().toLowerCase()}`;
-        loading.value = false;
-        return;
-      }
-
-      try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful login
-        const mockResponse = {
-          access_token: 'mock_access_token',
-          refresh_token: 'mock_refresh_token',
-          user: { id: 1, name: 'Test User' },
-          session_id: 'mock_session_id'
-        };
-
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', mockResponse.access_token);
-        localStorage.setItem('refresh_token', mockResponse.refresh_token);
-        localStorage.setItem('user', JSON.stringify(mockResponse.user));
-        localStorage.setItem('session_id', mockResponse.session_id);
-
-        // Store SIP information
-        localStorage.setItem('sipConnectionDetails', JSON.stringify({
-          desc: 'SIP Connection Details',
-          uri: sipConnectionDetails.value.uri,
-          password: sipConnectionDetails.value.password,
-          websocketURL: sipConnectionDetails.value.websocketURL
-        }));
-
-        // Store remember me preference
-        if (rememberMe.value) {
-          localStorage.setItem('rememberedContact', contactInfo.value);
-          localStorage.setItem('rememberedMethod', loginMethod.value);
+      const maskContactInfo = (contact) => {
+        if (['sms', 'whatsapp'].includes(deliveryMethod.value)) {
+          return contact.length > 4 ? '***' + contact.slice(-4) : contact;
         } else {
-          localStorage.removeItem('rememberedContact');
-          localStorage.removeItem('rememberedMethod');
+          const [username, domain] = contact.split('@');
+          const masked = username.slice(0, 2) + '*'.repeat(username.length - 2);
+          return `${masked}@${domain}`;
+        }
+      };
+
+      const passwordLogin = async () => {
+        loading.value = true;
+        error.value = '';
+
+        if (!validateContactInfo()) {
+          error.value = `Please enter a valid ${getContactLabel().toLowerCase()}`;
+          loading.value = false;
+          return;
         }
 
-        // Redirect to dashboard
-        router.push(returnUrl.value);
-      } catch (err) {
-        error.value = 'Login failed. Please check your credentials.';
-        console.error('Password login error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
+        try {
+          const res = await axios.post('/auth/login/', {
+            username: contactInfo.value,
+            email: contactInfo.value,
+            password: password.value
+          });
 
-    const requestOtp = async () => {
-      loading.value = true;
-      error.value = '';
+          authStore.setAuthData(res.data);
+          localStorage.setItem('sipConnectionDetails', JSON.stringify(sipConnectionDetails.value));
 
-      // Validate contact info
-      if (!validateContactInfo()) {
-        error.value = `Please enter a valid ${getContactLabel().toLowerCase()}`;
-        loading.value = false;
-        return;
-      }
+          if (rememberMe.value) {
+            localStorage.setItem('rememberedContact', contactInfo.value);
+            localStorage.setItem('rememberedMethod', loginMethod.value);
+          } else {
+            localStorage.removeItem('rememberedContact');
+            localStorage.removeItem('rememberedMethod');
+          }
 
-      try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful OTP request
-        userId.value = 'mock_user_id';
-        maskedContact.value = maskContactInfo(contactInfo.value);
-        
-        currentStep.value = 'otp';
-        successMessage.value = `OTP sent successfully via ${deliveryMethod.value}!`;
-        startResendTimer();
+          router.push(returnUrl.value);
+        } catch (err) {
+          error.value = 'Login failed. Please check your credentials.';
+          console.error('Password login error:', err);
+        } finally {
+          loading.value = false;
+        }
+      };
 
-        setTimeout(() => {
-          successMessage.value = '';
-        }, 3000);
-      } catch (err) {
-        error.value = 'Failed to send OTP. Please try again.';
-        console.error('OTP request error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
+      const requestOtp = async () => {
+        loading.value = true;
+        error.value = '';
 
-    const verifyOtp = async () => {
-      loading.value = true;
-      error.value = '';
-
-      try {
-        const otpCode = otpDigits.value.join('');
-        
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful verification
-        const mockResponse = {
-          access_token: 'mock_access_token',
-          refresh_token: 'mock_refresh_token',
-          user: { id: 1, name: 'Test User' },
-          session_id: 'mock_session_id'
-        };
-
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', mockResponse.access_token);
-        localStorage.setItem('refresh_token', mockResponse.refresh_token);
-        localStorage.setItem('user', JSON.stringify(mockResponse.user));
-        localStorage.setItem('session_id', mockResponse.session_id);
-
-        // Store SIP information
-        localStorage.setItem('sipConnectionDetails', JSON.stringify({
-          desc: 'SIP Connection Details',
-          uri: sipConnectionDetails.value.uri,
-          password: sipConnectionDetails.value.password,
-          websocketURL: sipConnectionDetails.value.websocketURL
-        }));
-
-        // Store remember me preference
-        if (rememberMe.value) {
-          localStorage.setItem('rememberedContact', contactInfo.value);
-          localStorage.setItem('rememberedMethod', loginMethod.value);
-        } else {
-          localStorage.removeItem('rememberedContact');
-          localStorage.removeItem('rememberedMethod');
+        if (!validateContactInfo()) {
+          error.value = `Please enter a valid ${getContactLabel().toLowerCase()}`;
+          loading.value = false;
+          return;
         }
 
-        // Redirect to dashboard
-        router.push(returnUrl.value);
-      } catch (err) {
-        error.value = 'OTP verification failed. Please try again.';
-        console.error('OTP verification error:', err);
-      } finally {
-        loading.value = false;
-      }
-    };
+        try {
+          const res = await axios.post('/auth/otp/request/', {
+            contact: contactInfo.value,
+            method: deliveryMethod.value
+          });
 
-    const handleSubmit = async () => {
-      submitted.value = true;
-
-      if (!isFormValid.value) {
-        return;
-      }
-
-      if (currentStep.value === 'email') {
-        if (loginMethod.value === 'password') {
-          await passwordLogin();
-        } else if (loginMethod.value === 'otp') {
-          await requestOtp();
+          userId.value = res.data.user_id;
+          maskedContact.value = maskContactInfo(contactInfo.value);
+          currentStep.value = 'otp';
+          successMessage.value = `OTP sent via ${deliveryMethod.value}`;
+          startResendTimer();
+          setTimeout(() => (successMessage.value = ''), 3000);
+        } catch (err) {
+          error.value = 'Failed to send OTP. Please try again.';
+          console.error('OTP request error:', err);
+        } finally {
+          loading.value = false;
         }
-      } else if (currentStep.value === 'otp') {
-        await verifyOtp();
-      }
-    };
+      };
 
-    const resendOtp = async () => {
-      loading.value = true;
-      error.value = '';
+      const verifyOtp = async () => {
+        loading.value = true;
+        error.value = '';
 
-      try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          const res = await axios.post('/auth/otp/verify/', {
+            user_id: userId.value,
+            otp: otpDigits.value.join('')
+          });
 
-        successMessage.value = `OTP resent successfully via ${deliveryMethod.value}!`;
-        startResendTimer();
+          authStore.setAuthData(res.data);
+          localStorage.setItem('sipConnectionDetails', JSON.stringify(sipConnectionDetails.value));
 
-        setTimeout(() => {
-          successMessage.value = '';
-        }, 3000);
-      } catch (err) {
-        error.value = 'Failed to resend OTP. Please try again.';
-      } finally {
-        loading.value = false;
-      }
-    };
+          if (rememberMe.value) {
+            localStorage.setItem('rememberedContact', contactInfo.value);
+            localStorage.setItem('rememberedMethod', loginMethod.value);
+          } else {
+            localStorage.removeItem('rememberedContact');
+            localStorage.removeItem('rememberedMethod');
+          }
 
-    const goBackToEmail = () => {
-      currentStep.value = 'email';
-      otpDigits.value = ['', '', '', '', '', ''];
-      submitted.value = false;
-      error.value = '';
-      successMessage.value = '';
-      userId.value = '';
+          router.push(returnUrl.value);
+        } catch (err) {
+          error.value = 'OTP verification failed.';
+          console.error('OTP verification error:', err);
+        } finally {
+          loading.value = false;
+        }
+      };
 
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
+      const handleSubmit = async () => {
+        submitted.value = true;
+        if (!isFormValid.value) return;
+
+        if (currentStep.value === 'email') {
+          loginMethod.value === 'password' ? await passwordLogin() : await requestOtp();
+        } else if (currentStep.value === 'otp') {
+          await verifyOtp();
+        }
+      };
+
+      const resendOtp = async () => {
+        loading.value = true;
+        error.value = '';
+
+        try {
+          await axios.post('/auth/otp/request/', {
+            contact: contactInfo.value,
+            method: deliveryMethod.value
+          });
+          successMessage.value = `OTP resent via ${deliveryMethod.value}`;
+          startResendTimer();
+          setTimeout(() => (successMessage.value = ''), 3000);
+        } catch (err) {
+          error.value = 'Failed to resend OTP.';
+          console.error('Resend OTP error:', err);
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const goBackToEmail = () => {
+        currentStep.value = 'email';
+        otpDigits.value = ['', '', '', '', '', ''];
+        submitted.value = false;
+        error.value = '';
+        successMessage.value = '';
+        userId.value = '';
+        if (resendInterval.value) clearInterval(resendInterval.value);
         resendTimer.value = 0;
-      }
-    };
+      };
 
-    const handleForgotPassword = () => {
-      router.push('/forgot-password');
-    };
+      const handleForgotPassword = () => router.push('/forgot-password');
+      const handleHelp = () => console.log('Help clicked');
 
-    const handleHelp = () => {
-      console.log('Help clicked');
-      // TODO: Implement help logic
-    };
+      const checkRememberedData = () => {
+        const rememberedContact = localStorage.getItem('rememberedContact');
+        const rememberedMethod = localStorage.getItem('rememberedMethod');
+        if (rememberedContact) {
+          contactInfo.value = rememberedContact;
+          rememberMe.value = true;
+        }
+        if (rememberedMethod) {
+          loginMethod.value = rememberedMethod;
+        }
+      };
 
-    // Check for remembered data on component mount
-    const checkRememberedData = () => {
-      const rememberedContact = localStorage.getItem('rememberedContact');
-      const rememberedMethod = localStorage.getItem('rememberedMethod');
+      onMounted(() => {
+        checkRememberedData();
+        try {
+          new WebSocket("ws://18.179.24.235:8089/ws", "sip");
+        } catch (err) {
+          console.error('WebSocket error:', err);
+        }
+      });
 
-      if (rememberedContact) {
-        contactInfo.value = rememberedContact;
-        rememberMe.value = true;
-      }
+      onUnmounted(() => {
+        if (resendInterval.value) clearInterval(resendInterval.value);
+      });
 
-      if (rememberedMethod) {
-        loginMethod.value = rememberedMethod;
-      }
-    };
-
-    // Lifecycle hooks
-    onMounted(() => {
-      checkRememberedData();
-
-      try {
-        const checkWSConnection = new WebSocket("ws://18.179.24.235:8089/ws", "sip");
-        console.log("checking WebSocket Connection", checkWSConnection);
-      } catch (error) {
-        console.log("WebSocket connection error:", error);
-      }
-    });
-
-    onUnmounted(() => {
-      if (resendInterval.value) {
-        clearInterval(resendInterval.value);
-      }
-    });
-
-    return {
-      contactInfo,
-      password,
-      loginMethod,
-      deliveryMethod,
-      rememberMe,
-      otpDigits,
-      otpInputs,
-      currentStep,
-      loading,
-      submitted,
-      error,
-      successMessage,
-      maskedContact,
-      resendTimer,
-      showPassword,
-      isOtpComplete,
-      isFormValid,
-      getContactLabel,
-      getInputType,
-      getInputPlaceholder,
-      selectLoginMethod,
-      handleDeliveryMethodChange,
-      handleOtpInput,
-      handleOtpKeydown,
-      handleSubmit,
-      resendOtp,
-      goBackToEmail,
-      handleForgotPassword,
-      handleHelp,
-      sipConnectionDetails,
-    };
-  }
-};
+      return {
+        contactInfo, password, loginMethod, deliveryMethod, rememberMe, otpDigits, otpInputs,
+        currentStep, loading, submitted, error, successMessage, maskedContact, resendTimer,
+        showPassword, isOtpComplete, isFormValid, getContactLabel, getInputType,
+        getInputPlaceholder, selectLoginMethod, handleDeliveryMethodChange, handleOtpInput,
+        handleOtpKeydown, handleSubmit, resendOtp, goBackToEmail, handleForgotPassword,
+        handleHelp, sipConnectionDetails
+      };
+    }
+  };
 </script>
+
+
 
 <style>
 @font-face {

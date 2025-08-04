@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
 import { useThemeStore } from './stores/theme.js'
+import axiosInstance from './utils/axios.js'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -20,6 +21,7 @@ window.addEventListener('error', (event) => {
 
 app.use(pinia)
 app.use(router)
+app.use(axiosInstance)
 // app.use(i18n)
 
 // Initialize theme store

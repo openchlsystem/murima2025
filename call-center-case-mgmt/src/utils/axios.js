@@ -36,6 +36,7 @@ axiosInstance.interceptors.request.use(
     // Add authorization token if available
     if (authStore.accessToken) {
       config.headers.Authorization = `Bearer ${authStore.accessToken}`;
+      console.log('Using access token:', authStore.accessToken);
     }
 
     return config;
@@ -110,7 +111,7 @@ axiosInstance.interceptors.response.use(
         authStore.clearAuthData();
 
         if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = '/login';
         }
         return Promise.reject(refreshError);
       }
