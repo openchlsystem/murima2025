@@ -49,7 +49,7 @@
           </div>
         </div>
 
-         Step 1: Reporter Selection 
+        <!-- Step 1: Reporter Selection -->
         <div v-show="currentStep === 1" class="step-content">
           <form class="case-form" @submit.prevent="validateAndProceed(1)">
             <div class="form-section">
@@ -122,7 +122,7 @@
           </form>
         </div>
 
-         Step 2: Reporter Details 
+        <!-- Step 2: Reporter Details -->
         <div v-show="currentStep === 2" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(2)">
             <div class="form-section">
@@ -265,7 +265,7 @@
                 </div>
               </div>
 
-               Client Management Section 
+              <!-- Client Management Section -->
               <div v-if="formData.step2.isClient === false" class="client-management-section">
                 <div class="section-title">Clients</div>
                 <div class="client-list">
@@ -280,18 +280,18 @@
                   </div>
                 </div>
                 <div class="client-actions">
-                  <button type="button" class="btn btn-secondary" @click="showAddClientModal = true">
+                  <button type="button" class="btn btn-secondary" @click="openAddClientModal">
                     <Plus class="w-4 h-4" />
                     Add a Client
                   </button>
-                  <button type="button" class="btn btn-secondary" @click="showAddToContactsModal = true">
+                  <button type="button" class="btn btn-secondary" @click="openAddToContactsModal">
                     <UserPlus class="w-4 h-4" />
                     Add to Clients/Contacts
                   </button>
                 </div>
               </div>
 
-               Perpetrators Section 
+              <!-- Perpetrators Section -->
               <div class="perpetrators-section">
                 <div class="section-title">Perpetrators</div>
                 <div class="perpetrator-list">
@@ -305,13 +305,13 @@
                     </button>
                   </div>
                 </div>
-                <button type="button" class="btn btn-secondary" @click="showAddPerpetratorModal = true">
+                <button type="button" class="btn btn-secondary" @click="openAddPerpetratorModal">
                   <Plus class="w-4 h-4" />
                   Add a Perpetrator
                 </button>
               </div>
 
-               Related Files Section 
+              <!-- Related Files Section -->
               <div class="related-files-section">
                 <div class="section-title">Related Files</div>
                 <div class="file-list">
@@ -342,7 +342,7 @@
           </form>
         </div>
 
-         Step 3: Case Details 
+        <!-- Step 3: Case Details -->
         <div v-show="currentStep === 3" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(3)">
             <div class="form-section">
@@ -440,7 +440,7 @@
           </form>
         </div>
 
-         Step 4: Case Classification 
+        <!-- Step 4: Case Classification -->
         <div v-show="currentStep === 4" class="step-content">
           <form class="case-form" @submit.prevent="saveAndProceed(4)">
             <div class="form-section">
@@ -529,7 +529,7 @@
                 </div>
               </div>
 
-               Conditional Modules based on Case Category 
+              <!-- Conditional Modules based on Case Category -->
               <div v-if="showMedicalAndCounselingModules" class="conditional-module-section">
                 <h4 class="subsection-title">Additional Case Details</h4>
                 <p class="section-description">
@@ -748,7 +748,7 @@
           </form>
         </div>
 
-         Step 5: Review 
+        <!-- Step 5: Review -->
         <div v-show="currentStep === 5" class="step-content">
           <div class="review-sections">
             <div class="review-section">
@@ -876,7 +876,7 @@
         </div>
       </div>
       
-       Enhanced AI Insights Panel 
+      <!-- Enhanced AI Insights Panel -->
       <div v-if="isAIEnabled" class="ai-preview-container">
         <div class="ai-preview">
           <div class="ai-preview-header">
@@ -884,21 +884,21 @@
             <div class="ai-preview-title">AI Insights <span class="ai-badge">LIVE</span></div>
           </div>
           <div class="ai-preview-content">
-             Audio Transcription Results 
+            <!-- Audio Transcription Results -->
             <div v-if="transcriptionData" class="ai-preview-section">
               <div class="ai-preview-section-title">Audio Analysis Results</div>
-               Transcription 
+              <!-- Transcription -->
               <div v-if="transcriptionData.transcript" class="transcription-section">
                 <h4 class="subsection-title">Transcription</h4>
                 <div class="transcription-text">{{ transcriptionData.transcript }}</div>
                 <button class="btn btn-tiny btn-outline" @click="useTranscription">Use in Case Narrative</button>
               </div>
-               Summary 
+              <!-- Summary -->
               <div v-if="transcriptionData.summary" class="summary-section">
                 <h4 class="subsection-title">Summary</h4>
                 <div class="summary-text">{{ transcriptionData.summary }}</div>
               </div>
-               Named Entities 
+              <!-- Named Entities -->
               <div v-if="transcriptionData.summary_entities && transcriptionData.summary_entities.length" class="entities-section">
                 <h4 class="subsection-title">Detected Entities</h4>
                 <div class="entity-suggestions">
@@ -909,7 +909,7 @@
                   </div>
                 </div>
               </div>
-               Classification Suggestions 
+              <!-- Classification Suggestions -->
               <div v-if="transcriptionData.summary_classification" class="classification-section">
                 <h4 class="subsection-title">AI Classification Suggestions</h4>
                 <div class="classification-suggestions">
@@ -931,16 +931,16 @@
                 </div>
               </div>
             </div>
-             AI Insights from Audio 
+            <!-- AI Insights from Audio -->
             <div v-if="aiInsights" class="ai-preview-section">
               <div class="ai-preview-section-title">Detailed AI Insights</div>
-               Case Summary 
+              <!-- Case Summary -->
               <div v-if="aiInsights.case_summary" class="insight-section">
                 <h4 class="subsection-title">Case Summary</h4>
                 <p class="insight-text">{{ aiInsights.case_summary }}</p>
                 <button class="btn btn-tiny btn-outline" @click="useCaseSummary">Use in Case Plan</button>
               </div>
-               Named Entities 
+              <!-- Named Entities -->
               <div v-if="aiInsights.named_entities" class="insight-section">
                 <h4 class="subsection-title">Key Information</h4>
                 <div v-if="aiInsights.named_entities.persons && aiInsights.named_entities.persons.length" class="entity-group">
@@ -962,7 +962,7 @@
                   </div>
                 </div>
               </div>
-               Risk Assessment 
+              <!-- Risk Assessment -->
               <div v-if="aiInsights.risk_assessment" class="insight-section">
                 <h4 class="subsection-title">Risk Assessment</h4>
                 <div v-if="aiInsights.risk_assessment.red_flags && aiInsights.risk_assessment.red_flags.length" class="risk-group">
@@ -978,7 +978,7 @@
                   </ul>
                 </div>
               </div>
-               Recommended Services 
+              <!-- Recommended Services -->
               <div v-if="aiInsights.case_management && aiInsights.case_management.psychosocial_support" class="insight-section">
                 <h4 class="subsection-title">Recommended Services</h4>
                 <div v-if="aiInsights.case_management.psychosocial_support.short_term && aiInsights.case_management.psychosocial_support.short_term.length" class="service-group">
@@ -995,18 +995,18 @@
                 </div>
               </div>
             </div>
-             Original AI Auto-Fill Section 
+            <!-- Original AI Auto-Fill Section -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">AI Auto-Fill</div>
               <div class="ai-autofill-section">
                 <p class="ai-autofill-description">Let AI automatically populate form fields with sample data based on common case patterns.</p>
-                <button class="btn btn-primary btn-small ai-autofill-btn" @click="showAutoFillModal = true">
+                <button class="btn btn-primary btn-small ai-autofill-btn" @click="openAutoFillModal">
                   <FlaskConical class="w-4 h-4" />
                   Auto-Fill Current Step
                 </button>
               </div>
             </div>
-             Smart Suggestions 
+            <!-- Smart Suggestions -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">Smart Suggestions</div>
               <div class="ai-suggestions">
@@ -1021,7 +1021,7 @@
                 </div>
               </div>
             </div>
-             Case Summary 
+            <!-- Case Summary -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">Case Summary</div>
               <div class="ai-summary">
@@ -1049,7 +1049,7 @@
                 </div>
               </div>
             </div>
-             Progress Insights 
+            <!-- Progress Insights -->
             <div v-if="getCompletedSteps().length > 0" class="ai-preview-section">
               <div class="ai-preview-section-title">Progress Insights</div>
               <div class="progress-insights">
@@ -1068,8 +1068,8 @@
       </div>
     </div>
     
-     AI Auto-Fill Warning Modal 
-    <div class="modal-overlay" :class="{ active: showAutoFillModal }">
+    <!-- AI Auto-Fill Warning Modal -->
+    <div v-if="showAutoFillModal" class="modal-overlay active">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">
@@ -1083,7 +1083,7 @@
           <p>Are you sure you want to continue?</p>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-cancel" @click="cancelAutoFill">Cancel</button>
+          <button class="modal-btn modal-btn-cancel" @click="closeAutoFillModal">Cancel</button>
           <button class="modal-btn modal-btn-confirm" @click="confirmAutoFill">
             <FlaskConical class="w-4 h-4" />
             Yes, Auto-Fill Data
@@ -1092,8 +1092,8 @@
       </div>
     </div>
 
-     Add Client Modal 
-    <div class="modal-overlay" :class="{ active: showAddClientModal }">
+    <!-- Add Client Modal -->
+    <div v-if="showAddClientModal" class="modal-overlay active">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">
@@ -1151,7 +1151,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-cancel" @click="cancelAddClient">Cancel</button>
+          <button class="modal-btn modal-btn-cancel" @click="closeAddClientModal">Cancel</button>
           <button class="modal-btn modal-btn-confirm" @click="addClient">
             <Plus class="w-4 h-4" />
             Add Client
@@ -1160,8 +1160,8 @@
       </div>
     </div>
 
-     Add to Contacts Modal 
-    <div class="modal-overlay" :class="{ active: showAddToContactsModal }">
+    <!-- Add to Contacts Modal -->
+    <div v-if="showAddToContactsModal" class="modal-overlay active">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">
@@ -1200,13 +1200,13 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-cancel" @click="cancelAddToContacts">Cancel</button>
+          <button class="modal-btn modal-btn-cancel" @click="closeAddToContactsModal">Cancel</button>
         </div>
       </div>
     </div>
 
-     Add Perpetrator Modal 
-    <div class="modal-overlay" :class="{ active: showAddPerpetratorModal }">
+    <!-- Add Perpetrator Modal -->
+    <div v-if="showAddPerpetratorModal" class="modal-overlay active">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">
@@ -1264,7 +1264,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-cancel" @click="cancelAddPerpetrator">Cancel</button>
+          <button class="modal-btn modal-btn-cancel" @click="closeAddPerpetratorModal">Cancel</button>
           <button class="modal-btn modal-btn-confirm" @click="addPerpetrator">
             <Plus class="w-4 h-4" />
             Add Perpetrator
@@ -1312,7 +1312,7 @@ const selectedReporter = ref(null)
 const showCategoryDropdown = ref(false)
 const categorySearchQuery = ref("")
 
-// New modal states
+// New modal states - now properly managed
 const showAddClientModal = ref(false)
 const showAddToContactsModal = ref(false)
 const showAddPerpetratorModal = ref(false)
@@ -1619,6 +1619,53 @@ const saveAndProceed = (step) => {
   currentStep.value = step + 1
 }
 
+// Modal management methods - Fixed to prevent overlapping
+const closeAllModals = () => {
+  showAutoFillModal.value = false
+  showAddClientModal.value = false
+  showAddToContactsModal.value = false
+  showAddPerpetratorModal.value = false
+}
+
+const openAutoFillModal = () => {
+  closeAllModals()
+  showAutoFillModal.value = true
+}
+
+const openAddClientModal = () => {
+  closeAllModals()
+  showAddClientModal.value = true
+}
+
+const openAddToContactsModal = () => {
+  closeAllModals()
+  showAddToContactsModal.value = true
+}
+
+const openAddPerpetratorModal = () => {
+  closeAllModals()
+  showAddPerpetratorModal.value = true
+}
+
+const closeAutoFillModal = () => {
+  showAutoFillModal.value = false
+}
+
+const closeAddClientModal = () => {
+  resetNewClient()
+  showAddClientModal.value = false
+}
+
+const closeAddToContactsModal = () => {
+  showAddToContactsModal.value = false
+  contactSearchQuery.value = ''
+}
+
+const closeAddPerpetratorModal = () => {
+  resetNewPerpetrator()
+  showAddPerpetratorModal.value = false
+}
+
 // Client management methods
 const addClient = () => {
   if (newClient.name) {
@@ -1629,8 +1676,7 @@ const addClient = () => {
       gender: newClient.gender,
       relationship: newClient.relationship
     })
-    resetNewClient()
-    showAddClientModal.value = false
+    closeAddClientModal()
   }
 }
 
@@ -1639,11 +1685,6 @@ const removeClient = (clientId) => {
   if (index > -1) {
     clients.splice(index, 1)
   }
-}
-
-const cancelAddClient = () => {
-  resetNewClient()
-  showAddClientModal.value = false
 }
 
 const resetNewClient = () => {
@@ -1661,13 +1702,7 @@ const selectContactForClient = (contact) => {
     gender: contact.gender,
     relationship: 'Client'
   })
-  showAddToContactsModal.value = false
-  contactSearchQuery.value = ''
-}
-
-const cancelAddToContacts = () => {
-  showAddToContactsModal.value = false
-  contactSearchQuery.value = ''
+  closeAddToContactsModal()
 }
 
 // Perpetrator management methods
@@ -1680,8 +1715,7 @@ const addPerpetrator = () => {
       gender: newPerpetrator.gender,
       relationship: newPerpetrator.relationship
     })
-    resetNewPerpetrator()
-    showAddPerpetratorModal.value = false
+    closeAddPerpetratorModal()
   }
 }
 
@@ -1690,11 +1724,6 @@ const removePerpetrator = (perpetratorId) => {
   if (index > -1) {
     perpetrators.splice(index, 1)
   }
-}
-
-const cancelAddPerpetrator = () => {
-  resetNewPerpetrator()
-  showAddPerpetratorModal.value = false
 }
 
 const resetNewPerpetrator = () => {
@@ -1731,12 +1760,8 @@ const removeFile = (fileId) => {
 }
 
 // AI methods
-const cancelAutoFill = () => {
-  showAutoFillModal.value = false
-}
-
 const confirmAutoFill = () => {
-  showAutoFillModal.value = false
+  closeAutoFillModal()
   applyAISuggestions()
 }
 
@@ -2113,7 +2138,7 @@ body {
   padding: 20px;
   background-color: var(--background-color);
   border-bottom: 1px solid var(--border-color);
-  z-index: 100;
+  z-index: 50;
 }
 
 .back-button {
@@ -3206,20 +3231,19 @@ textarea.form-control {
   color: var(--text-color);
 }
 
+/* Fixed Modal Overlay System */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s;
+  backdrop-filter: blur(4px);
 }
 
 .modal-overlay.active {
@@ -3233,19 +3257,20 @@ textarea.form-control {
   padding: 0;
   max-width: 500px;
   width: 90%;
+  max-height: 80vh;
   border: 1px solid var(--border-color);
   animation: modalSlideIn 0.3s ease-out;
-  max-height: 80vh;
   overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 @keyframes modalSlideIn {
   from {
-    transform: translateY(-20px);
+    transform: translateY(-20px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
@@ -3549,7 +3574,7 @@ textarea.form-control {
 
 .multi-select-dropdown {
   position: absolute;
-  z-index: 20;
+  z-index: 30;
   width: 100%;
   background-color: var(--content-bg);
   border: 1px solid var(--border-color);
