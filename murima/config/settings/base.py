@@ -20,6 +20,7 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     
     # Custom shared apps
@@ -35,6 +36,7 @@ TENANT_APPS = [
     'django.contrib.admin',
     
     # Core business apps
+    # 'apps.tenant.administration',
     'apps.tenant.ai_service',
     'apps.tenant.cases',
     'apps.tenant.communications',
@@ -57,17 +59,25 @@ DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
 )
 
+
 MIDDLEWARE = [
     'django_tenants.middleware.main.TenantMainMiddleware',
+
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # 👈 Must come before anything that uses request.user
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # ✅ These can safely access request.user now
+    'apps.shared.core.middleware.CurrentUserMiddleware',
+    'apps.shared.core.middleware.AuditLogMiddleware',
 ]
+
+
 
 ROOT_URLCONF = 'config.urls'
 
@@ -130,7 +140,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -182,3 +192,14 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 # Email configuration (base settings)
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # DEFAULT_FROM_EMAIL = 'noreply@murima.com'
+
+PUBLIC_SCHEMA_URLCONF = "apps.shared.tenants.public_urls"  # Custom URLConf for public schema
+
+
+# CORS headers
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://acme-healthcare.localhost:3000"
+]
+

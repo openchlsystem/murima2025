@@ -2,66 +2,92 @@ from django.db import models
 from django.core.cache import cache
 from django.core.validators import validate_slug
 from django.utils.translation import gettext_lazy as _
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
-import json
-import uuid
+from django.utils.functional import SimpleLazyObject
+from django.contrib.auth.models import AnonymousUser
+from crum import get_current_user
+
+
+
+from django.contrib.postgres.fields import ArrayField
 from jsonschema import validate as jsonschema_validate
+
 from apps.shared.core.models import BaseModel
+# from tenants.models import Tenant  # Uncomment if needed for type hints
+
+# -- Utility Function ------------------------------------------------------
+
+def get_public_tenant():
+    """Helper function to get the public tenant"""
+    # return Tenant.objects.filter(schema_name='public').first()
+    pass  # Implement appropriately
 
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.contrib.postgres.fields import ArrayField
+from django.utils.translation import gettext_lazy as _
+import re
+
+# If UserTrackingModel is your audit trail base
 
 class ReferenceDataType(BaseModel):
     """
-    Master table of all reference data types available in the system.
-    Defines the types of reference data that can be created.
+    Defines all possible reference data types in the system.
     """
     name = models.CharField(
         max_length=100,
         unique=True,
-        help_text=_("Unique name identifier for this reference data type (e.g., 'product_categories')")
+        help_text=_("Unique name identifier (e.g., 'product_categories')")
     )
     description = models.TextField(
         blank=True,
-        help_text=_("Description of what this reference data type represents")
+        help_text=_("Human-readable description")
     )
     is_tenant_specific = models.BooleanField(
-        default=True,
-        help_text=_("Whether this data type can have tenant-specific values")
+        default=False,
+        help_text=_("Customizable per tenant")
     )
     is_system_managed = models.BooleanField(
         default=False,
-        help_text=_("If True, this type is managed by the system and cannot be modified via API")
+        help_text=_("Managed by system code")
     )
     allowed_metadata_keys = ArrayField(
         models.CharField(max_length=50),
         blank=True,
-        null=True,
-        help_text=_("List of allowed keys in the metadata JSON field")
+        default=list,
+        help_text=_("Allowed metadata keys")
     )
     validation_schema = models.JSONField(
         blank=True,
         null=True,
-        help_text=_("JSON schema for validating the metadata field")
+        help_text=_("Validation schema")
     )
 
     class Meta:
-        verbose_name = _("Reference Data Type")
-        verbose_name_plural = _("Reference Data Types")
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(is_system_managed=True) | models.Q(is_tenant_specific=False),
+                name="no_system_managed_tenant_specific"
+            )
+        ]
 
     def clean(self):
-        """Validate that system-managed types aren't tenant-specific"""
-        if self.is_system_managed and self.is_tenant_specific:
-            raise ValidationError(_("System-managed types cannot be tenant-specific"))
+        if self.is_system_managed:
+            if not re.match(r'^[a-z_]+$', self.name):
+                raise ValidationError("System-managed names must be lowercase with underscores")
+            if not self.allowed_metadata_keys:
+                raise ValidationError("System-managed types require allowed_metadata_keys")
+
+    def __str__(self):
+        return f"{self.name} (Tenant specific: {self.is_tenant_specific}, System managed: {self.is_system_managed})"
+
+
+# -- Reference Data --------------------------------------------------------
 
 class ReferenceData(BaseModel):
     """
-    Base model for all tenant-specific reference data entries.
-    Represents individual values within a reference data type.
+    Represents a reference data value (e.g., category, type, status).
     """
     tenant = models.ForeignKey(
         'tenants.Tenant',
@@ -126,50 +152,46 @@ class ReferenceData(BaseModel):
         return f"{self.data_type.name}: {self.display_value} ({self.code})"
 
     def clean(self):
-        """Validate the reference data entry"""
-        # Validate metadata against allowed keys and schema
+        # Validate metadata keys
         if self.data_type.allowed_metadata_keys:
             for key in self.metadata.keys():
                 if key not in self.data_type.allowed_metadata_keys:
                     raise ValidationError(
-                        _("Metadata key '%(key)s' is not allowed for this data type"),
-                        params={'key': key}
+                        _(f"Metadata key '{key}' is not allowed for this data type.")
                     )
-        
+
+        # Validate metadata schema
         if self.data_type.validation_schema:
             try:
                 jsonschema_validate(self.metadata, self.data_type.validation_schema)
             except Exception as e:
                 raise ValidationError(_(f"Metadata validation error: {str(e)}"))
 
-        # Validate tenant-specific constraint
+        # Validate tenant restriction
         if not self.data_type.is_tenant_specific and self.tenant != get_public_tenant():
             raise ValidationError(
-                _("This data type is not tenant-specific and can only be created for the public tenant")
+                _("This data type is not tenant-specific and can only be used for the public tenant.")
             )
 
     def save(self, *args, **kwargs):
-        """Override save to handle versioning and cache invalidation"""
         if self.pk:
             self.version += 1
-        
         self.full_clean()
         super().save(*args, **kwargs)
-        
-        # Invalidate cache for this data type
-        # cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
+        cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
         cache.delete(cache_key)
 
     def delete(self, *args, **kwargs):
-        """Override delete to handle cache invalidation"""
-        # cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
+        cache_key = f"ref_data_{self.tenant.id}_{self.data_type.name}"
         cache.delete(cache_key)
         super().delete(*args, **kwargs)
 
+
+# -- Reference Data History ------------------------------------------------
+
 class ReferenceDataHistory(BaseModel):
     """
-    Audit history for reference data changes.
-    Tracks all modifications to reference data entries.
+    Tracks changes to reference data for audit purposes.
     """
     reference_data = models.ForeignKey(
         ReferenceData,
@@ -193,7 +215,3 @@ class ReferenceDataHistory(BaseModel):
 
     def __str__(self):
         return f"{self.reference_data} - v{self.version}"
-
-def get_public_tenant():
-    """Helper function to get the public tenant"""
-    # return Tenant.objects.filter(schema_name='public').first()

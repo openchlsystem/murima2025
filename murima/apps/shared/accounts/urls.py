@@ -47,7 +47,7 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     
     # JWT endpoints
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 ]
 
 # Primary Authentication Endpoints

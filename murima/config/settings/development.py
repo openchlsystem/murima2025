@@ -125,3 +125,5 @@ CACHES = {
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+PUBLIC_SCHEMA_URLCONF = "apps.shared.tenants.public_urls"  # Custom URLConf for public schema

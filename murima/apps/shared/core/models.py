@@ -12,6 +12,10 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
+# from apps.shared.core.middleware import get_current_user
+from crum import get_current_user
+
+
 # Get the User model - this will work with custom user models
 # User = get_user_model()
 
@@ -54,31 +58,55 @@ class UUIDModel(models.Model):
         abstract = True
 
 
+from django.db import models
+from django.contrib.auth.models import AnonymousUser
+from django.utils.functional import SimpleLazyObject
+
+
 class UserTrackingModel(models.Model):
     """
-    Abstract base model that tracks which user created and last updated the record.
-    
-    Useful for audit trails and accountability. The created_by field is required
-    and should be set when the object is created. The updated_by field is optional
-    and should be set whenever the object is modified.
+    Abstract base model that tracks who created and last updated a record.
+    Integrates with get_current_user for automatic assignment.
     """
+
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='created_records_%(app_label)s_%(class)s',
-        help_text="User who created this record"
-    )
-    updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='updated_records_%(app_label)s_%(class)s',
+        'accounts.User',
         null=True,
         blank=True,
-        help_text="User who last updated this record"
+        related_name="created_%(class)s",
+        on_delete=models.SET_NULL,
     )
-    
+    updated_by = models.ForeignKey(
+        'accounts.User',
+        null=True,
+        blank=True,
+        related_name="updated_%(class)s",
+        on_delete=models.SET_NULL,
+    )
+
     class Meta:
         abstract = True
+
+    def get_valid_user(self, user=None):
+        user = user or get_current_user()
+
+        if isinstance(user, SimpleLazyObject):
+            user = user._wrapped if hasattr(user, "_wrapped") else None
+
+        if not user or isinstance(user, AnonymousUser):
+            return None
+
+        return user
+
+    def save(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        user = self.get_valid_user(user)
+
+        if not self.pk and not self.created_by:
+            self.created_by = user
+        self.updated_by = user
+
+        super().save(*args, **kwargs)
 
 
 class SoftDeleteModel(models.Model):
@@ -132,6 +160,24 @@ class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
 
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        return super().update(is_deleted=True, deleted_at=timezone.now())
+
+    def hard_delete(self):
+        return super().delete()
+
+    def alive(self):
+        return self.filter(is_deleted=False)
+
+    def dead(self):
+        return self.filter(is_deleted=True)
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db).alive()
+
+
 
 class BaseModel(UUIDModel, TimestampedModel, UserTrackingModel, SoftDeleteModel):
     """
@@ -172,6 +218,8 @@ class AuditLog(TimestampedModel):
     tenant = models.ForeignKey(
         'tenants.Tenant',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         help_text="Tenant where this action occurred"
     )
     
@@ -203,10 +251,14 @@ class AuditLog(TimestampedModel):
     object_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
+         null=True,
+        blank=True,
         help_text="Type of object that was affected"
     )
     object_id = models.CharField(
         max_length=255,
+        null=True,
+        blank=True,
         help_text="ID of the object that was affected"
     )
     object_repr = models.CharField(

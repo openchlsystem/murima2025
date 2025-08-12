@@ -1,6 +1,6 @@
 # core/utils.py
 from django.utils import timezone
-from core.models import AuditLog
+from .models import AuditLog
 from django.http import HttpRequest
 
 def log_action(
